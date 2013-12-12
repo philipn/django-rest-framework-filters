@@ -30,7 +30,7 @@ To enable chained filtering through relations:
 
     from rest_framework import viewsets
     import django_filters
-    from rest_framework_chain import ChainedFilterSet, RelatedField
+    from rest_framework_chain import ChainedFilterSet, RelatedFilter
 
     class PageFilter(ChainedFilterSet):
         title = django_filters.CharFilter(name='title')
@@ -91,16 +91,16 @@ and also filter on the default lookup (``exact``), as usual::
 
     /api/page/?title=The%20Park
 
-Combining RelatedField and AllLookupsFilter
+Combining RelatedFilter and AllLookupsFilter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can combine ``RelatedField`` and ``AllLookupsFilter``:
+We can combine ``RelatedFilter`` and ``AllLookupsFilter``:
 
 .. code-block:: python
 
     from rest_framework import viewsets
     import django_filters
-    from rest_framework_chain import ChainedFilterSet, RelatedField
+    from rest_framework_chain import ChainedFilterSet, RelatedFilter
 
     class PageFilter(ChainedFilterSet):
         title = django_filters.CharFilter(name='title')
