@@ -1,4 +1,4 @@
-`django-rest-framework-chain` is an extension to `django-rest-framework` that allows arbitrary chaining of both relations and lookup filters.  Here's an example::
+`django-rest-framework-chain` is an extension to Django REST Framework that allows arbitrary chaining of both relations and lookup filters.
 
 Installation
 ------------
@@ -13,7 +13,7 @@ Usage
 Chaining filtering through relations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To enable chained filtering through relations::
+To enable chained filtering through relations:
 
 *views.py*
 
@@ -38,7 +38,7 @@ To enable chained filtering through relations::
         ...
         filter_class = PageFilter
 
-then we can automatically chain our filters through the `author` relation, as so::
+then we can automatically chain our filters through the ``author`` relation, as so::
 
     /api/page/?author__username=philipn
 
@@ -46,15 +46,17 @@ then we can automatically chain our filters through the `author` relation, as so
 Allowing any lookup type on a field
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can use the `AllLookupsFilter` to allow all possible lookup types on a particular
-field.  While we could otherwise specify these by hand, e.g.::
+We can use the ``AllLookupsFilter`` to allow all possible lookup types on a particular
+field.  While we could otherwise specify these by hand, e.g.:
+
+.. code-block:: python
 
     class ProductFilter(django_filters.FilterSet):
         min_price = django_filters.NumberFilter(name="price", lookup_type='gte')
         ...
 
-to allow the `price__gte` lookup.  But this gets cumbersome, and we sometimes want to
-allow any possible lookups on particular fields.  We do this by using `AllLookupsFilter`::
+to allow the ``price__gte`` lookup.  But this gets cumbersome, and we sometimes want to
+allow any possible lookups on particular fields.  We do this by using ``AllLookupsFilter``:
 
 *views.py*
 
@@ -68,7 +70,7 @@ allow any possible lookups on particular fields.  We do this by using `AllLookup
         title = AllLookupsFilter(name='title')
         ...
 
-then we can use any possible lookup on the `title` field, e.g.::
+then we can use any possible lookup on the ``title`` field, e.g.::
 
     /api/page/?title__icontains=park
 
@@ -76,14 +78,14 @@ or ::
 
     /api/page/?title__startswith=The
 
-and also filter on the default lookup (`exact`), as usual::
+and also filter on the default lookup (``exact``), as usual::
 
     /api/page/?title=The%20Park
 
 Combining RelatedField and AllLookupsFilter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can combine `RelatedField` and `AllLookupsFilter`::
+We can combine ``RelatedField`` and ``AllLookupsFilter``:
 
 .. code-block:: python
 
