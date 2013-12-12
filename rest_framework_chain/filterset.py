@@ -12,7 +12,7 @@ from .filters import RelatedFilter, AllLookupsFilter
 
 class ChainedFilterSet(django_filters.FilterSet):
     def __new__(cls, *args, **kwargs):
-        new_cls = super(ChainedFilterSet, cls).__new__(cls, *args, **kwargs)
+        new_cls = super(ChainedFilterSet, cls).__new__(cls)
         for name, filter_ in six.iteritems(new_cls.base_filters):
             if isinstance(filter_, RelatedFilter):
                 # Populate our FilterSet fields with the fields we've stored
