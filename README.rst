@@ -1,5 +1,8 @@
 `django-rest-framework-chain` is an extension to Django REST Framework that allows arbitrary chaining of both relations and lookup filters.
 
+.. image:: https://secure.travis-ci.org/philipn/django-rest-framework-chain.png?branch=master
+   :target: http://travis-ci.org/philipn/django-rest-framework-chain
+
 Installation
 ------------
 
