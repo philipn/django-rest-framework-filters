@@ -7,7 +7,7 @@ import django_filters
 from django_filters.filters import LOOKUP_TYPES
 from django_filters.filterset import get_model_field
 
-from filters import RelatedFilter, AllLookupsFilter
+from .filters import RelatedFilter, AllLookupsFilter
 
 
 class ChainedFilterSet(django_filters.FilterSet):
