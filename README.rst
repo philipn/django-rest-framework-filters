@@ -10,6 +10,12 @@ Installation
 
     $ pip install djangorestframework-chain
 
+Requirements
+------------
+
+* Python 2.6+
+* Django 1.4.5+
+
 Usage
 -----
 

@@ -1,4 +1,8 @@
-from django.db.models.constants import LOOKUP_SEP
+try:
+    from django.db.models.constants import LOOKUP_SEP
+except ImportError:  # pragma: nocover
+    # Django < 1.5 fallback
+    from django.db.models.sql.constants import LOOKUP_SEP  # noqa
 from django.utils.datastructures import SortedDict
 from django.db.models.related import RelatedObject
 from django.utils import six
