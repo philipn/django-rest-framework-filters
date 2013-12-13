@@ -1,3 +1,5 @@
+from copy import copy
+
 try:
     from django.db.models.constants import LOOKUP_SEP
 except ImportError:  # pragma: nocover
@@ -24,6 +26,7 @@ class ChainedFilterSet(django_filters.FilterSet):
                 for f in filter_.filterset.base_filters.values():
                     if f in new_cls.base_filters.values():
                         continue
+                    f = copy(f)
                     f.name = '%s%s%s' % (name, LOOKUP_SEP, f.name)
                     new_cls.base_filters[f.name] = f
             elif isinstance(filter_, AllLookupsFilter):

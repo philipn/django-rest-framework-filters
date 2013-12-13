@@ -17,6 +17,11 @@ class Note(models.Model):
     author = models.ForeignKey(User)
 
 
+class Post(models.Model):
+    note = models.ForeignKey(Note)
+    content = models.TextField()
+
+
 class NoteFilterWithAll(ChainedFilterSet):
     title = AllLookupsFilter(name='title')
 
@@ -56,8 +61,18 @@ class NoteFilterWithRelatedAll(ChainedFilterSet):
         model = Note
 
 
+class PostFilterWithRelated(ChainedFilterSet):
+    note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
+
+    class Meta:
+        model = Post
+
+
 class TestAllLookupsFilter(TestCase):
     def setUp(self):
+        #######################
+        # Create users
+        #######################
         user1 = User(
             username="user1",
             email="user1@example.org"
@@ -77,6 +92,9 @@ class TestAllLookupsFilter(TestCase):
         )
         n.save()
 
+        #######################
+        # Create notes 
+        #######################
         n = Note(
             title="Test 2",
             content="Test content 2",
@@ -97,6 +115,27 @@ class TestAllLookupsFilter(TestCase):
             author=user2
         )
         n.save()
+
+        #######################
+        # Create posts 
+        #######################
+        post = Post(
+            note=Note.objects.get(title="Test 1"),
+            content="Test content in post 1",
+        )
+        post.save()
+
+        post = Post(
+            note=Note.objects.get(title="Test 2"),
+            content="Test content in post 2",
+        )
+        post.save()
+
+        post = Post(
+            note=Note.objects.get(title="Hello Test 4"),
+            content="Test content in post 3",
+        )
+        post.save()
 
     def test_alllookupsfilter(self):
         # Test __iendswith
@@ -184,3 +223,13 @@ class TestAllLookupsFilter(TestCase):
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f)), 4)
+
+    def test_double_relation_filter(self):
+        # Test that the default exact filter works
+        GET = {
+            'note__author__username__endswith': 'user2'
+        }
+        f = PostFilterWithRelated(GET, queryset=Post.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        post = list(f)[0]
+        self.assertEqual(post.content, "Test content in post 3")
