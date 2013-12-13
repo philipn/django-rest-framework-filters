@@ -22,6 +22,11 @@ class Post(models.Model):
     content = models.TextField()
 
 
+class Cover(models.Model):
+    comment = models.CharField(max_length=100)
+    post = models.ForeignKey(Post)
+
+
 class NoteFilterWithAll(ChainedFilterSet):
     title = AllLookupsFilter(name='title')
 
@@ -66,6 +71,14 @@ class PostFilterWithRelated(ChainedFilterSet):
 
     class Meta:
         model = Post
+
+
+class CoverFilterWithRelated(ChainedFilterSet):
+    comment = django_filters.CharFilter(name='comment')
+    post = RelatedFilter(PostFilterWithRelated, name='post')
+
+    class Meta:
+        model = Cover
 
 
 class TestAllLookupsFilter(TestCase):
@@ -136,6 +149,21 @@ class TestAllLookupsFilter(TestCase):
             content="Test content in post 3",
         )
         post.save()
+
+        #######################
+        # Create covers
+        #######################
+        cover = Cover(
+            post=Post.objects.get(note__title="Test 1"),
+            comment="Cover 1"
+        )
+        cover.save()
+
+        cover = Cover(
+            post=Post.objects.get(note__title="Hello Test 4"),
+            comment="Cover 2"
+        )
+        cover.save()
 
     def test_alllookupsfilter(self):
         # Test __iendswith
@@ -233,3 +261,13 @@ class TestAllLookupsFilter(TestCase):
         self.assertEqual(len(list(f)), 1)
         post = list(f)[0]
         self.assertEqual(post.content, "Test content in post 3")
+
+    def test_triple_relation_filter(self):
+        # Test that the default exact filter works
+        GET = {
+            'post__note__author__username__endswith': 'user2'
+        }
+        f = CoverFilterWithRelated(GET, queryset=Cover.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        cover = list(f)[0]
+        self.assertEqual(cover.comment, "Cover 2")
