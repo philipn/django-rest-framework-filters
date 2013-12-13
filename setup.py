@@ -34,7 +34,7 @@ def get_package_data(package):
 
 setup(
     name='djangorestframework-chain',
-    version='0.1.1',
+    version='0.1.2',
     url='http://github.com/philipn/django-rest-framework-chain',
     license='MIT',
     description='Chained relations and filtering for Django REST Framework',
