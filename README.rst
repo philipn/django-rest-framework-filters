@@ -24,8 +24,6 @@ Chaining filtering through relations
 
 To enable chained filtering through relations:
 
-*views.py*
-
 .. code-block:: python
 
     from rest_framework import viewsets
@@ -66,8 +64,6 @@ field.  While we could otherwise specify these by hand, e.g.:
 
 to allow the ``price__gte`` lookup.  But this gets cumbersome, and we sometimes want to
 allow any possible lookups on particular fields.  We do this by using ``AllLookupsFilter``:
-
-*views.py*
 
 .. code-block:: python
 
