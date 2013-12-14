@@ -27,6 +27,27 @@ class Cover(models.Model):
     post = models.ForeignKey(Post)
 
 
+class Page(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    previous_page = models.ForeignKey('self', null=True)
+
+
+class A(models.Model):
+    title = models.CharField(max_length=100)
+    b = models.ForeignKey('B', null=True)
+
+
+class C(models.Model):
+    title = models.CharField(max_length=100)
+    a = models.ForeignKey(A, null=True)
+
+
+class B(models.Model):
+    name = models.CharField(max_length=100)
+    c = models.ForeignKey(C, null=True)
+
+
 class NoteFilterWithAll(ChainedFilterSet):
     title = AllLookupsFilter(name='title')
 
@@ -79,6 +100,30 @@ class CoverFilterWithRelated(ChainedFilterSet):
 
     class Meta:
         model = Cover
+
+#############################################################
+# Recursive, indirect, filtersets
+#############################################################
+class AFilter(ChainedFilterSet):
+    title = django_filters.CharFilter(name='title')
+    b = RelatedFilter('BFilter', name='b')
+
+
+class CFilter(ChainedFilterSet):
+    title = django_filters.CharFilter(name='title')
+    a = RelatedFilter(AFilter, name='a')
+
+
+class BFilter(ChainedFilterSet):
+    name= django_filters.CharFilter(name='name')
+    c = RelatedFilter(CFilter, name='c')
+
+#class PageFilterWithRelated(ChainedFilterSet):
+#    title = django_filters.CharFilter(name='title')
+#    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
+#
+#    class Meta:
+#        model = Page
 
 
 class TestAllLookupsFilter(TestCase):
@@ -165,6 +210,47 @@ class TestAllLookupsFilter(TestCase):
         )
         cover.save()
 
+        #######################
+        # Create pages
+        #######################
+        page = Page(
+            title="First page",
+            content="First first."
+        )
+        page.save()
+
+        page = Page(
+            title="Second page",
+            content="Second second.",
+            previous_page=Page.objects.get(title="First page")
+        )
+        page.save()
+
+        ################################
+        # Indirect recursive relation
+        ################################
+        a = A(title="A1")
+        a.save()
+
+        b = B(name="B1")
+        b.save()
+
+        c = C(title="C1")
+        c.save()
+
+        c.a = a
+        c.save()
+        a.b = b
+        a.save()
+
+        a = A(title="A2")
+        a.save()
+
+        c = C(title="C2")
+        c.save()
+
+        import pdb;pdb.set_trace()
+
     def test_alllookupsfilter(self):
         # Test __iendswith
         GET = {
@@ -229,7 +315,6 @@ class TestAllLookupsFilter(TestCase):
         note = list(f)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
-        # Test the lookup filters on the related UserFilter set.
         GET = {
             'author__username__endswith': '2',
         }
@@ -238,14 +323,12 @@ class TestAllLookupsFilter(TestCase):
         note = list(f)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
-        # Test the lookup filters on the related UserFilter set.
         GET = {
             'author__username__endswith': '1',
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f)), 3)
 
-        # Test the lookup filters on the related UserFilter set.
         GET = {
             'author__username__contains': 'user',
         }
@@ -253,7 +336,6 @@ class TestAllLookupsFilter(TestCase):
         self.assertEqual(len(list(f)), 4)
 
     def test_double_relation_filter(self):
-        # Test that the default exact filter works
         GET = {
             'note__author__username__endswith': 'user2'
         }
@@ -263,7 +345,6 @@ class TestAllLookupsFilter(TestCase):
         self.assertEqual(post.content, "Test content in post 3")
 
     def test_triple_relation_filter(self):
-        # Test that the default exact filter works
         GET = {
             'post__note__author__username__endswith': 'user2'
         }
@@ -271,3 +352,12 @@ class TestAllLookupsFilter(TestCase):
         self.assertEqual(len(list(f)), 1)
         cover = list(f)[0]
         self.assertEqual(cover.comment, "Cover 2")
+
+    def test_indirect_recursive_relation(self):
+        GET = {
+            'a__b__name__endswith': '1'
+        }
+        f = CFilter(GET, queryset=C.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        c = list(f)[0]
+        self.assertEqual(c.title, "C1")
