@@ -32,14 +32,14 @@ To enable chained filtering through relations:
     import django_filters
     from rest_framework_chain import ChainedFilterSet, RelatedFilter
 
-    class PageFilter(ChainedFilterSet):
-        title = django_filters.CharFilter(name='title')
-        author = RelatedFilter(UserFilter, name='author')
-
     # Just a regular FilterSet
     class UserFilter(django_filters.FilterSet):
         username = django_filters.CharFilter(name='username')
         ...
+
+    class PageFilter(ChainedFilterSet):
+        title = django_filters.CharFilter(name='title')
+        author = RelatedFilter(UserFilter, name='author')
 
     # Then just use the PageFilter as you would any other FilterSet:
 
