@@ -48,6 +48,11 @@ class B(models.Model):
     c = models.ForeignKey(C, null=True)
 
 
+class Person(models.Model):
+    name = models.CharField(max_length=100)
+    best_friend = models.ForeignKey('self', null=True)
+
+
 class NoteFilterWithAll(ChainedFilterSet):
     title = AllLookupsFilter(name='title')
 
@@ -101,8 +106,17 @@ class CoverFilterWithRelated(ChainedFilterSet):
     class Meta:
         model = Cover
 
+
+class PageFilterWithRelated(ChainedFilterSet):
+    title = django_filters.CharFilter(name='title')
+    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
+
+    class Meta:
+        model = Page
+
+
 #############################################################
-# Recursive, indirect, filtersets
+# Recursive filtersets
 #############################################################
 class AFilter(ChainedFilterSet):
     title = django_filters.CharFilter(name='title')
@@ -121,22 +135,22 @@ class CFilter(ChainedFilterSet):
 
 
 class BFilter(ChainedFilterSet):
-    name= AllLookupsFilter(name='name')
+    name = AllLookupsFilter(name='name')
     c = RelatedFilter(CFilter, name='c')
 
     class Meta:
         model = B
 
 
-class PageFilterWithRelated(ChainedFilterSet):
-    title = django_filters.CharFilter(name='title')
-    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
+class PersonFilter(ChainedFilterSet):
+    name = AllLookupsFilter(name='name')
+    best_friend = RelatedFilter('rest_framework_chain.tests.PersonFilter', name='best_friend')
 
     class Meta:
-        model = Page
+        model = Person
 
 
-class TestAllLookupsFilter(TestCase):
+class TestFilterSets(TestCase):
     def setUp(self):
         #######################
         # Create users
@@ -237,7 +251,7 @@ class TestAllLookupsFilter(TestCase):
         page.save()
 
         ################################
-        # Indirect recursive relation
+        # Recursive relations
         ################################
         a = A(title="A1")
         a.save()
@@ -261,6 +275,12 @@ class TestAllLookupsFilter(TestCase):
 
         c = C(title="C3")
         c.save()
+
+        p = Person(name="John")
+        p.save()
+
+        p = Person(name="Mark", best_friend=Person.objects.get(name="John"))
+        p.save()
 
 
     def test_alllookupsfilter(self):
@@ -373,3 +393,12 @@ class TestAllLookupsFilter(TestCase):
         self.assertEqual(len(list(f)), 1)
         c = list(f)[0]
         self.assertEqual(c.title, "C1")
+
+    def test_direct_recursive_relation(self):
+        GET = {
+            'best_friend__name__endswith': 'hn'
+        }
+        f = PersonFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        p = list(f)[0]
+        self.assertEqual(p.name, "Mark")

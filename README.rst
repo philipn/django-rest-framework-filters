@@ -115,6 +115,21 @@ then we can filter like so::
 
     /api/page/?author__username__icontains=john
 
+More information on RelatedFilter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Recursive relations are supported.  You will need to specify the full module
+path in the ``RelatedFilter`` definition in some cases, e.g.:
+
+.. code-block:: python
+
+   class PersonFilter(ChainedFilterSet):
+    name = AllLookupsFilter(name='name')
+    best_friend = RelatedFilter('people.views.PersonFilter', name='best_friend')
+
+    class Meta:
+        model = Person 
+
 License
 -------
 Copyright (c) 2013 Philip Neustrom <philipn@gmail.com>
