@@ -15,31 +15,50 @@ from django_filters.filterset import get_model_field
 
 from .filters import RelatedFilter, AllLookupsFilter
 
+def populate_from_filterset(filterset, name, filters):
+    """
+    Populate `filters` with filters provided on `filterset`.
+    """
+    def _should_skip():
+        for name, filter_ in six.iteritems(filters):
+            if f == filter_:
+                return True
+            # Avoid infinite recursion on recursive relations.  If the queryset and
+            # class are the same, then we assume that we've already added this
+            # filter previously along the lookup chain, e.g.
+            # a__b__a <-- the last 'a' there.
+            if isinstance(filter_, RelatedFilter) and isinstance(f, RelatedFilter):
+                if f.extra.get('queryset', None) == filter_.extra.get('queryset'):
+                    return True
+        return False
+
+    for f in filterset.base_filters.values():
+        if _should_skip():
+            continue
+
+        f = copy(f)
+        f.name = '%s%s%s' % (name, LOOKUP_SEP, f.name)
+        filters[f.name] = f
 
 class ChainedFilterSet(django_filters.FilterSet):
-    def __new__(cls, *args, **kwargs):
-        new_cls = super(ChainedFilterSet, cls).__new__(cls)
-        for name, filter_ in six.iteritems(new_cls.base_filters):
+    def __init__(self, *args, **kwargs):
+        super(ChainedFilterSet, self).__init__(*args, **kwargs)
+
+        for name, filter_ in six.iteritems(self.filters):
             if isinstance(filter_, RelatedFilter):
                 # Populate our FilterSet fields with the fields we've stored
                 # in RelatedFilter.
-                for f in filter_.filterset.base_filters.values():
-                    if f in new_cls.base_filters.values():
-                        continue
-                    f = copy(f)
-                    f.name = '%s%s%s' % (name, LOOKUP_SEP, f.name)
-                    new_cls.base_filters[f.name] = f
+                filter_.setup_filterset()
+                populate_from_filterset(filter_.filterset, name, self.filters)
             elif isinstance(filter_, AllLookupsFilter):
                 # Populate our FilterSet fields with all the possible
                 # filters for the AllLookupsFilter field.
-                model = new_cls._meta.model
+                model = self._meta.model
                 field = get_model_field(model, filter_.name)
                 for lookup_type in LOOKUP_TYPES:
                     if isinstance(field, RelatedObject):
-                        f = new_cls.filter_for_reverse_field(field, filter_.name)
+                        f = self.filter_for_reverse_field(field, filter_.name)
                     else:
-                        f = new_cls.filter_for_field(field, filter_.name)
+                        f = self.filter_for_field(field, filter_.name)
                     f.lookup_type = lookup_type
-                    new_cls.base_filters["%s__%s" % (filter_.name, lookup_type)] = f
-
-        return new_cls
+                    self.filters["%s__%s" % (filter_.name, lookup_type)] = f

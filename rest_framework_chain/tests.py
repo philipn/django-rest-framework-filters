@@ -106,24 +106,34 @@ class CoverFilterWithRelated(ChainedFilterSet):
 #############################################################
 class AFilter(ChainedFilterSet):
     title = django_filters.CharFilter(name='title')
-    b = RelatedFilter('BFilter', name='b')
+    b = RelatedFilter('rest_framework_chain.tests.BFilter', name='b')
+
+    class Meta:
+        model = A
 
 
 class CFilter(ChainedFilterSet):
     title = django_filters.CharFilter(name='title')
     a = RelatedFilter(AFilter, name='a')
 
+    class Meta:
+        model = C
+
 
 class BFilter(ChainedFilterSet):
-    name= django_filters.CharFilter(name='name')
+    name= AllLookupsFilter(name='name')
     c = RelatedFilter(CFilter, name='c')
 
-#class PageFilterWithRelated(ChainedFilterSet):
-#    title = django_filters.CharFilter(name='title')
-#    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
-#
-#    class Meta:
-#        model = Page
+    class Meta:
+        model = B
+
+
+class PageFilterWithRelated(ChainedFilterSet):
+    title = django_filters.CharFilter(name='title')
+    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
+
+    class Meta:
+        model = Page
 
 
 class TestAllLookupsFilter(TestCase):
@@ -249,7 +259,9 @@ class TestAllLookupsFilter(TestCase):
         c = C(title="C2")
         c.save()
 
-        import pdb;pdb.set_trace()
+        c = C(title="C3")
+        c.save()
+
 
     def test_alllookupsfilter(self):
         # Test __iendswith
