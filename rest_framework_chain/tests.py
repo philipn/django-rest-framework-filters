@@ -53,6 +53,20 @@ class Person(models.Model):
     best_friend = models.ForeignKey('self', null=True)
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100)
+
+
+class BlogPost(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    tags = models.ManyToManyField(Tag, null=True)
+
+
+#################################################
+# FilterSets
+#################################################
+
 class NoteFilterWithAll(ChainedFilterSet):
     title = AllLookupsFilter(name='title')
 
@@ -113,6 +127,21 @@ class PageFilterWithRelated(ChainedFilterSet):
 
     class Meta:
         model = Page
+
+
+class TagFilter(ChainedFilterSet):
+    name = AllLookupsFilter(name='name')
+
+    class Meta:
+        model = Tag
+
+
+class BlogPostFilter(ChainedFilterSet):
+    title = django_filters.CharFilter(name='title')
+    tags = RelatedFilter(TagFilter, name='tags')
+
+    class Meta:
+        model = BlogPost
 
 
 #############################################################
@@ -250,6 +279,30 @@ class TestFilterSets(TestCase):
         )
         page.save()
 
+        ################################
+        # ManyToMany
+        ################################
+        tag = Tag(name="park")
+        tag.save()
+        tag = Tag(name="lake")
+        tag.save()
+        tag = Tag(name="house")
+        tag.save()
+
+        blogpost = BlogPost(
+            title="First post",
+            content="First"
+        )
+        blogpost.save()
+        blogpost.tags = [Tag.objects.get(name="park"), Tag.objects.get(name="house")]
+
+        blogpost = BlogPost(
+            title="Second post",
+            content="Secon"
+        )
+        blogpost.save()
+        blogpost.tags = [Tag.objects.get(name="house")]
+       
         ################################
         # Recursive relations
         ################################
@@ -402,3 +455,20 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(list(f)), 1)
         p = list(f)[0]
         self.assertEqual(p.name, "Mark")
+
+    def test_m2m_relation(self):
+        GET = {
+            'tags__name__endswith': 'ark',
+        }
+        f = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        p = list(f)[0]
+        self.assertEqual(p.title, "First post")
+
+        GET = {
+            'tags__name__endswith': 'ouse',
+        }
+        f = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        self.assertEqual(len(list(f)), 2)
+        titles = set([p.title for p in f])
+        self.assertEqual(titles, set(["First post", "Second post"]))
