@@ -1,5 +1,12 @@
 `django-rest-framework-chain` is an extension to Django REST Framework that allows arbitrary chaining of both relations and lookup filters.
 
+E.g. this allows you to do stuff like::
+
+    /api/page/?author__username__icontains=john
+    /api/page/?author__username__endswith=smith
+
+Without having to create a zillion filter fields by hand.
+
 .. image:: https://secure.travis-ci.org/philipn/django-rest-framework-chain.png?branch=master
    :target: http://travis-ci.org/philipn/django-rest-framework-chain
 
@@ -38,6 +45,7 @@ To enable chained filtering through relations:
     class PageFilter(ChainedFilterSet):
         title = django_filters.CharFilter(name='title')
         author = RelatedFilter(UserFilter, name='author')
+        ...
 
     # Then just use the PageFilter as you would any other FilterSet:
 
