@@ -1,6 +1,6 @@
-`django-rest-framework-chain` is an extension to Django REST Framework that allows arbitrary chaining of both relations and lookup filters.
+`django-rest-framework-filter` is an extension to Django REST Framework and `django-filter` that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of `django-filter`, we allow arbitrary chaining of both relations and lookup filters.
 
-E.g. this allows you to do stuff like::
+E.g. using `django-rest-framework-filter` instead of just `django-filter`, we can do stuff like::
 
     /api/page/?author__username__icontains=john
     /api/page/?author__username__endswith=smith
@@ -15,7 +15,7 @@ Installation
 
 .. code-block:: bash
 
-    $ pip install djangorestframework-chain
+    $ pip install djangorestframework-filter
 
 Requirements
 ------------
@@ -26,6 +26,40 @@ Requirements
 Usage
 -----
 
+Here's how you were probably doing filtering before:
+
+.. code-block:: python
+
+    import django_filters
+    from myapp.models import Product
+    
+    class ProductFilter(django_filters.FilterSet):
+        manufacturer = django_filters.CharFilter(name="manufacturer__name")
+    
+        class Meta:
+            model = Product
+            fields = ['category', 'in_stock', 'manufacturer']
+
+
+To use `django-rest-framework-filter`, simply import `rest_framework_filters` instead of
+`django_filters`:
+
+.. code-block:: python
+
+    import rest_framework_filters as filters
+    from myapp.models import Product
+    
+    class ProductFilter(filters.FilterSet):
+        manufacturer = filters.CharFilter(name="manufacturer__name")
+    
+        class Meta:
+            model = Product
+            fields = ['category', 'in_stock', 'manufacturer']
+
+All filters found in `django-filter` are available for usage.  In this case, there's nothing new
+that's gained.  But read onward!
+
+
 Chaining filtering through relations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -34,17 +68,15 @@ To enable chained filtering through relations:
 .. code-block:: python
 
     from rest_framework import viewsets
-    import django_filters
-    from rest_framework_chain import ChainedFilterSet, RelatedFilter
+    import rest_framework_filters as filters
 
-    # Just a regular FilterSet
-    class UserFilter(django_filters.FilterSet):
-        username = django_filters.CharFilter(name='username')
+    class UserFilter(filters.FilterSet):
+        username = filters.CharFilter(name='username')
         ...
 
-    class PageFilter(ChainedFilterSet):
-        title = django_filters.CharFilter(name='title')
-        author = RelatedFilter(UserFilter, name='author')
+    class PageFilter(filters.FilterSet):
+        title = filters.CharFilter(name='title')
+        author = filters.RelatedFilter(UserFilter, name='author')
         ...
 
     # Then just use the PageFilter as you would any other FilterSet:
@@ -66,8 +98,8 @@ field.  While we could otherwise specify these by hand, e.g.:
 
 .. code-block:: python
 
-    class ProductFilter(django_filters.FilterSet):
-        min_price = django_filters.NumberFilter(name="price", lookup_type='gte')
+    class ProductFilter(filters.FilterSet):
+        min_price = filters.NumberFilter(name="price", lookup_type='gte')
         ...
 
 to allow the ``price__gte`` lookup.  But this gets cumbersome, and we sometimes want to
@@ -76,11 +108,10 @@ allow any possible lookups on particular fields.  We do this by using ``AllLooku
 .. code-block:: python
 
     from rest_framework import viewsets
-    import django_filters
-    from rest_framework_chain import ChainedFilterSet, AllLookupsFilter
+    import rest_framework_filters as filters
 
-    class PageFilter(ChainedFilterSet):
-        title = AllLookupsFilter(name='title')
+    class PageFilter(filters.FilterSet):
+        title = filters.AllLookupsFilter(name='title')
         ...
 
 then we can use any possible lookup on the ``title`` field, e.g.::
@@ -103,15 +134,13 @@ We can combine ``RelatedFilter`` and ``AllLookupsFilter``:
 .. code-block:: python
 
     from rest_framework import viewsets
-    import django_filters
-    from rest_framework_chain import ChainedFilterSet, RelatedFilter
+    import rest_framework_filters as filters
 
-    class PageFilter(ChainedFilterSet):
-        title = django_filters.CharFilter(name='title')
-        author = RelatedFilter(UserFilter, name='author')
+    class PageFilter(filters.FilterSet):
+        title = filters.CharFilter(name='title')
+        author = filters.RelatedFilter(UserFilter, name='author')
 
-    # Just a regular FilterSet
-    class UserFilter(ChainedFilterSet):
+    class UserFilter(filters.FilterSet):
         username = AllLookupsFilter(name='username')
         ...
 
@@ -127,16 +156,37 @@ path in the ``RelatedFilter`` definition in some cases, e.g.:
 
 .. code-block:: python
 
-   class PersonFilter(ChainedFilterSet):
-    name = AllLookupsFilter(name='name')
-    best_friend = RelatedFilter('people.views.PersonFilter', name='best_friend')
+    class PersonFilter(filters.FilterSet):
+        name = filters.AllLookupsFilter(name='name')
+        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
 
-    class Meta:
-        model = Person 
+        class Meta:
+            model = Person 
+
+What warts are fixed?
+~~~~~~~~~~~~~~~~~~~~~
+
+Even if you're not using `RelatedFilter` or `AllLookupsFilter`, you will probably want
+to use `django-rest-framework-filter`.  For instance, if you simply use `django-filter`
+it is very difficult to filter on a `DateTimeFilter` in the date format emitted by
+the default serializer (ISO 8601), which makes working with your API difficult.
+
+Can I mix and match `django-filter` and `django-rest-framework-filter`?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes, you can.  For a given class, you should use either `django-filter` or
+`django-rest-framework-filter`, but you can use `RelatedFilter` to
+link to a filter relation defined elsewhere that uses vanilla `django-filter`.
+
+Wanted functionality
+~~~~~~~~~~~~~~~~~~~~
+
+  * Better support for `__in=`.
+  * Allow for `OR` as well as `AND` style filtering.
 
 License
 -------
-Copyright (c) 2013 Philip Neustrom <philipn@gmail.com>
+Copyright (c) 2013-2014 Philip Neustrom <philipn@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

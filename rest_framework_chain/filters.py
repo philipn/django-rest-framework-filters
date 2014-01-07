@@ -1,9 +1,12 @@
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 from django.utils import six
 
-import django_filters
+from django_filters.filters import *
 
 
-class RelatedFilter(django_filters.ModelChoiceFilter):
+class RelatedFilter(ModelChoiceFilter):
     def __init__(self, filterset, *args, **kwargs):
         self.filterset = filterset
         super(RelatedFilter, self).__init__(*args, **kwargs)
@@ -20,5 +23,5 @@ class RelatedFilter(django_filters.ModelChoiceFilter):
         self.extra['queryset'] = self.filterset._meta.model.objects.all()
 
 
-class AllLookupsFilter(django_filters.Filter):
+class AllLookupsFilter(Filter):
     pass

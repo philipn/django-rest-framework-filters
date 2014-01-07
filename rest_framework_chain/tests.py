@@ -1,5 +1,9 @@
 #-*- coding:utf-8 -*-
+from __future__ import absolute_import
 from __future__ import unicode_literals
+
+import time
+import datetime
 
 from django.db import models
 from django.test import TestCase
@@ -51,6 +55,10 @@ class B(models.Model):
 class Person(models.Model):
     name = models.CharField(max_length=100)
     best_friend = models.ForeignKey('self', null=True)
+
+    date_joined = models.DateField(auto_now=True)
+    time_joined = models.TimeField(auto_now=True)
+    datetime_joined = models.DateTimeField(auto_now=True)
 
 
 class Tag(models.Model):
@@ -174,6 +182,27 @@ class BFilter(ChainedFilterSet):
 class PersonFilter(ChainedFilterSet):
     name = AllLookupsFilter(name='name')
     best_friend = RelatedFilter('rest_framework_chain.tests.PersonFilter', name='best_friend')
+
+    class Meta:
+        model = Person
+
+#############################################################
+# Extensions to django_filter fields for DRF.
+#############################################################
+
+class AllLookupsPersonDateFilter(ChainedFilterSet):
+    date_joined = AllLookupsFilter(name='date_joined')
+    time_joined = AllLookupsFilter(name='time_joined')
+    datetime_joined = AllLookupsFilter(name='datetime_joined')
+
+    class Meta:
+        model = Person
+
+
+class ExplicitLookupsPersonDateFilter(ChainedFilterSet):
+    date_joined = AllLookupsFilter(name='date_joined')
+    time_joined = AllLookupsFilter(name='time_joined')
+    datetime_joined = AllLookupsFilter(name='datetime_joined')
 
     class Meta:
         model = Person
@@ -332,6 +361,7 @@ class TestFilterSets(TestCase):
         p = Person(name="John")
         p.save()
 
+        time.sleep(1)  # Created at least one second apart
         p = Person(name="Mark", best_friend=Person.objects.get(name="John"))
         p.save()
 
@@ -472,3 +502,54 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(list(f)), 2)
         titles = set([p.title for p in f])
         self.assertEqual(titles, set(["First post", "Second post"]))
+
+    def test_implicit_date_filters(self):
+        john = Person.objects.get(name="John")
+        # Mark was created at least one second after John.
+        mark = Person.objects.get(name="Mark")
+
+        from rest_framework import serializers
+        from rest_framework.renderers import JSONRenderer
+
+        class PersonSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Person
+
+        # Figure out what the date strings should look like based on the
+        # serializer output.
+        data = PersonSerializer(john).data
+
+        date_str = JSONRenderer().render(data['date_joined']).strip('"')
+
+        # Adjust for imprecise rendering of time
+        datetime_str = JSONRenderer().render(data['datetime_joined'] + datetime.timedelta(seconds=0.6)).strip('"')
+
+        # Adjust for imprecise rendering of time
+        dt = datetime.datetime.combine(datetime.date.today(), data['time_joined']) + datetime.timedelta(seconds=0.6)
+        time_str = JSONRenderer().render(dt.time()).strip('"')
+
+        # DateField
+        GET = {
+            'date_joined__lte': date_str,
+        }
+        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 2)
+        p = list(f)[0]
+
+        # DateTimeField
+        GET = {
+            'datetime_joined__lte': datetime_str,
+        }
+        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        p = list(f)[0]
+        self.assertEqual(p.name, "John")
+
+        # TimeField
+        GET = {
+            'time_joined__lte': time_str,
+        }
+        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        p = list(f)[0]
+        self.assertEqual(p.name, "John")
