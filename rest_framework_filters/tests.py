@@ -9,10 +9,9 @@ from django.db import models
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-import django_filters
-
+from . import filters
 from .filters import RelatedFilter, AllLookupsFilter
-from .filterset import ChainedFilterSet
+from .filterset import FilterSet
 
 
 class Note(models.Model):
@@ -75,77 +74,77 @@ class BlogPost(models.Model):
 # FilterSets
 #################################################
 
-class NoteFilterWithAll(ChainedFilterSet):
+class NoteFilterWithAll(FilterSet):
     title = AllLookupsFilter(name='title')
 
     class Meta:
         model = Note
 
 
-class UserFilter(django_filters.FilterSet):
-    username = django_filters.CharFilter(name='username')
-    email = django_filters.CharFilter(name='email')
+class UserFilter(FilterSet):
+    username = filters.CharFilter(name='username')
+    email = filters.CharFilter(name='email')
 
     class Meta:
         model = User
 
 
-class UserFilterWithAll(ChainedFilterSet):
+class UserFilterWithAll(FilterSet):
     username = AllLookupsFilter(name='username')
-    email = django_filters.CharFilter(name='email')
+    email = filters.CharFilter(name='email')
 
     class Meta:
         model = User
 
 
-class NoteFilterWithRelated(ChainedFilterSet):
-    title = django_filters.CharFilter(name='title')
+class NoteFilterWithRelated(FilterSet):
+    title = filters.CharFilter(name='title')
     author = RelatedFilter(UserFilter, name='author')
 
     class Meta:
         model = Note
 
 
-class NoteFilterWithRelatedAll(ChainedFilterSet):
-    title = django_filters.CharFilter(name='title')
+class NoteFilterWithRelatedAll(FilterSet):
+    title = filters.CharFilter(name='title')
     author = RelatedFilter(UserFilterWithAll, name='author')
 
     class Meta:
         model = Note
 
 
-class PostFilterWithRelated(ChainedFilterSet):
+class PostFilterWithRelated(FilterSet):
     note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
 
     class Meta:
         model = Post
 
 
-class CoverFilterWithRelated(ChainedFilterSet):
-    comment = django_filters.CharFilter(name='comment')
+class CoverFilterWithRelated(FilterSet):
+    comment = filters.CharFilter(name='comment')
     post = RelatedFilter(PostFilterWithRelated, name='post')
 
     class Meta:
         model = Cover
 
 
-class PageFilterWithRelated(ChainedFilterSet):
-    title = django_filters.CharFilter(name='title')
+class PageFilterWithRelated(FilterSet):
+    title = filters.CharFilter(name='title')
     previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
 
     class Meta:
         model = Page
 
 
-class TagFilter(ChainedFilterSet):
+class TagFilter(FilterSet):
     name = AllLookupsFilter(name='name')
 
     class Meta:
         model = Tag
 
 
-class BlogPostFilter(ChainedFilterSet):
-    title = django_filters.CharFilter(name='title')
+class BlogPostFilter(FilterSet):
+    title = filters.CharFilter(name='title')
     tags = RelatedFilter(TagFilter, name='tags')
 
     class Meta:
@@ -155,23 +154,23 @@ class BlogPostFilter(ChainedFilterSet):
 #############################################################
 # Recursive filtersets
 #############################################################
-class AFilter(ChainedFilterSet):
-    title = django_filters.CharFilter(name='title')
-    b = RelatedFilter('rest_framework_chain.tests.BFilter', name='b')
+class AFilter(FilterSet):
+    title = filters.CharFilter(name='title')
+    b = RelatedFilter('rest_framework_filters.tests.BFilter', name='b')
 
     class Meta:
         model = A
 
 
-class CFilter(ChainedFilterSet):
-    title = django_filters.CharFilter(name='title')
+class CFilter(FilterSet):
+    title = filters.CharFilter(name='title')
     a = RelatedFilter(AFilter, name='a')
 
     class Meta:
         model = C
 
 
-class BFilter(ChainedFilterSet):
+class BFilter(FilterSet):
     name = AllLookupsFilter(name='name')
     c = RelatedFilter(CFilter, name='c')
 
@@ -179,9 +178,9 @@ class BFilter(ChainedFilterSet):
         model = B
 
 
-class PersonFilter(ChainedFilterSet):
+class PersonFilter(FilterSet):
     name = AllLookupsFilter(name='name')
-    best_friend = RelatedFilter('rest_framework_chain.tests.PersonFilter', name='best_friend')
+    best_friend = RelatedFilter('rest_framework_filters.tests.PersonFilter', name='best_friend')
 
     class Meta:
         model = Person
@@ -190,7 +189,7 @@ class PersonFilter(ChainedFilterSet):
 # Extensions to django_filter fields for DRF.
 #############################################################
 
-class AllLookupsPersonDateFilter(ChainedFilterSet):
+class AllLookupsPersonDateFilter(FilterSet):
     date_joined = AllLookupsFilter(name='date_joined')
     time_joined = AllLookupsFilter(name='time_joined')
     datetime_joined = AllLookupsFilter(name='datetime_joined')
@@ -199,7 +198,7 @@ class AllLookupsPersonDateFilter(ChainedFilterSet):
         model = Person
 
 
-class ExplicitLookupsPersonDateFilter(ChainedFilterSet):
+class ExplicitLookupsPersonDateFilter(FilterSet):
     date_joined = AllLookupsFilter(name='date_joined')
     time_joined = AllLookupsFilter(name='time_joined')
     datetime_joined = AllLookupsFilter(name='datetime_joined')

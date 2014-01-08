@@ -33,15 +33,15 @@ def get_package_data(package):
 
 
 setup(
-    name='djangorestframework-chain',
+    name='djangorestframework-filter',
     version='0.1.3',
-    url='http://github.com/philipn/django-rest-framework-chain',
+    url='http://github.com/philipn/django-rest-framework-filter',
     license='MIT',
-    description='Chained relations and filtering for Django REST Framework',
+    description='Better filtering for Django REST Framework',
     author='Philip Neustrom',
     author_email='philipn@gmail.com',
-    packages=get_packages('rest_framework_chain'),
-    package_data=get_package_data('rest_framework_chain'),
+    packages=get_packages('rest_framework_filters'),
+    package_data=get_package_data('rest_framework_filters'),
     #test_suite='rest_framework.runtests.runtests.main',
     install_requires=[
         'djangorestframework',
