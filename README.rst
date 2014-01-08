@@ -1,6 +1,6 @@
-`django-rest-framework-filter` is an extension to Django REST Framework and `django-filter` that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of `django-filter`, we allow arbitrary chaining of both relations and lookup filters.
+``django-rest-framework-filter`` is an extension to Django REST Framework and ``django-filter`` that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
 
-E.g. using `django-rest-framework-filter` instead of just `django-filter`, we can do stuff like::
+E.g. using ``django-rest-framework-filter`` instead of just ``django-filter``, we can do stuff like::
 
     /api/page/?author__username__icontains=john
     /api/page/?author__username__endswith=smith
@@ -41,8 +41,8 @@ Here's how you were probably doing filtering before:
             fields = ['category', 'in_stock', 'manufacturer']
 
 
-To use `django-rest-framework-filter`, simply import `rest_framework_filters` instead of
-`django_filters`:
+To use ``django-rest-framework-filter``, simply import ``rest_framework_filters`` instead of
+``django_filters``:
 
 .. code-block:: python
 
@@ -56,7 +56,7 @@ To use `django-rest-framework-filter`, simply import `rest_framework_filters` in
             model = Product
             fields = ['category', 'in_stock', 'manufacturer']
 
-All filters found in `django-filter` are available for usage.  In this case, there's nothing new
+All filters found in ``django-filter`` are available for usage.  In this case, there's nothing new
 that's gained.  But read onward!
 
 
@@ -166,23 +166,23 @@ path in the ``RelatedFilter`` definition in some cases, e.g.:
 What warts are fixed?
 ~~~~~~~~~~~~~~~~~~~~~
 
-Even if you're not using `RelatedFilter` or `AllLookupsFilter`, you will probably want
-to use `django-rest-framework-filter`.  For instance, if you simply use `django-filter`
-it is very difficult to filter on a `DateTimeFilter` in the date format emitted by
+Even if you're not using ``RelatedFilter`` or ``AllLookupsFilter``, you will probably want
+to use ``django-rest-framework-filter``.  For instance, if you simply use ``django-filter``
+it is very difficult to filter on a ``DateTimeFilter`` in the date format emitted by
 the default serializer (ISO 8601), which makes working with your API difficult.
 
 Can I mix and match `django-filter` and `django-rest-framework-filter`?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Yes, you can.  For a given class, you should use either `django-filter` or
-`django-rest-framework-filter`, but you can use `RelatedFilter` to
-link to a filter relation defined elsewhere that uses vanilla `django-filter`.
+Yes, you can.  For a given class, you should use only one of ``django-filter`` or
+``django-rest-framework-filter``, but you can use ``RelatedFilter`` to
+link to a filter relation defined elsewhere that uses vanilla ``django-filter``.
 
 Wanted functionality
 ~~~~~~~~~~~~~~~~~~~~
 
-  * Better support for `__in=`.
-  * Allow for `OR` as well as `AND` style filtering.
+  * Better support for ``__in=``.
+  * Allow for ``OR`` as well as ``AND`` style filtering.
 
 License
 -------
