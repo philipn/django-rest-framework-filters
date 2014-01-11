@@ -10,7 +10,7 @@ env:
 install:
   - pip install -q $DJANGO --use-mirrors
   - python setup.py develop
-script: python manage.py test rest_framework_chain
+script: python manage.py test rest_framework_filters
 
 matrix:
   exclude:
