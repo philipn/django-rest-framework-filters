@@ -518,14 +518,14 @@ class TestFilterSets(TestCase):
         # serializer output.
         data = PersonSerializer(john).data
 
-        date_str = JSONRenderer().render(data['date_joined']).strip('"')
+        date_str = JSONRenderer().render(data['date_joined']).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        datetime_str = JSONRenderer().render(data['datetime_joined'] + datetime.timedelta(seconds=0.6)).strip('"')
+        datetime_str = JSONRenderer().render(data['datetime_joined'] + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
         dt = datetime.datetime.combine(datetime.date.today(), data['time_joined']) + datetime.timedelta(seconds=0.6)
-        time_str = JSONRenderer().render(dt.time()).strip('"')
+        time_str = JSONRenderer().render(dt.time()).decode('utf-8').strip('"')
 
         # DateField
         GET = {
