@@ -43,7 +43,7 @@ class FilterSet(django_filters.FilterSet):
                 # Populate our FilterSet fields with the fields we've stored
                 # in RelatedFilter.
                 filter_.setup_filterset()
-                self.populate_from_filterset(filter_.filterset, name)
+                self.populate_from_filterset(filter_.filterset, filter_, name)
             elif isinstance(filter_, filters.AllLookupsFilter):
                 # Populate our FilterSet fields with all the possible
                 # filters for the AllLookupsFilter field.
@@ -57,7 +57,7 @@ class FilterSet(django_filters.FilterSet):
                     f.lookup_type = lookup_type
                     self.filters["%s__%s" % (filter_.name, lookup_type)] = f
 
-    def populate_from_filterset(self, filterset, name):
+    def populate_from_filterset(self, filterset, filter_, name):
         """
         Populate `filters` with filters provided on `filterset`.
         """
@@ -74,11 +74,15 @@ class FilterSet(django_filters.FilterSet):
                     if f.extra.get('queryset', None) == filter_.extra.get('queryset'):
                         return True
             return False
-    
+
+
         for f in filterset.base_filters.values():
             if _should_skip():
                 continue
     
             f = copy(f)
-            f.name = '%s%s%s' % (name, LOOKUP_SEP, f.name)
-            self.filters[f.name] = f
+            # We use filter_.name -- which is the internal name, to do the actual query
+            filter_name = f.name 
+            f.name = '%s%s%s' % (filter_.name, LOOKUP_SEP, filter_name)
+            # and then we use the /given/ name keyword as the actual querystring lookup.
+            self.filters['%s%s%s' % (name, LOOKUP_SEP, filter_name)] = f
