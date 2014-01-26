@@ -14,7 +14,7 @@ from django.db.models.related import RelatedObject
 from django.utils import six
 
 import django_filters
-from django_filters.filters import LOOKUP_TYPES
+import django_filters.filters
 from django_filters.filterset import get_model_field
 
 from . import filters
@@ -35,6 +35,8 @@ class FilterSet(django_filters.FilterSet):
         },
     }
 
+    LOOKUP_TYPES = django_filters.filters.LOOKUP_TYPES
+
     def __init__(self, *args, **kwargs):
         super(FilterSet, self).__init__(*args, **kwargs)
 
@@ -44,18 +46,31 @@ class FilterSet(django_filters.FilterSet):
                 # in RelatedFilter.
                 filter_.setup_filterset()
                 self.populate_from_filterset(filter_.filterset, filter_, name)
+                # Add an 'isnull' filter to allow checking if the relation is empty.
+                isnull_filter = filters.BooleanFilter(name=("%s%sisnull" % (filter_.name, LOOKUP_SEP)))
+                self.filters['%s%s%s' % (filter_.name, LOOKUP_SEP, 'isnull')] = isnull_filter
             elif isinstance(filter_, filters.AllLookupsFilter):
                 # Populate our FilterSet fields with all the possible
                 # filters for the AllLookupsFilter field.
                 model = self._meta.model
                 field = get_model_field(model, filter_.name)
-                for lookup_type in LOOKUP_TYPES:
+                for lookup_type in self.LOOKUP_TYPES:
                     if isinstance(field, RelatedObject):
                         f = self.filter_for_reverse_field(field, filter_.name)
                     else:
                         f = self.filter_for_field(field, filter_.name)
                     f.lookup_type = lookup_type
-                    self.filters["%s__%s" % (filter_.name, lookup_type)] = f
+                    f = self.fix_filter_field(f)
+                    self.filters["%s%s%s" % (filter_.name, LOOKUP_SEP, lookup_type)] = f
+
+    def fix_filter_field(self, f):
+        """
+        Fix the filter field based on the lookup type. 
+        """
+        lookup_type = f.lookup_type
+        if lookup_type == 'isnull':
+            return filters.BooleanFilter(name=("%s%sisnull" % (f.name, LOOKUP_SEP)))
+        return f
 
     def populate_from_filterset(self, filterset, filter_, name):
         """
