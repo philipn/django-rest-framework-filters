@@ -40,7 +40,8 @@ DATETIME_INPUT_FORMATS = subsitute_iso8601('datetime')
 class RelatedFilter(ModelChoiceFilter):
     def __init__(self, filterset, *args, **kwargs):
         self.filterset = filterset
-        super(RelatedFilter, self).__init__(*args, **kwargs)
+        self.parent_relation = kwargs.get('parent_relation', None)
+        return super(RelatedFilter, self).__init__(*args, **kwargs)
 
     def setup_filterset(self):
         if isinstance(self.filterset, six.string_types):

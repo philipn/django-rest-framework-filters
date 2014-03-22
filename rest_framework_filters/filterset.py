@@ -90,12 +90,16 @@ class FilterSet(django_filters.FilterSet):
                         return True
             return False
 
-
         for f in filterset.base_filters.values():
             if _should_skip():
                 continue
     
             f = copy(f)
+
+            # Guess on the field to join on, if applicable
+            if not getattr(f, 'parent_relation', None):
+                f.parent_relation = filterset._meta.model.__name__.lower()
+
             # We use filter_.name -- which is the internal name, to do the actual query
             filter_name = f.name 
             f.name = '%s%s%s' % (filter_.name, LOOKUP_SEP, filter_name)
