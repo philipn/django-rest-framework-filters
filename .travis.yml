@@ -9,9 +9,9 @@ python:
   - "pypy3"
 env:
   - DJANGO="Django>=1.4,<1.5"
-  - DJANGO="django>=1.5,<1.6"
-  - DJANGO="django>=1.6,<1.7"
-  - DJANGO="django>=1.7,<1.8"
+  - DJANGO="Django>=1.5,<1.6"
+  - DJANGO="Django>=1.6,<1.7"
+  - DJANGO="Django>=1.7,<1.8"
 install:
   - travis_retry pip install -q $DJANGO
   - python setup.py develop
