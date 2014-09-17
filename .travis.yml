@@ -22,7 +22,7 @@ matrix:
     - python: "3.2"
       env: DJANGO="Django>=1.4,<1.5"
     - python: "3.3"
-      DJANGO="Django>=1.4,<1.5"
+      env: DJANGO="Django>=1.4,<1.5"
     - python: "3.4"
       env: DJANGO="Django>=1.4,<1.5"
     - python: "pypy"
