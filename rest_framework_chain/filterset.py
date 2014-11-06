@@ -15,7 +15,7 @@ from django_filters.filterset import get_model_field
 
 from .filters import RelatedFilter, AllLookupsFilter
 
-def populate_from_filterset(filterset, name, filters):
+def populate_from_filterset(filterset, name, parent_filter, filters):
     """
     Populate `filters` with filters provided on `filterset`.
     """
@@ -37,8 +37,9 @@ def populate_from_filterset(filterset, name, filters):
             continue
 
         f = copy(f)
-        f.name = '%s%s%s' % (name, LOOKUP_SEP, f.name)
-        filters[f.name] = f
+        old_field_name = f.name
+        f.name = '%s%s%s' % (parent_filter.name, LOOKUP_SEP, f.name)
+        filters['%s%s%s' % (name, LOOKUP_SEP, old_field_name)] = f
 
 class ChainedFilterSet(django_filters.FilterSet):
     def __init__(self, *args, **kwargs):
@@ -49,7 +50,7 @@ class ChainedFilterSet(django_filters.FilterSet):
                 # Populate our FilterSet fields with the fields we've stored
                 # in RelatedFilter.
                 filter_.setup_filterset()
-                populate_from_filterset(filter_.filterset, name, self.filters)
+                populate_from_filterset(filter_.filterset, name, filter_, self.filters)
             elif isinstance(filter_, AllLookupsFilter):
                 # Populate our FilterSet fields with all the possible
                 # filters for the AllLookupsFilter field.
@@ -61,4 +62,4 @@ class ChainedFilterSet(django_filters.FilterSet):
                     else:
                         f = self.filter_for_field(field, filter_.name)
                     f.lookup_type = lookup_type
-                    self.filters["%s__%s" % (filter_.name, lookup_type)] = f
+                    self.filters["%s__%s" % (name, lookup_type)] = f
