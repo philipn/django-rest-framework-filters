@@ -9,6 +9,7 @@ env:
   - DJANGO="django<1.6" # Django 1.5
 install:
   - pip install -q $DJANGO --use-mirrors
+  - pip install py-dateutil
   - python setup.py develop
 script: python manage.py test rest_framework_filters
 

@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import time
 import datetime
 
+from dateutil.parser import parse as date_parse
+
 from django.db import models
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -521,10 +523,10 @@ class TestFilterSets(TestCase):
         date_str = JSONRenderer().render(data['date_joined']).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        datetime_str = JSONRenderer().render(data['datetime_joined'] + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+        datetime_str = JSONRenderer().render(date_parse(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        dt = datetime.datetime.combine(datetime.date.today(), data['time_joined']) + datetime.timedelta(seconds=0.6)
+        dt = datetime.datetime.combine(datetime.date.today(), date_parse(data['time_joined']).time()) + datetime.timedelta(seconds=0.6)
         time_str = JSONRenderer().render(dt.time()).decode('utf-8').strip('"')
 
         # DateField
