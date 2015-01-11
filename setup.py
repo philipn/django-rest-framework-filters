@@ -42,6 +42,7 @@ setup(
     author_email='philipn@gmail.com',
     packages=get_packages('rest_framework_filters'),
     package_data=get_package_data('rest_framework_filters'),
+    zip_safe=False,
     #test_suite='rest_framework.runtests.runtests.main',
     install_requires=[
         'djangorestframework',

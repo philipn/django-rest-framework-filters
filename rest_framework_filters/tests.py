@@ -115,6 +115,14 @@ class NoteFilterWithRelatedAll(FilterSet):
         model = Note
 
 
+class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
+    title = django_filters.CharFilter(name='title')
+    writer = RelatedFilter(UserFilterWithAll, name='author')
+
+    class Meta:
+        model = Note
+
+
 class PostFilterWithRelated(FilterSet):
     note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
 
@@ -449,6 +457,45 @@ class TestFilterSets(TestCase):
             'author__username__contains': 'user',
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 4)
+
+    def test_relatedfilter_combined_with_alllookups_and_different_filter_name(self):
+        # Test that the default exact filter works
+        GET = {
+            'writer': User.objects.get(username='user2').pk,
+        }
+        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        note = list(f)[0]
+        self.assertEqual(note.title, "Hello Test 4")
+
+        # Test the username filter on the related UserFilter set.
+        GET = {
+            'writer__username': 'user2',
+        }
+        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        note = list(f)[0]
+        self.assertEqual(note.title, "Hello Test 4")
+
+        GET = {
+            'writer__username__endswith': '2',
+        }
+        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        note = list(f)[0]
+        self.assertEqual(note.title, "Hello Test 4")
+
+        GET = {
+            'writer__username__endswith': '1',
+        }
+        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 3)
+
+        GET = {
+            'writer__username__contains': 'user',
+        }
+        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f)), 4)
 
     def test_double_relation_filter(self):
