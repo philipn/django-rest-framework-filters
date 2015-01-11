@@ -116,7 +116,7 @@ class NoteFilterWithRelatedAll(FilterSet):
 
 
 class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
-    title = django_filters.CharFilter(name='title')
+    title = filters.CharFilter(name='title')
     writer = RelatedFilter(UserFilterWithAll, name='author')
 
     class Meta:
