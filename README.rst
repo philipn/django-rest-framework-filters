@@ -7,8 +7,8 @@ E.g. using ``django-rest-framework-filters`` instead of just ``django-filter``, 
 
 Without having to create a zillion filter fields by hand.
 
-.. image:: https://secure.travis-ci.org/philipn/django-rest-framework-chain.png?branch=master
-   :target: http://travis-ci.org/philipn/django-rest-framework-chain
+.. image:: https://secure.travis-ci.org/philipn/django-rest-framework-filters.png?branch=master
+   :target: http://travis-ci.org/philipn/django-rest-framework-filters
 
 Installation
 ------------
