@@ -1,6 +1,6 @@
-``django-rest-framework-filter`` (formerly ``django-rest-framework-chain``) is an extension to Django REST Framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
+``django-rest-framework-filters`` (formerly ``django-rest-framework-chain``) is an extension to Django REST Framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
 
-E.g. using ``django-rest-framework-filter`` instead of just ``django-filter``, we can do stuff like::
+E.g. using ``django-rest-framework-filters`` instead of just ``django-filter``, we can do stuff like::
 
     /api/page/?author__username__icontains=john
     /api/page/?author__username__endswith=smith
@@ -15,7 +15,7 @@ Installation
 
 .. code-block:: bash
 
-    $ pip install djangorestframework-filter
+    $ pip install djangorestframework-filters
 
 Requirements
 ------------
@@ -41,7 +41,7 @@ Here's how you were probably doing filtering before:
             fields = ['category', 'in_stock', 'manufacturer']
 
 
-To use ``django-rest-framework-filter``, simply import ``rest_framework_filters`` instead of
+To use ``django-rest-framework-filters``, simply import ``rest_framework_filters`` instead of
 ``django_filters``:
 
 .. code-block:: python
@@ -187,15 +187,15 @@ What warts are fixed?
 ~~~~~~~~~~~~~~~~~~~~~
 
 Even if you're not using ``RelatedFilter`` or ``AllLookupsFilter``, you will probably want
-to use ``django-rest-framework-filter``.  For instance, if you simply use ``django-filter``
+to use ``django-rest-framework-filters``.  For instance, if you simply use ``django-filter``
 it is very difficult to filter on a ``DateTimeFilter`` in the date format emitted by
 the default serializer (ISO 8601), which makes working with your API difficult.
 
-Can I mix and match `django-filter` and `django-rest-framework-filter`?
+Can I mix and match `django-filter` and `django-rest-framework-filters`?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Yes, you can.  For a given class, you should use only one of ``django-filter`` or
-``django-rest-framework-filter``, but you can use ``RelatedFilter`` to
+``django-rest-framework-filters``, but you can use ``RelatedFilter`` to
 link to a filter relation defined elsewhere that uses vanilla ``django-filter``.
 
 Wanted functionality
