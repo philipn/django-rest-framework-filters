@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.utils import six
 
 from rest_framework.settings import api_settings
+import rest_framework.filters
 import django_filters
 from django_filters.filters import *
 

@@ -14,6 +14,7 @@ from django.contrib.auth.models import User
 from . import filters
 from .filters import RelatedFilter, AllLookupsFilter
 from .filterset import FilterSet
+from .backends import DjangoFilterBackend
 
 
 class Note(models.Model):
