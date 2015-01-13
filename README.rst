@@ -127,7 +127,7 @@ and also filter on the default lookup (``exact``), as usual::
     /api/page/?title=The%20Park
 
 Combining RelatedFilter and AllLookupsFilter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We can combine ``RelatedFilter`` and ``AllLookupsFilter``:
 
@@ -176,7 +176,7 @@ it is very difficult to filter on a ``DateTimeFilter`` in the date format emitte
 the default serializer (ISO 8601), which makes working with your API difficult.
 
 Can I mix and match `django-filter` and `django-rest-framework-filters`?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Yes, you can.  For a given class, you should use only one of ``django-filter`` or
 ``django-rest-framework-filters``, but you can use ``RelatedFilter`` to
