@@ -148,21 +148,6 @@ then we can filter like so::
 
     /api/page/?author__username__icontains=john
 
-More information on RelatedFilter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Recursive relations are supported.  You will need to specify the full module
-path in the ``RelatedFilter`` definition in some cases, e.g.:
-
-.. code-block:: python
-
-    class PersonFilter(filters.FilterSet):
-        name = filters.AllLookupsFilter(name='name')
-        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
-
-        class Meta:
-            model = Person 
-
 DjangoFilterBackend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -182,7 +167,6 @@ To use our ``FilterBackend``, in your `settings.py``, simply use:
 
 instead of the default ``rest_framework.filters.DjangoFilterBackend``.
 
-
 What warts are fixed?
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -197,6 +181,21 @@ Can I mix and match `django-filter` and `django-rest-framework-filters`?
 Yes, you can.  For a given class, you should use only one of ``django-filter`` or
 ``django-rest-framework-filters``, but you can use ``RelatedFilter`` to
 link to a filter relation defined elsewhere that uses vanilla ``django-filter``.
+
+More information on RelatedFilter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Recursive relations are supported.  You will need to specify the full module
+path in the ``RelatedFilter`` definition in some cases, e.g.:
+
+.. code-block:: python
+
+    class PersonFilter(filters.FilterSet):
+        name = filters.AllLookupsFilter(name='name')
+        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
+
+        class Meta:
+            model = Person 
 
 Wanted functionality
 ~~~~~~~~~~~~~~~~~~~~
