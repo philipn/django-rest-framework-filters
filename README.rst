@@ -1,4 +1,4 @@
-``django-rest-framework-filter`` (formerly `django-rest-frameowkr-chain`) is an extension to Django REST Framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
+``django-rest-framework-filter`` (formerly ``django-rest-framework-chain``) is an extension to Django REST Framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
 
 E.g. using ``django-rest-framework-filter`` instead of just ``django-filter``, we can do stuff like::
 
@@ -166,11 +166,11 @@ path in the ``RelatedFilter`` definition in some cases, e.g.:
 DjangoFilterBackend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We implement our own subclass of `DjangoFilterBackend`, which you should probably use instead
-of the default `DjangoFilterBackend`.  Our `DjangoFilterBackend` caches repeated filter set
-generation -- a particularly important optimization when using `RelatedFilter` and `AllLookupsFilter`.
+We implement our own subclass of ``DjangoFilterBackend``, which you should probably use instead
+of the default ``DjangoFilterBackend``.  Our ``DjangoFilterBackend`` caches repeated filter set
+generation -- a particularly important optimization when using ``RelatedFilter`` and ``AllLookupsFilter``.
 
-To use our `FilterBackend`, in your `settings.py`, simply use:
+To use our ``FilterBackend``, in your `settings.py``, simply use:
 
 .. code-block:: python
 
@@ -180,7 +180,7 @@ To use our `FilterBackend`, in your `settings.py`, simply use:
             'rest_framework_filters.backends.DjangoFilterBackend', ...
         ),
 
-instead of the default `rest_framework.filters.DjangoFilterBackend`.
+instead of the default ``rest_framework.filters.DjangoFilterBackend``.
 
 
 What warts are fixed?
