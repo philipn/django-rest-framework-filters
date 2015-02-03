@@ -153,7 +153,7 @@ DjangoFilterBackend
 
 We implement our own subclass of ``DjangoFilterBackend``, which you should probably use instead
 of the default ``DjangoFilterBackend``.  Our ``DjangoFilterBackend`` caches repeated filter set
-generation -- a particularly important optimization when using ``RelatedFilter`` and ``AllLookupsFilter``.
+generation — a particularly important optimization when using ``RelatedFilter`` and ``AllLookupsFilter``.
 
 To use our ``FilterBackend``, in your `settings.py``, simply use:
 
