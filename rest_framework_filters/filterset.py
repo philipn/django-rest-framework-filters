@@ -90,7 +90,7 @@ class FilterSet(django_filters.FilterSet):
                         return True
             return False
 
-        for (filter_key, filter_value) in filterset.base_filters.iteritems():
+        for (filter_key, filter_value) in filterset.base_filters.items():
             if _should_skip():
                 continue
 
