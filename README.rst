@@ -178,7 +178,7 @@ the default serializer (ISO 8601), which makes working with your API difficult.
 Can I mix and match `django-filter` and `django-rest-framework-filters`?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Yes, you can.  For a given class, you should use only one of ``django-filter`` or
+Yes you can.  `django-rest-framework-filters` extends `django-filter`, and you can mix and match them as you please.  For a given class, you should use only one of ``django-filter`` or
 ``django-rest-framework-filters``, but you can use ``RelatedFilter`` to
 link to a filter relation defined elsewhere that uses vanilla ``django-filter``.
 
