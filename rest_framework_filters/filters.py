@@ -10,7 +10,7 @@ from django_filters.filters import *
 
 
 def subsitute_iso8601(date_type):
-    from rest_framework import ISO_8601 
+    from rest_framework import ISO_8601
 
     if date_type == 'datetime':
         strptime_iso8601 = '%Y-%m-%dT%H:%M:%S.%f'
@@ -28,7 +28,7 @@ def subsitute_iso8601(date_type):
             new_formats.append(strptime_iso8601)
         else:
             new_formats.append(f)
-    return new_formats 
+    return new_formats
 
 
 # In order to support ISO-8601 -- which is the default output for
@@ -49,7 +49,7 @@ class RelatedFilter(ModelChoiceFilter):
             # This is a recursive relation, defined via a string, so we need
             # to create and import the class here.
             items = self.filterset.split('.')
-            cls = items[-1]
+            cls = str(items[-1]) # Ensure not unicode on py2.x
             mod = __import__('.'.join(items[:-1]), fromlist=[cls])
             self.filterset = getattr(mod, cls)
 

@@ -162,6 +162,20 @@ class BlogPostFilter(FilterSet):
         model = BlogPost
 
 
+class UserFilterWithDifferentName(FilterSet):
+    name = filters.CharFilter(name='username')
+
+    class Meta:
+        model = User
+
+
+class NoteFilterWithRelatedDifferentName(FilterSet):
+    author = RelatedFilter(UserFilterWithDifferentName, name='author')
+
+    class Meta:
+        model = Note
+
+
 #############################################################
 # Recursive filtersets
 #############################################################
@@ -498,6 +512,16 @@ class TestFilterSets(TestCase):
         }
         f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f)), 4)
+
+    def test_relatedfilter_different_name(self):
+        # Test the name filter on the related UserFilter set.
+        GET = {
+            'author__name': 'user2',
+        }
+        f = NoteFilterWithRelatedDifferentName(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        note = list(f)[0]
+        self.assertEqual(note.title, "Hello Test 4")
 
     def test_double_relation_filter(self):
         GET = {
