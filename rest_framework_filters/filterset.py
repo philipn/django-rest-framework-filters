@@ -10,7 +10,10 @@ except ImportError:  # pragma: nocover
     from django.db.models.sql.constants import LOOKUP_SEP  # noqa
 from django.db import models
 from django.utils.datastructures import SortedDict
-from django.db.models.related import RelatedObject
+try:
+    from django.db.models.related import RelatedObject as RelObj
+except ImportError:
+    from django.db.models.fields.related import ForeignObjectRel as RelObj
 from django.utils import six
 
 import django_filters
@@ -26,10 +29,10 @@ class FilterSet(django_filters.FilterSet):
     filter_overrides = {
         models.DateTimeField: {
             'filter_class': filters.DateTimeFilter,
-        }, 
+        },
         models.DateField: {
             'filter_class': filters.DateFilter,
-        }, 
+        },
         models.TimeField: {
             'filter_class': filters.TimeFilter,
         },
@@ -55,7 +58,7 @@ class FilterSet(django_filters.FilterSet):
                 model = self._meta.model
                 field = get_model_field(model, filter_.name)
                 for lookup_type in self.LOOKUP_TYPES:
-                    if isinstance(field, RelatedObject):
+                    if isinstance(field, RelObj):
                         f = self.filter_for_reverse_field(field, filter_.name)
                     else:
                         f = self.filter_for_field(field, filter_.name)
@@ -65,7 +68,7 @@ class FilterSet(django_filters.FilterSet):
 
     def fix_filter_field(self, f):
         """
-        Fix the filter field based on the lookup type. 
+        Fix the filter field based on the lookup type.
         """
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':
