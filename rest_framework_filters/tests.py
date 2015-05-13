@@ -231,6 +231,11 @@ class ExplicitLookupsPersonDateFilter(FilterSet):
     class Meta:
         model = Person
 
+class InSetLookupPersonFilter(FilterSet):
+    pk = AllLookupsFilter('id')
+
+    class Meta:
+        model = Person
 
 class TestFilterSets(TestCase):
     def setUp(self):
@@ -626,3 +631,41 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(list(f)), 1)
         p = list(f)[0]
         self.assertEqual(p.name, "John")
+
+    def test_inset_filter(self):
+        p1 = Person.objects.get(name="John").pk
+        p2 = Person.objects.get(name="Mark").pk
+
+        ALL_GET = {
+            'pk__in': u'%d,%d' % (p1, p2),
+        }
+        f = InSetLookupPersonFilter(ALL_GET, queryset=Person.objects.all())
+        f = [x.pk for x in f]
+        self.assertEqual(len(f), 2)
+        self.assertIn(p1, f)
+        self.assertIn(p2, f)
+
+
+        INVALID_GET = {
+            'pk__in': u'%d,c%d' % (p1, p2)
+        }
+        f = InSetLookupPersonFilter(INVALID_GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 0)
+
+        EXTRA_GET = {
+            'pk__in': u'%d,%d,%d' % (p1, p2, p1*p2)
+        }
+        f = InSetLookupPersonFilter(EXTRA_GET, queryset=Person.objects.all())
+        f = [x.pk for x in f]
+        self.assertEqual(len(f), 2)
+        self.assertIn(p1, f)
+        self.assertIn(p2, f)
+
+        DISORDERED_GET = {
+            'pk__in': u'%d,%d,%d' % (p2, p2*p1, p1)
+        }
+        f = InSetLookupPersonFilter(DISORDERED_GET, queryset=Person.objects.all())
+        f = [x.pk for x in f]
+        self.assertEqual(len(f), 2)
+        self.assertIn(p1, f)
+        self.assertIn(p2, f)
