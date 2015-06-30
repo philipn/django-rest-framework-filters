@@ -64,6 +64,7 @@ class FilterSet(django_filters.FilterSet):
                         f = self.filter_for_field(field, filter_.name)
                     f.lookup_type = lookup_type
                     f = self.fix_filter_field(f)
+                    f.exclude = filter_.exclude
                     self.filters["%s%s%s" % (name, LOOKUP_SEP, lookup_type)] = f
 
     def fix_filter_field(self, f):

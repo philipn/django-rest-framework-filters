@@ -83,6 +83,11 @@ class NoteFilterWithAll(FilterSet):
     class Meta:
         model = Note
 
+class NoteFilterWithAllExclude(FilterSet):
+    title = AllLookupsFilter(name='title', exclude=True)
+
+    class Meta:
+        model = Note
 
 class UserFilter(FilterSet):
     username = filters.CharFilter(name='username')
@@ -415,6 +420,32 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(list(f)), 1)
         note = list(f)[0]
         self.assertEqual(note.title, "Hello Test 3")
+
+    def test_alllookupsfilter_exclude(self):
+        # Test __iendswith
+        GET = {
+            'title__iendswith': '2',
+        }
+        f = NoteFilterWithAllExclude(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 3)
+        for note in list(f):
+            self.assertNotEqual(note.title, "Test 2")
+
+        # Test __contains
+        GET = {
+            'title__contains': 'Test',
+        }
+        f = NoteFilterWithAllExclude(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 0)
+
+        # Test that the default exact filter works
+        GET = {
+            'title': 'Hello Test 3',
+        }
+        f = NoteFilterWithAllExclude(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 3)
+        for note in list(f):
+            self.assertNotEqual(note.title, "Hello Test 3")
 
     def test_relatedfilter(self):
         # Test that the default exact filter works
