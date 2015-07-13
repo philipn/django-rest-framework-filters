@@ -13,7 +13,7 @@ env:
 install:
   - travis_retry pip install -q $DJANGO
   - pip install py-dateutil
-  - python setup.py develop
+  - python setup.py install
 script: python manage.py test rest_framework_filters
 
 matrix:
