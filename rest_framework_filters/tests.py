@@ -637,7 +637,7 @@ class TestFilterSets(TestCase):
         p2 = Person.objects.get(name="Mark").pk
 
         ALL_GET = {
-            'pk__in': u'%d,%d' % (p1, p2),
+            'pk__in': '{:d},{:d}'.format(p1, p2),
         }
         f = InSetLookupPersonFilter(ALL_GET, queryset=Person.objects.all())
         f = [x.pk for x in f]
@@ -647,13 +647,13 @@ class TestFilterSets(TestCase):
 
 
         INVALID_GET = {
-            'pk__in': u'%d,c%d' % (p1, p2)
+            'pk__in': '{:d},c{:d}'.format(p1, p2)
         }
         f = InSetLookupPersonFilter(INVALID_GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f)), 0)
 
         EXTRA_GET = {
-            'pk__in': u'%d,%d,%d' % (p1, p2, p1*p2)
+            'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1*p2)
         }
         f = InSetLookupPersonFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.pk for x in f]
@@ -662,7 +662,7 @@ class TestFilterSets(TestCase):
         self.assertIn(p2, f)
 
         DISORDERED_GET = {
-            'pk__in': u'%d,%d,%d' % (p2, p2*p1, p1)
+            'pk__in': '{:d},{:d},{:d}'.format(p2, p2*p1, p1)
         }
         f = InSetLookupPersonFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.pk for x in f]
