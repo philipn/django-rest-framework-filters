@@ -200,7 +200,6 @@ path in the ``RelatedFilter`` definition in some cases, e.g.:
 Wanted functionality
 ~~~~~~~~~~~~~~~~~~~~
 
-  * Better support for ``__in=``.
   * Allow for ``OR`` as well as ``AND`` style filtering.
 
 License
