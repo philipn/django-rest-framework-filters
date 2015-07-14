@@ -8,6 +8,7 @@ import rest_framework.filters
 import django_filters
 from django_filters.filters import *
 
+from . import fields
 
 def subsitute_iso8601(date_type):
     from rest_framework import ISO_8601
@@ -80,3 +81,16 @@ class TimeFilter(django_filters.DateTimeFilter):
     def __init__(self, *args, **kwargs):
         super(TimeFilter, self).__init__(*args, **kwargs)
         self.extra.update({'input_formats': TIME_INPUT_FORMATS})
+
+
+class InSetNumberFilter(NumberFilter):
+    field_class = fields.ArrayDecimalField
+
+    def filter(self, qs, value):
+        if value in ([], (), {}, None, ''):
+            return qs
+        method = qs.exclude if self.exclude else qs.filter
+        qs = method(**{self.name: value})
+        if self.distinct:
+            qs = qs.distinct()
+        return qs
