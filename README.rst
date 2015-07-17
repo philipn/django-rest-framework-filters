@@ -1,4 +1,4 @@
-``django-rest-framework-filters`` (formerly ``django-rest-framework-chain``) is an extension to Django REST Framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
+``django-rest-framework-filters`` is an extension to Django REST Framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
 
 E.g. using ``django-rest-framework-filters`` instead of just ``django-filter``, we can do stuff like::
 
