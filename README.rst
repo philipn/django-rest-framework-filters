@@ -195,12 +195,7 @@ path in the ``RelatedFilter`` definition in some cases, e.g.:
         best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
 
         class Meta:
-            model = Person 
-
-Wanted functionality
-~~~~~~~~~~~~~~~~~~~~
-
-  * Allow for ``OR`` as well as ``AND`` style filtering.
+            model = Person
 
 License
 -------
