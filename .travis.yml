@@ -4,6 +4,7 @@ python:
   - "3.2"
   - "3.3"
   - "3.4"
+  - "3.5.0b3"
 env:
   - DJANGO="Django>=1.4,<1.5"
   - DJANGO="Django>=1.5,<1.6"
@@ -23,5 +24,7 @@ matrix:
     - python: "3.3"
       env: DJANGO="Django>=1.4,<1.5"
     - python: "3.4"
+      env: DJANGO="Django>=1.4,<1.5"
+    - python: "3.5.0b3"
       env: DJANGO="Django>=1.4,<1.5"
   fast_finish: true
