@@ -40,9 +40,9 @@ class DjangoFilterBackend(rest_framework.filters.DjangoFilterBackend):
         if filter_class:
             if filter_class in self._filter_instance_cache:
                 _filter = self._filter_instance_cache[filter_class]
-                self._setup_filter_instance(_filter, request.QUERY_PARAMS, queryset=queryset)
+                self._setup_filter_instance(_filter, request.query_params, queryset=queryset)
             else:
-                _filter = filter_class(request.QUERY_PARAMS, queryset=queryset)
+                _filter = filter_class(request.query_params, queryset=queryset)
                 self._filter_instance_cache[filter_class] = _filter
 
             return _filter.qs
