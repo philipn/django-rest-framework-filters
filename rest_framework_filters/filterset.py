@@ -28,13 +28,7 @@ class FilterSet(django_filters.FilterSet):
     # DRF -- we need to set up custom date/time input formats.
     filter_overrides = {
         models.DateTimeField: {
-            'filter_class': filters.DateTimeFilter,
-        }, 
-        models.DateField: {
-            'filter_class': filters.DateFilter,
-        }, 
-        models.TimeField: {
-            'filter_class': filters.TimeFilter,
+            'filter_class': filters.IsoDateTimeFilter,
         },
     }
 
@@ -68,7 +62,7 @@ class FilterSet(django_filters.FilterSet):
 
     def fix_filter_field(self, f):
         """
-        Fix the filter field based on the lookup type. 
+        Fix the filter field based on the lookup type.
         """
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':
