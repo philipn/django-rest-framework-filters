@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import django
 from django.utils import six
 from django_filters.filters import *
 
@@ -32,6 +33,11 @@ class AllLookupsFilter(Filter):
 ###################################################
 # Fixed-up versions of some of the default filters
 ###################################################
+
+class TimeFilter(TimeFilter):
+    if django.VERSION < (1, 6):
+        field_class = fields.Django14TimeField
+
 
 class InSetNumberFilter(NumberFilter):
     field_class = fields.ArrayDecimalField
