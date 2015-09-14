@@ -8,13 +8,19 @@ import datetime
 from django.utils.dateparse import parse_time, parse_datetime
 
 from django.db import models
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.contrib.auth.models import User
 
 from . import filters
 from .filters import RelatedFilter, AllLookupsFilter
 from .filterset import FilterSet
 from .backends import DjangoFilterBackend
+
+try:
+    from django.test import override_settings
+except ImportError:
+    # TODO: Remove this once Django 1.6 is EOL.
+    from django.test.utils import override_settings
 
 
 class Note(models.Model):
