@@ -8,7 +8,7 @@ import datetime
 from django.utils.dateparse import parse_time, parse_datetime
 
 from django.db import models
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 
 from . import filters
@@ -626,6 +626,35 @@ class TestFilterSets(TestCase):
         # TimeField
         GET = {
             'time_joined__lte': time_str,
+        }
+        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        p = list(f)[0]
+        self.assertEqual(p.name, "John")
+
+    @override_settings(USE_TZ=True)
+    def test_datetime_timezone_awareness(self):
+        # Addresses issue #24 - ensure that datetime strings terminating
+        # in 'Z' are correctly handled.
+        from rest_framework import serializers
+        from rest_framework.renderers import JSONRenderer
+
+        class PersonSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Person
+
+        # Figure out what the date strings should look like based on the
+        # serializer output.
+        john = Person.objects.get(name="John")
+        data = PersonSerializer(john).data
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+
+        # This is more for documentation - DRF appends a 'Z' to timezone aware UTC datetimes when rendering:
+        # https://github.com/tomchristie/django-rest-framework/blob/3.2.0/rest_framework/fields.py#L1002-L1006
+        self.assertTrue(datetime_str.endswith('Z'))
+
+        GET = {
+            'datetime_joined__lte': datetime_str,
         }
         f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f)), 1)
