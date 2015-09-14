@@ -24,18 +24,19 @@ from . import filters
 
 
 class FilterSet(django_filters.FilterSet):
-    # In order to support ISO-8601 -- which is the default output for
-    # DRF -- we need to set up custom date/time input formats.
     filter_overrides = {
+
+        # In order to support ISO-8601 -- which is the default output for
+        # DRF -- we need to use django-filter's IsoDateTimeFilter
         models.DateTimeField: {
-            'filter_class': filters.DateTimeFilter,
-        }, 
-        models.DateField: {
-            'filter_class': filters.DateFilter,
-        }, 
+            'filter_class': filters.IsoDateTimeFilter,
+        },
+
+        # Django < 1.6 time input formats did not account for microseconds
+        # https://code.djangoproject.com/ticket/19917
         models.TimeField: {
             'filter_class': filters.TimeFilter,
-        },
+        }
     }
 
     LOOKUP_TYPES = django_filters.filters.LOOKUP_TYPES
@@ -68,7 +69,7 @@ class FilterSet(django_filters.FilterSet):
 
     def fix_filter_field(self, f):
         """
-        Fix the filter field based on the lookup type. 
+        Fix the filter field based on the lookup type.
         """
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':

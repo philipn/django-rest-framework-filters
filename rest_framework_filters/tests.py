@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import time
 import datetime
 
-from dateutil.parser import parse as date_parse
+from django.utils.dateparse import parse_time, parse_datetime
 
 from django.db import models
 from django.test import TestCase
@@ -262,7 +262,7 @@ class TestFilterSets(TestCase):
         n.save()
 
         #######################
-        # Create notes 
+        # Create notes
         #######################
         n = Note(
             title="Test 2",
@@ -286,7 +286,7 @@ class TestFilterSets(TestCase):
         n.save()
 
         #######################
-        # Create posts 
+        # Create posts
         #######################
         post = Post(
             note=Note.objects.get(title="Test 1"),
@@ -360,7 +360,7 @@ class TestFilterSets(TestCase):
         )
         blogpost.save()
         blogpost.tags = [Tag.objects.get(name="house")]
-       
+
         ################################
         # Recursive relations
         ################################
@@ -600,10 +600,10 @@ class TestFilterSets(TestCase):
         date_str = JSONRenderer().render(data['date_joined']).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        datetime_str = JSONRenderer().render(date_parse(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        dt = datetime.datetime.combine(datetime.date.today(), date_parse(data['time_joined']).time()) + datetime.timedelta(seconds=0.6)
+        dt = datetime.datetime.combine(datetime.date.today(), parse_time(data['time_joined'])) + datetime.timedelta(seconds=0.6)
         time_str = JSONRenderer().render(dt.time()).decode('utf-8').strip('"')
 
         # DateField
