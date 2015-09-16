@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import time
 import datetime
 
-from dateutil.parser import parse as date_parse
+from django.utils.dateparse import parse_time, parse_datetime
 
 from django.db import models
 from django.test import TestCase
@@ -15,6 +15,12 @@ from . import filters
 from .filters import RelatedFilter, AllLookupsFilter
 from .filterset import FilterSet
 from .backends import DjangoFilterBackend
+
+try:
+    from django.test import override_settings
+except ImportError:
+    # TODO: Remove this once Django 1.6 is EOL.
+    from django.test.utils import override_settings
 
 
 class Note(models.Model):
@@ -262,7 +268,7 @@ class TestFilterSets(TestCase):
         n.save()
 
         #######################
-        # Create notes 
+        # Create notes
         #######################
         n = Note(
             title="Test 2",
@@ -286,7 +292,7 @@ class TestFilterSets(TestCase):
         n.save()
 
         #######################
-        # Create posts 
+        # Create posts
         #######################
         post = Post(
             note=Note.objects.get(title="Test 1"),
@@ -360,7 +366,7 @@ class TestFilterSets(TestCase):
         )
         blogpost.save()
         blogpost.tags = [Tag.objects.get(name="house")]
-       
+
         ################################
         # Recursive relations
         ################################
@@ -600,10 +606,10 @@ class TestFilterSets(TestCase):
         date_str = JSONRenderer().render(data['date_joined']).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        datetime_str = JSONRenderer().render(date_parse(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        dt = datetime.datetime.combine(datetime.date.today(), date_parse(data['time_joined']).time()) + datetime.timedelta(seconds=0.6)
+        dt = datetime.datetime.combine(datetime.date.today(), parse_time(data['time_joined'])) + datetime.timedelta(seconds=0.6)
         time_str = JSONRenderer().render(dt.time()).decode('utf-8').strip('"')
 
         # DateField
@@ -626,6 +632,35 @@ class TestFilterSets(TestCase):
         # TimeField
         GET = {
             'time_joined__lte': time_str,
+        }
+        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        p = list(f)[0]
+        self.assertEqual(p.name, "John")
+
+    @override_settings(USE_TZ=True)
+    def test_datetime_timezone_awareness(self):
+        # Addresses issue #24 - ensure that datetime strings terminating
+        # in 'Z' are correctly handled.
+        from rest_framework import serializers
+        from rest_framework.renderers import JSONRenderer
+
+        class PersonSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Person
+
+        # Figure out what the date strings should look like based on the
+        # serializer output.
+        john = Person.objects.get(name="John")
+        data = PersonSerializer(john).data
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+
+        # This is more for documentation - DRF appends a 'Z' to timezone aware UTC datetimes when rendering:
+        # https://github.com/tomchristie/django-rest-framework/blob/3.2.0/rest_framework/fields.py#L1002-L1006
+        self.assertTrue(datetime_str.endswith('Z'))
+
+        GET = {
+            'datetime_joined__lte': datetime_str,
         }
         f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f)), 1)
