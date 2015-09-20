@@ -79,8 +79,9 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
                 filter_.setup_filterset()
 
                 # Add an 'isnull' filter to allow checking if the relation is empty.
-                isnull_filter = filters.BooleanFilter(name=("%s%sisnull" % (filter_.name, LOOKUP_SEP)))
-                self.filters['%s%s%s' % (filter_.name, LOOKUP_SEP, 'isnull')] = isnull_filter
+                isnull = "%s%sisnull" % (filter_.name, LOOKUP_SEP)
+                if isnull not in self.filters:
+                    self.filters[isnull] = filters.BooleanFilter(name=isnull)
 
     def get_filters(self):
         """
