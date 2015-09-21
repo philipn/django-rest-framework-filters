@@ -6,8 +6,11 @@ from django.utils import six
 
 import django
 from django_filters.filters import *
+from django_filters.filters import LOOKUP_TYPES
 
 from . import fields
+
+ALL_LOOKUPS = LOOKUP_TYPES
 
 
 def _import_class(path):
