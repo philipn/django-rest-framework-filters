@@ -7,6 +7,7 @@ import datetime
 
 from dateutil.parser import parse as date_parse
 
+import django
 from django.db import models
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -238,7 +239,18 @@ class InSetLookupPersonFilter(FilterSet):
         model = Person
 
 class TestFilterSets(TestCase):
-    def setUp(self):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
         #######################
         # Create users
         #######################
