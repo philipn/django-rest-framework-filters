@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from copy import copy
+from collections import OrderedDict
 
 try:
     from django.db.models.constants import LOOKUP_SEP
@@ -45,13 +46,12 @@ class FilterSet(django_filters.FilterSet):
 
         for name, filter_ in six.iteritems(self.filters):
             if isinstance(filter_, filters.RelatedFilter):
-                # Populate our FilterSet fields with the fields we've stored
-                # in RelatedFilter.
                 filter_.setup_filterset()
-                self.populate_from_filterset(filter_.filterset, filter_, name)
+
                 # Add an 'isnull' filter to allow checking if the relation is empty.
                 isnull_filter = filters.BooleanFilter(name=("%s%sisnull" % (filter_.name, LOOKUP_SEP)))
                 self.filters['%s%s%s' % (filter_.name, LOOKUP_SEP, 'isnull')] = isnull_filter
+
             elif isinstance(filter_, filters.AllLookupsFilter):
                 # Populate our FilterSet fields with all the possible
                 # filters for the AllLookupsFilter field.
@@ -66,6 +66,62 @@ class FilterSet(django_filters.FilterSet):
                     f = self.fix_filter_field(f)
                     self.filters["%s%s%s" % (name, LOOKUP_SEP, lookup_type)] = f
 
+    def get_filters(self):
+        """
+        Build a set of filters based on the requested data. The resulting set
+        will walk `RelatedFilter`s to recursively build the set of filters.
+        """
+        requested_filters = OrderedDict()
+
+        # filter out any filters not included in the request data
+        for filter_key, filter_value in six.iteritems(self.filters):
+            if filter_key in self.data:
+                requested_filters[filter_key] = filter_value
+
+        # build a map of potential {rel: [filter]} pairs
+        related_data = OrderedDict()
+        for filter_key in self.data:
+            if filter_key not in self.filters:
+
+                # skip non lookup/related keys
+                if LOOKUP_SEP not in filter_key:
+                    continue
+
+                rel_name, filter_key = filter_key.split(LOOKUP_SEP, 1)
+
+                related_data.setdefault(rel_name, [])
+                related_data[rel_name].append(filter_key)
+
+        # walk the related lookup data. If the rel is a RelatedFilter,
+        # then instantiate its filterset and append its filters
+        for rel_name, rel_data in related_data.items():
+            related_filter = self.filters.get(rel_name, None)
+
+            # skip non-`RelatedFilter`s
+            if not isinstance(related_filter, filters.RelatedFilter):
+                continue
+
+            filterset = related_filter.filterset(data=rel_data)
+            rel_filters = filterset.get_filters()
+
+            for filter_key, filter_value in six.iteritems(rel_filters):
+                rel_filter_key = LOOKUP_SEP.join([rel_name, filter_key])
+                filter_value.name = LOOKUP_SEP.join([related_filter.name, filter_value.name])
+                requested_filters[rel_filter_key] = filter_value
+
+        return requested_filters
+
+    @property
+    def qs(self):
+        available_filters = self.filters
+        requested_filters = self.get_filters()
+
+        self.filters = requested_filters
+        qs = super(FilterSet, self).qs
+        self.filters = available_filters
+
+        return qs
+
     def fix_filter_field(self, f):
         """
         Fix the filter field based on the lookup type. 
@@ -76,38 +132,3 @@ class FilterSet(django_filters.FilterSet):
         if lookup_type == 'in' and type(f) in [filters.NumberFilter]:
             return filters.InSetNumberFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
         return f
-
-    def populate_from_filterset(self, filterset, filter_, name):
-        """
-        Populate `filters` with filters provided on `filterset`.
-        """
-        def _should_skip():
-            for name, filter_ in six.iteritems(self.filters):
-                if filter_value == filter_:
-                    return True
-                # Avoid infinite recursion on recursive relations.  If the queryset and
-                # class are the same, then we assume that we've already added this
-                # filter previously along the lookup chain, e.g.
-                # a__b__a <-- the last 'a' there.
-                if (isinstance(filter_, filters.RelatedFilter) and
-                    isinstance(filter_value, filters.RelatedFilter)):
-                    if filter_value.extra.get('queryset', None) == filter_.extra.get('queryset'):
-                        return True
-            return False
-
-        for (filter_key, filter_value) in filterset.base_filters.items():
-            if _should_skip():
-                continue
-
-            filter_value = copy(filter_value)
-
-            # Guess on the field to join on, if applicable
-            if not getattr(filter_value, 'parent_relation', None):
-                filter_value.parent_relation = filterset._meta.model.__name__.lower()
-
-            # We use filter_.name -- which is the internal name, to do the actual query
-            filter_name = filter_value.name
-            filter_value.name = '%s%s%s' % (filter_.name, LOOKUP_SEP, filter_name)
-            # and then we use the /given/ name keyword as the actual querystring lookup, and
-            # the filter's name in the related class (filter_key).
-            self.filters['%s%s%s' % (name, LOOKUP_SEP, filter_key)] = filter_value

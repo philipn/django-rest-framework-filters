@@ -4,11 +4,17 @@ from __future__ import unicode_literals
 from django.utils import six
 
 from rest_framework.settings import api_settings
-import rest_framework.filters
 import django_filters
 from django_filters.filters import *
 
 from . import fields
+
+
+def _import_class(path):
+    module_path, class_name = path.rsplit('.', 1)
+    module = __import__(module_path, fromlist=[class_name], level=0)
+    return getattr(module, class_name)
+
 
 def subsitute_iso8601(date_type):
     from rest_framework import ISO_8601
@@ -42,18 +48,22 @@ DATETIME_INPUT_FORMATS = subsitute_iso8601('datetime')
 class RelatedFilter(ModelChoiceFilter):
     def __init__(self, filterset, *args, **kwargs):
         self.filterset = filterset
-        self.parent_relation = kwargs.get('parent_relation', None)
+        # self.parent_relation = kwargs.get('parent_relation', None)
         return super(RelatedFilter, self).__init__(*args, **kwargs)
 
-    def setup_filterset(self):
-        if isinstance(self.filterset, six.string_types):
-            # This is a recursive relation, defined via a string, so we need
-            # to create and import the class here.
-            items = self.filterset.split('.')
-            cls = str(items[-1]) # Ensure not unicode on py2.x
-            mod = __import__('.'.join(items[:-1]), fromlist=[cls])
-            self.filterset = getattr(mod, cls)
+    def filterset():
+        def fget(self):
+            if isinstance(self._filterset, six.string_types):
+                self._filterset = _import_class(self._filterset)
+            return self._filterset
 
+        def fset(self, value):
+            self._filterset = value
+
+        return locals()
+    filterset = property(**filterset())
+
+    def setup_filterset(self):
         self.extra['queryset'] = self.filterset._meta.model.objects.all()
 
 
