@@ -12,6 +12,7 @@ class Note(models.Model):
 class Post(models.Model):
     note = models.ForeignKey(Note)
     content = models.TextField()
+    date_published = models.DateField(null=True)
 
 
 class Cover(models.Model):
