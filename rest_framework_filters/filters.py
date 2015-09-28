@@ -39,9 +39,7 @@ class TimeFilter(TimeFilter):
         field_class = fields.Django14TimeField
 
 
-class InSetNumberFilter(NumberFilter):
-    field_class = fields.ArrayDecimalField
-
+class InSetFilterBase(object):
     def filter(self, qs, value):
         if value in ([], (), {}, None, ''):
             return qs
@@ -50,3 +48,11 @@ class InSetNumberFilter(NumberFilter):
         if self.distinct:
             qs = qs.distinct()
         return qs
+
+
+class InSetNumberFilter(InSetFilterBase, NumberFilter):
+    field_class = fields.ArrayDecimalField
+
+
+class InSetCharFilter(InSetFilterBase, NumberFilter):
+    field_class = fields.ArrayCharField

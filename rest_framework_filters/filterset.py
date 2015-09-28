@@ -74,8 +74,10 @@ class FilterSet(django_filters.FilterSet):
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':
             return filters.BooleanFilter(name=("%s%sisnull" % (f.name, LOOKUP_SEP)))
-        if lookup_type == 'in' and type(f) in [filters.NumberFilter]:
+        if lookup_type == 'in' and type(f) == filters.NumberFilter:
             return filters.InSetNumberFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
+        if lookup_type == 'in' and type(f) == filters.CharFilter:
+            return filters.InSetCharFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
         return f
 
     def populate_from_filterset(self, filterset, filter_, name):
