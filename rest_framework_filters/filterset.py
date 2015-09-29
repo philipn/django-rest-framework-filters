@@ -69,6 +69,8 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     }
 
     def __init__(self, *args, **kwargs):
+        self._related_filterset_cache = kwargs.pop('cache', {})
+
         super(FilterSet, self).__init__(*args, **kwargs)
 
         for name, filter_ in six.iteritems(self.filters):
@@ -86,14 +88,14 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         """
         requested_filters = OrderedDict()
 
-        # filter out any filters not included in the request data
+        # Add plain lookup filters if match. ie, `username__icontains`
         for filter_key, filter_value in six.iteritems(self.filters):
             if filter_key in self.data:
                 requested_filters[filter_key] = filter_value
 
-        # build a map of potential {rel: [filter]} pairs
+        # build a map of potential {rel: {filter: value}} data
         related_data = OrderedDict()
-        for filter_key in self.data:
+        for filter_key, value in six.iteritems(self.data):
             if filter_key not in self.filters:
 
                 # skip non lookup/related keys
@@ -102,11 +104,11 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
 
                 rel_name, filter_key = filter_key.split(LOOKUP_SEP, 1)
 
-                related_data.setdefault(rel_name, [])
-                related_data[rel_name].append(filter_key)
+                related_data.setdefault(rel_name, OrderedDict())
+                related_data[rel_name][filter_key] = value
 
-        # walk the related lookup data. If the rel is a RelatedFilter,
-        # then instantiate its filterset and append its filters
+        # walk the related lookup data. If the filter is a RelatedFilter,
+        # then instantiate its filterset and append its filters.
         for rel_name, rel_data in related_data.items():
             related_filter = self.filters.get(rel_name, None)
 
@@ -114,15 +116,53 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
             if not isinstance(related_filter, filters.RelatedFilter):
                 continue
 
-            filterset = related_filter.filterset(data=rel_data)
-            rel_filters = filterset.get_filters()
+            # get known filter names
+            filterset_class = related_filter.filterset
+            filter_names = [filterset_class.get_filter_name(param) for param in rel_data.keys()]
 
+            # attempt to retrieve related filterset subset from the cache
+            key = self.cache_key(filterset_class, filter_names)
+            subset_class = self.cache_get(key)
+
+            # otherwise build and insert it into the cache
+            if subset_class is None:
+                subset_class = related_filter.get_filterset_subset(filter_names)
+                self.cache_set(key, subset_class)
+
+            # initialize and copy filters
+            filterset = subset_class(data=rel_data)
+            rel_filters = filterset.get_filters()
             for filter_key, filter_value in six.iteritems(rel_filters):
+                # modify filter name to account for relationship
                 rel_filter_key = LOOKUP_SEP.join([rel_name, filter_key])
                 filter_value.name = LOOKUP_SEP.join([related_filter.name, filter_value.name])
                 requested_filters[rel_filter_key] = filter_value
 
         return requested_filters
+
+    @classmethod
+    def get_filter_name(cls, param):
+        """
+        Get the filter name for the request data parameter.
+        """
+        # Attempt to match against filters with lookups first. (username__endswith)
+        if param in cls.base_filters:
+            return param
+
+        # Fallback to matching against relationships. (author__username__endswith)
+        param = param.split(LOOKUP_SEP, 1)[0]
+        f = cls.base_filters.get(param, None)
+        if isinstance(f, filters.RelatedFilter):
+            return param
+
+    def cache_key(self, filterset, filter_names):
+        return '%sSubset-%s' % (filterset.__name__, '-'.join(sorted(filter_names)), )
+
+    def cache_get(self, key):
+        return self._related_filterset_cache.get(key)
+
+    def cache_set(self, key, value):
+        self._related_filterset_cache[key] = value
 
     @property
     def qs(self):
