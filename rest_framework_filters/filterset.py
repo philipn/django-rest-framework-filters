@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from copy import copy
 from collections import OrderedDict
 
 try:
@@ -19,12 +18,42 @@ from django.utils import six
 
 import django_filters
 import django_filters.filters
-from django_filters.filterset import get_model_field
+from django_filters import filterset
 
 from . import filters
 
 
-class FilterSet(django_filters.FilterSet):
+class FilterSetMetaclass(filterset.FilterSetMetaclass):
+    def __new__(cls, name, bases, attrs):
+        new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
+
+        # Populate our FilterSet fields with all the possible
+        # filters for the AllLookupsFilter field.
+        for name, filter_ in six.iteritems(new_class.base_filters):
+            if isinstance(filter_, filters.AllLookupsFilter):
+                model = new_class._meta.model
+                field = filterset.get_model_field(model, filter_.name)
+
+                for lookup_type in django_filters.filters.LOOKUP_TYPES:
+                    if isinstance(field, ForeignObjectRel):
+                        f = new_class.filter_for_reverse_field(field, filter_.name)
+                    else:
+                        f = new_class.filter_for_field(field, filter_.name)
+                    f.lookup_type = lookup_type
+                    f = new_class.fix_filter_field(f)
+
+                    # compute filter name
+                    filter_name = name
+                    # Don't add "exact" to filter names
+                    if lookup_type != 'exact':
+                        filter_name = LOOKUP_SEP.join([name, lookup_type])
+
+                    new_class.base_filters[filter_name] = f
+
+        return new_class
+
+
+class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     # In order to support ISO-8601 -- which is the default output for
     # DRF -- we need to set up custom date/time input formats.
     filter_overrides = {
@@ -39,8 +68,6 @@ class FilterSet(django_filters.FilterSet):
         },
     }
 
-    LOOKUP_TYPES = django_filters.filters.LOOKUP_TYPES
-
     def __init__(self, *args, **kwargs):
         super(FilterSet, self).__init__(*args, **kwargs)
 
@@ -51,20 +78,6 @@ class FilterSet(django_filters.FilterSet):
                 # Add an 'isnull' filter to allow checking if the relation is empty.
                 isnull_filter = filters.BooleanFilter(name=("%s%sisnull" % (filter_.name, LOOKUP_SEP)))
                 self.filters['%s%s%s' % (filter_.name, LOOKUP_SEP, 'isnull')] = isnull_filter
-
-            elif isinstance(filter_, filters.AllLookupsFilter):
-                # Populate our FilterSet fields with all the possible
-                # filters for the AllLookupsFilter field.
-                model = self._meta.model
-                field = get_model_field(model, filter_.name)
-                for lookup_type in self.LOOKUP_TYPES:
-                    if isinstance(field, ForeignObjectRel):
-                        f = self.filter_for_reverse_field(field, filter_.name)
-                    else:
-                        f = self.filter_for_field(field, filter_.name)
-                    f.lookup_type = lookup_type
-                    f = self.fix_filter_field(f)
-                    self.filters["%s%s%s" % (name, LOOKUP_SEP, lookup_type)] = f
 
     def get_filters(self):
         """
@@ -122,9 +135,10 @@ class FilterSet(django_filters.FilterSet):
 
         return qs
 
-    def fix_filter_field(self, f):
+    @classmethod
+    def fix_filter_field(cls, f):
         """
-        Fix the filter field based on the lookup type. 
+        Fix the filter field based on the lookup type.
         """
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':
