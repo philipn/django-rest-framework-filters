@@ -5,8 +5,9 @@ from __future__ import unicode_literals
 import time
 import datetime
 
-from dateutil.parser import parse as date_parse
+from django.utils.dateparse import parse_time, parse_datetime
 
+import django
 from django.db import models
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -15,6 +16,12 @@ from . import filters
 from .filters import RelatedFilter, AllLookupsFilter
 from .filterset import FilterSet
 from .backends import DjangoFilterBackend
+
+try:
+    from django.test import override_settings
+except ImportError:
+    # TODO: Remove this once Django 1.6 is EOL.
+    from django.test.utils import override_settings
 
 
 class Note(models.Model):
@@ -231,14 +238,34 @@ class ExplicitLookupsPersonDateFilter(FilterSet):
     class Meta:
         model = Person
 
-class InSetLookupPersonFilter(FilterSet):
+
+class InSetLookupPersonIDFilter(FilterSet):
     pk = AllLookupsFilter('id')
 
     class Meta:
         model = Person
 
+
+class InSetLookupPersonNameFilter(FilterSet):
+    name = AllLookupsFilter('name')
+
+    class Meta:
+        model = Person
+
+
 class TestFilterSets(TestCase):
-    def setUp(self):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
         #######################
         # Create users
         #######################
@@ -262,7 +289,7 @@ class TestFilterSets(TestCase):
         n.save()
 
         #######################
-        # Create notes 
+        # Create notes
         #######################
         n = Note(
             title="Test 2",
@@ -286,7 +313,7 @@ class TestFilterSets(TestCase):
         n.save()
 
         #######################
-        # Create posts 
+        # Create posts
         #######################
         post = Post(
             note=Note.objects.get(title="Test 1"),
@@ -360,7 +387,7 @@ class TestFilterSets(TestCase):
         )
         blogpost.save()
         blogpost.tags = [Tag.objects.get(name="house")]
-       
+
         ################################
         # Recursive relations
         ################################
@@ -600,10 +627,10 @@ class TestFilterSets(TestCase):
         date_str = JSONRenderer().render(data['date_joined']).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        datetime_str = JSONRenderer().render(date_parse(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        dt = datetime.datetime.combine(datetime.date.today(), date_parse(data['time_joined']).time()) + datetime.timedelta(seconds=0.6)
+        dt = datetime.datetime.combine(datetime.date.today(), parse_time(data['time_joined'])) + datetime.timedelta(seconds=0.6)
         time_str = JSONRenderer().render(dt.time()).decode('utf-8').strip('"')
 
         # DateField
@@ -632,14 +659,43 @@ class TestFilterSets(TestCase):
         p = list(f)[0]
         self.assertEqual(p.name, "John")
 
-    def test_inset_filter(self):
+    @override_settings(USE_TZ=True)
+    def test_datetime_timezone_awareness(self):
+        # Addresses issue #24 - ensure that datetime strings terminating
+        # in 'Z' are correctly handled.
+        from rest_framework import serializers
+        from rest_framework.renderers import JSONRenderer
+
+        class PersonSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Person
+
+        # Figure out what the date strings should look like based on the
+        # serializer output.
+        john = Person.objects.get(name="John")
+        data = PersonSerializer(john).data
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+
+        # This is more for documentation - DRF appends a 'Z' to timezone aware UTC datetimes when rendering:
+        # https://github.com/tomchristie/django-rest-framework/blob/3.2.0/rest_framework/fields.py#L1002-L1006
+        self.assertTrue(datetime_str.endswith('Z'))
+
+        GET = {
+            'datetime_joined__lte': datetime_str,
+        }
+        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 1)
+        p = list(f)[0]
+        self.assertEqual(p.name, "John")
+
+    def test_inset_number_filter(self):
         p1 = Person.objects.get(name="John").pk
         p2 = Person.objects.get(name="Mark").pk
 
         ALL_GET = {
             'pk__in': '{:d},{:d}'.format(p1, p2),
         }
-        f = InSetLookupPersonFilter(ALL_GET, queryset=Person.objects.all())
+        f = InSetLookupPersonIDFilter(ALL_GET, queryset=Person.objects.all())
         f = [x.pk for x in f]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -649,13 +705,13 @@ class TestFilterSets(TestCase):
         INVALID_GET = {
             'pk__in': '{:d},c{:d}'.format(p1, p2)
         }
-        f = InSetLookupPersonFilter(INVALID_GET, queryset=Person.objects.all())
+        f = InSetLookupPersonIDFilter(INVALID_GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f)), 0)
 
         EXTRA_GET = {
             'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1*p2)
         }
-        f = InSetLookupPersonFilter(EXTRA_GET, queryset=Person.objects.all())
+        f = InSetLookupPersonIDFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.pk for x in f]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -664,7 +720,7 @@ class TestFilterSets(TestCase):
         DISORDERED_GET = {
             'pk__in': '{:d},{:d},{:d}'.format(p2, p2*p1, p1)
         }
-        f = InSetLookupPersonFilter(DISORDERED_GET, queryset=Person.objects.all())
+        f = InSetLookupPersonIDFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.pk for x in f]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -680,3 +736,40 @@ class TestFilterSets(TestCase):
         # ensure that the FilterSet subset only contains the requested fields
         self.assertIn('email', filterset_class.base_filters)
         self.assertEqual(len(filterset_class.base_filters), 1)
+
+    def test_inset_char_filter(self):
+        p1 = Person.objects.get(name="John").name
+        p2 = Person.objects.get(name="Mark").name
+
+        ALL_GET = {
+            'name__in': '{},{}'.format(p1, p2),
+        }
+        f = InSetLookupPersonNameFilter(ALL_GET, queryset=Person.objects.all())
+        f = [x.name for x in f]
+        self.assertEqual(len(f), 2)
+        self.assertIn(p1, f)
+        self.assertIn(p2, f)
+
+        NONEXISTENT_GET = {
+            'name__in': '{},Foo{}'.format(p1, p2)
+        }
+        f = InSetLookupPersonNameFilter(NONEXISTENT_GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f)), 1)
+
+        EXTRA_GET = {
+            'name__in': '{},{},{}'.format(p1, p2, p1+p2)
+        }
+        f = InSetLookupPersonNameFilter(EXTRA_GET, queryset=Person.objects.all())
+        f = [x.name for x in f]
+        self.assertEqual(len(f), 2)
+        self.assertIn(p1, f)
+        self.assertIn(p2, f)
+
+        DISORDERED_GET = {
+            'name__in': '{},{},{}'.format(p2, p2+p1, p1)
+        }
+        f = InSetLookupPersonNameFilter(DISORDERED_GET, queryset=Person.objects.all())
+        f = [x.name for x in f]
+        self.assertEqual(len(f), 2)
+        self.assertIn(p1, f)
+        self.assertIn(p2, f)

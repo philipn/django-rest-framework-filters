@@ -54,15 +54,16 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
-    # In order to support ISO-8601 -- which is the default output for
-    # DRF -- we need to set up custom date/time input formats.
     filter_overrides = {
+
+        # In order to support ISO-8601 -- which is the default output for
+        # DRF -- we need to use django-filter's IsoDateTimeFilter
         models.DateTimeField: {
-            'filter_class': filters.DateTimeFilter,
-        }, 
-        models.DateField: {
-            'filter_class': filters.DateFilter,
-        }, 
+            'filter_class': filters.IsoDateTimeFilter,
+        },
+
+        # Django < 1.6 time input formats did not account for microseconds
+        # https://code.djangoproject.com/ticket/19917
         models.TimeField: {
             'filter_class': filters.TimeFilter,
         },
@@ -183,6 +184,8 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':
             return filters.BooleanFilter(name=("%s%sisnull" % (f.name, LOOKUP_SEP)))
-        if lookup_type == 'in' and type(f) in [filters.NumberFilter]:
+        if lookup_type == 'in' and type(f) == filters.NumberFilter:
             return filters.InSetNumberFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
+        if lookup_type == 'in' and type(f) == filters.CharFilter:
+            return filters.InSetCharFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
         return f
