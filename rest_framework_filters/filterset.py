@@ -29,7 +29,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         # Populate our FilterSet fields with all the possible
         # filters for the AllLookupsFilter field.
-        for name, filter_ in six.iteritems(new_class.base_filters):
+        for name, filter_ in six.iteritems(new_class.base_filters.copy()):
             if isinstance(filter_, filters.AllLookupsFilter):
                 model = new_class._meta.model
                 field = filterset.get_model_field(model, filter_.name)
@@ -74,7 +74,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
 
         super(FilterSet, self).__init__(*args, **kwargs)
 
-        for name, filter_ in six.iteritems(self.filters):
+        for name, filter_ in six.iteritems(self.filters.copy()):
             if isinstance(filter_, filters.RelatedFilter):
                 filter_.setup_filterset()
 
