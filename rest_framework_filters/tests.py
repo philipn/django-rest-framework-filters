@@ -726,6 +726,17 @@ class TestFilterSets(TestCase):
         self.assertIn(p1, f)
         self.assertIn(p2, f)
 
+    def test_get_filterset_subset(self):
+        related_filter = NoteFilterWithRelated.base_filters['author']
+        filterset_class = related_filter.get_filterset_subset(['email'])
+
+        # ensure that the class name is useful when debugging
+        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
+
+        # ensure that the FilterSet subset only contains the requested fields
+        self.assertIn('email', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 1)
+
     def test_inset_char_filter(self):
         p1 = Person.objects.get(name="John").name
         p2 = Person.objects.get(name="Mark").name

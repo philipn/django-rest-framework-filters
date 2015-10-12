@@ -1,28 +1,61 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import django
+from collections import OrderedDict
 from django.utils import six
+
+import django
 from django_filters.filters import *
 
 from . import fields
 
 
+def _import_class(path):
+    module_path, class_name = path.rsplit('.', 1)
+    module = __import__(module_path, fromlist=[class_name], level=0)
+    return getattr(module, class_name)
+
+
 class RelatedFilter(ModelChoiceFilter):
     def __init__(self, filterset, *args, **kwargs):
         self.filterset = filterset
-        self.parent_relation = kwargs.get('parent_relation', None)
+        # self.parent_relation = kwargs.get('parent_relation', None)
         return super(RelatedFilter, self).__init__(*args, **kwargs)
 
-    def setup_filterset(self):
-        if isinstance(self.filterset, six.string_types):
-            # This is a recursive relation, defined via a string, so we need
-            # to create and import the class here.
-            items = self.filterset.split('.')
-            cls = str(items[-1])  # Ensure not unicode on py2.x
-            mod = __import__('.'.join(items[:-1]), fromlist=[cls])
-            self.filterset = getattr(mod, cls)
+    def filterset():
+        def fget(self):
+            if isinstance(self._filterset, six.string_types):
+                self._filterset = _import_class(self._filterset)
+            return self._filterset
 
+        def fset(self, value):
+            self._filterset = value
+
+        return locals()
+    filterset = property(**filterset())
+
+    def get_filterset_subset(self, filter_names):
+        """
+        Returns a FilterSet subclass that contains the subset of filters
+        specified in `filter_names`. This is useful for creating FilterSets
+        used across relationships, as it minimizes the deepcopy overhead
+        incurred when instantiating the FilterSet.
+        """
+        BaseFilterSet = self.filterset
+
+        class FilterSetSubset(BaseFilterSet):
+            pass
+
+        FilterSetSubset.__name__ = str('%sSubset' % (BaseFilterSet.__name__))
+        FilterSetSubset.base_filters = OrderedDict([
+            (name, f)
+            for name, f in six.iteritems(BaseFilterSet.base_filters)
+            if name in filter_names
+        ])
+
+        return FilterSetSubset
+
+    def setup_filterset(self):
         self.extra['queryset'] = self.filterset._meta.model.objects.all()
 
 
