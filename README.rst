@@ -20,8 +20,8 @@ Installation
 Requirements
 ------------
 
-* Python 2.6+
-* Django 1.5.6+
+* Python 2.7+
+* Django 1.7.10+
 * Django REST framework 3.0+
 
 Usage
@@ -33,10 +33,10 @@ Here's how you were probably doing filtering before:
 
     import django_filters
     from myapp.models import Product
-    
+
     class ProductFilter(django_filters.FilterSet):
         manufacturer = django_filters.CharFilter(name="manufacturer__name")
-    
+
         class Meta:
             model = Product
             fields = ['category', 'in_stock', 'manufacturer']
@@ -49,10 +49,10 @@ To use ``django-rest-framework-filters``, simply import ``rest_framework_filters
 
     import rest_framework_filters as filters
     from myapp.models import Product
-    
+
     class ProductFilter(filters.FilterSet):
         manufacturer = filters.CharFilter(name="manufacturer__name")
-    
+
         class Meta:
             model = Product
             fields = ['category', 'in_stock', 'manufacturer']

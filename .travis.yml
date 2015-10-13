@@ -6,9 +6,6 @@ python:
   - "3.4"
   - "3.5"
 env:
-  - DJANGO="Django>=1.4,<1.5"
-  - DJANGO="Django>=1.5,<1.6"
-  - DJANGO="Django>=1.6,<1.7"
   - DJANGO="Django>=1.7,<1.8"
   - DJANGO="Django>=1.8,<1.9"
 install:
@@ -18,18 +15,6 @@ script: python manage.py test rest_framework_filters
 
 matrix:
   exclude:
-    - python: "3.2"
-      env: DJANGO="Django>=1.4,<1.5"
-    - python: "3.3"
-      env: DJANGO="Django>=1.4,<1.5"
-    - python: "3.4"
-      env: DJANGO="Django>=1.4,<1.5"
-    - python: "3.5"
-      env: DJANGO="Django>=1.4,<1.5"
-    - python: "3.5"
-      env: DJANGO="Django>=1.5,<1.6"
-    - python: "3.5"
-      env: DJANGO="Django>=1.6,<1.7"
     - python: "3.5"
       env: DJANGO="Django>=1.7,<1.8"
   fast_finish: true

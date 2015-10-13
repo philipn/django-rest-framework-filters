@@ -3,11 +3,7 @@ from __future__ import unicode_literals
 
 from collections import OrderedDict
 
-try:
-    from django.db.models.constants import LOOKUP_SEP
-except ImportError:  # pragma: nocover
-    # Django < 1.5 fallback
-    from django.db.models.sql.constants import LOOKUP_SEP  # noqa
+from django.db.models.constants import LOOKUP_SEP
 from django.db import models
 try:
     from django.db.models.related import RelatedObject as ForeignObjectRel
@@ -60,12 +56,6 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         # DRF -- we need to use django-filter's IsoDateTimeFilter
         models.DateTimeField: {
             'filter_class': filters.IsoDateTimeFilter,
-        },
-
-        # Django < 1.6 time input formats did not account for microseconds
-        # https://code.djangoproject.com/ticket/19917
-        models.TimeField: {
-            'filter_class': filters.TimeFilter,
         },
     }
 

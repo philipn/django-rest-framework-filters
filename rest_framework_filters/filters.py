@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 from django.utils import six
 
-import django
 from django_filters.filters import *
 
 from . import fields
@@ -66,11 +65,6 @@ class AllLookupsFilter(Filter):
 ###################################################
 # Fixed-up versions of some of the default filters
 ###################################################
-
-class TimeFilter(TimeFilter):
-    if django.VERSION < (1, 6):
-        field_class = fields.Django14TimeField
-
 
 class InSetFilterBase(object):
     def filter(self, qs, value):
