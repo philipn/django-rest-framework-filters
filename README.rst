@@ -127,6 +127,21 @@ and also filter on the default lookup (``exact``), as usual::
 
     /api/page/?title=The%20Park
 
+Additionally, you may use ``ALL_LOOKUPS`` with dictionary style declarations.
+
+.. code-block:: python
+
+    import rest_framework_filters as filters
+
+    class PageFilter(filters.FilterSet):
+        ...
+
+        class Meta:
+            fields = {
+                'title': filters.ALL_LOOKUPS,
+            }
+
+
 Combining RelatedFilter and AllLookupsFilter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
