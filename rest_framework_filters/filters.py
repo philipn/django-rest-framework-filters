@@ -14,6 +14,7 @@ ALL_LOOKUPS = LOOKUP_TYPES
 
 def _import_class(path):
     module_path, class_name = path.rsplit('.', 1)
+    class_name = str(class_name) # Ensure not unicode on py2.x
     module = __import__(module_path, fromlist=[class_name], level=0)
     return getattr(module, class_name)
 
