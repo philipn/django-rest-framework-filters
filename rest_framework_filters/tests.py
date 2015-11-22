@@ -766,3 +766,97 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
+
+
+class FilterSetExclutionTests(TestCase):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
+        t1 = Tag.objects.create(name='Tag 1')
+        t2 = Tag.objects.create(name='Tag 2')
+        t3 = Tag.objects.create(name='Something else entirely')
+
+        p1 = BlogPost.objects.create(title='Post 1', content='content 1')
+        p2 = BlogPost.objects.create(title='Post 2', content='content 2')
+
+        p1.tags = [t1, t2]
+        p2.tags = [t3]
+
+    def test_exclude_property(self):
+        """
+        Ensure that the filter is set to exclude
+        """
+        GET = {
+            'name__contains!': 'Tag',
+        }
+
+        filterset = TagFilter(GET, queryset=Tag.objects.all())
+        requested_filters = filterset.get_filters()
+
+        self.assertTrue(requested_filters['name__contains!'].exclude)
+
+    def test_filter_and_exclude(self):
+        """
+        Ensure that both the filter and exclusion filter are available
+        """
+        GET = {
+            'name__contains': 'Tag',
+            'name__contains!': 'Tag',
+        }
+
+        filterset = TagFilter(GET, queryset=Tag.objects.all())
+        requested_filters = filterset.get_filters()
+
+        self.assertFalse(requested_filters['name__contains'].exclude)
+        self.assertTrue(requested_filters['name__contains!'].exclude)
+
+    def test_related_exclude(self):
+        GET = {
+            'tags__name__contains!': 'Tag',
+        }
+
+        filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        requested_filters = filterset.get_filters()
+
+        self.assertTrue(requested_filters['tags__name__contains!'].exclude)
+
+    def test_exclusion_results(self):
+        GET = {
+            'name__contains!': 'Tag',
+        }
+
+        filterset = TagFilter(GET, queryset=Tag.objects.all())
+        results = [r.name for r in filterset]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], 'Something else entirely')
+
+    def test_filter_and_exclusion_results(self):
+        GET = {
+            'name__contains': 'Tag',
+            'name__contains!': '2',
+        }
+
+        filterset = TagFilter(GET, queryset=Tag.objects.all())
+        results = [r.name for r in filterset]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], 'Tag 1')
+
+    def test_related_exclusion_results(self):
+        GET = {
+            'tags__name__contains!': 'Tag',
+        }
+
+        filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        results = [r.title for r in filterset]
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], 'Post 2')
