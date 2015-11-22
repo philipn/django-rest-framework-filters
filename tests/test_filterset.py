@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
@@ -8,242 +8,38 @@ import datetime
 from django.utils.dateparse import parse_time, parse_datetime
 
 import django
-from django.db import models
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 
-from . import filters
-from .filters import RelatedFilter, AllLookupsFilter
-from .filterset import FilterSet
-
-
-class Note(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    author = models.ForeignKey(User)
-
-
-class Post(models.Model):
-    note = models.ForeignKey(Note)
-    content = models.TextField()
-
-
-class Cover(models.Model):
-    comment = models.CharField(max_length=100)
-    post = models.ForeignKey(Post)
-
-
-class Page(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    previous_page = models.ForeignKey('self', null=True)
-
-
-class A(models.Model):
-    title = models.CharField(max_length=100)
-    b = models.ForeignKey('B', null=True)
-
-
-class C(models.Model):
-    title = models.CharField(max_length=100)
-    a = models.ForeignKey(A, null=True)
-
-
-class B(models.Model):
-    name = models.CharField(max_length=100)
-    c = models.ForeignKey(C, null=True)
-
-
-class Person(models.Model):
-    name = models.CharField(max_length=100)
-    best_friend = models.ForeignKey('self', null=True)
-
-    date_joined = models.DateField(auto_now=True)
-    time_joined = models.TimeField(auto_now=True)
-    datetime_joined = models.DateTimeField(auto_now=True)
-
-
-class Tag(models.Model):
-    name = models.CharField(max_length=100)
-
-
-class BlogPost(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    tags = models.ManyToManyField(Tag, null=True)
-
-
-#################################################
-# FilterSets
-#################################################
-
-class NoteFilterWithAll(FilterSet):
-    title = AllLookupsFilter(name='title')
-
-    class Meta:
-        model = Note
-
-
-class UserFilter(FilterSet):
-    username = filters.CharFilter(name='username')
-    email = filters.CharFilter(name='email')
-
-    class Meta:
-        model = User
-
-
-class UserFilterWithAll(FilterSet):
-    username = AllLookupsFilter(name='username')
-    email = filters.CharFilter(name='email')
-
-    class Meta:
-        model = User
-
-
-class NoteFilterWithRelated(FilterSet):
-    title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilter, name='author')
-
-    class Meta:
-        model = Note
-
-
-class NoteFilterWithRelatedAll(FilterSet):
-    title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilterWithAll, name='author')
-
-    class Meta:
-        model = Note
-
-
-class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
-    title = filters.CharFilter(name='title')
-    writer = RelatedFilter(UserFilterWithAll, name='author')
-
-    class Meta:
-        model = Note
-
-
-class PostFilterWithRelated(FilterSet):
-    note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
-
-    class Meta:
-        model = Post
-
-
-class CoverFilterWithRelated(FilterSet):
-    comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilterWithRelated, name='post')
-
-    class Meta:
-        model = Cover
-
-
-class PageFilterWithRelated(FilterSet):
-    title = filters.CharFilter(name='title')
-    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
-
-    class Meta:
-        model = Page
-
-
-class TagFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-
-    class Meta:
-        model = Tag
-
-
-class BlogPostFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    tags = RelatedFilter(TagFilter, name='tags')
-
-    class Meta:
-        model = BlogPost
-
-
-class UserFilterWithDifferentName(FilterSet):
-    name = filters.CharFilter(name='username')
-
-    class Meta:
-        model = User
-
-
-class NoteFilterWithRelatedDifferentName(FilterSet):
-    author = RelatedFilter(UserFilterWithDifferentName, name='author')
-
-    class Meta:
-        model = Note
-
-
-#############################################################
-# Recursive filtersets
-#############################################################
-class AFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    b = RelatedFilter('rest_framework_filters.tests.BFilter', name='b')
-
-    class Meta:
-        model = A
-
-
-class CFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    a = RelatedFilter(AFilter, name='a')
-
-    class Meta:
-        model = C
-
-
-class BFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-    c = RelatedFilter(CFilter, name='c')
-
-    class Meta:
-        model = B
-
-
-class PersonFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-    best_friend = RelatedFilter('rest_framework_filters.tests.PersonFilter', name='best_friend')
-
-    class Meta:
-        model = Person
-
-#############################################################
-# Extensions to django_filter fields for DRF.
-#############################################################
-
-class AllLookupsPersonDateFilter(FilterSet):
-    date_joined = AllLookupsFilter(name='date_joined')
-    time_joined = AllLookupsFilter(name='time_joined')
-    datetime_joined = AllLookupsFilter(name='datetime_joined')
-
-    class Meta:
-        model = Person
-
-
-class ExplicitLookupsPersonDateFilter(FilterSet):
-    date_joined = AllLookupsFilter(name='date_joined')
-    time_joined = AllLookupsFilter(name='time_joined')
-    datetime_joined = AllLookupsFilter(name='datetime_joined')
-
-    class Meta:
-        model = Person
-
-
-class InSetLookupPersonIDFilter(FilterSet):
-    pk = AllLookupsFilter('id')
-
-    class Meta:
-        model = Person
-
-
-class InSetLookupPersonNameFilter(FilterSet):
-    name = AllLookupsFilter('name')
-
-    class Meta:
-        model = Person
+from .models import (
+    Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
+)
+
+from .filters import (
+    NoteFilterWithAll,
+    # UserFilter,
+    # UserFilterWithAll,
+    NoteFilterWithRelated,
+    NoteFilterWithRelatedAll,
+    NoteFilterWithRelatedAllDifferentFilterName,
+    PostFilterWithRelated,
+    CoverFilterWithRelated,
+    # PageFilterWithRelated,
+    TagFilter,
+    BlogPostFilter,
+    # UserFilterWithDifferentName,
+    NoteFilterWithRelatedDifferentName,
+
+    # AFilter,
+    # BFilter,
+    CFilter,
+    PersonFilter,
+
+    AllLookupsPersonDateFilter,
+    # ExplicitLookupsPersonDateFilter,
+    InSetLookupPersonIDFilter,
+    InSetLookupPersonNameFilter,
+)
 
 
 class TestFilterSets(TestCase):

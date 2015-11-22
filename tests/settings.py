@@ -9,7 +9,7 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'rest_framework',
-    'rest_framework_filters',
+    'tests',
 )
 
 SECRET_KEY = 'testsecretkey'
