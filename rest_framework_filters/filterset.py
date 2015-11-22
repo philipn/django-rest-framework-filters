@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from collections import OrderedDict
+import copy
 
 from django.db.models.constants import LOOKUP_SEP
 from django.db import models
@@ -82,8 +83,15 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
 
         # Add plain lookup filters if match. ie, `username__icontains`
         for filter_key, filter_value in six.iteritems(self.filters):
+            exclude_key = '%s!' % filter_key
+
             if filter_key in self.data:
                 requested_filters[filter_key] = filter_value
+
+            if exclude_key in self.data:
+                filter_value = copy.deepcopy(filter_value)
+                filter_value.exclude = not filter_value.exclude
+                requested_filters[exclude_key] = filter_value
 
         # build a map of potential {rel: {filter: value}} data
         related_data = OrderedDict()
@@ -141,11 +149,15 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         if param in cls.base_filters:
             return param
 
+        # Attempt to match against exclusion filters
+        if param[-1] == '!' and param[:-1] in cls.base_filters:
+            return param[:-1]
+
         # Fallback to matching against relationships. (author__username__endswith)
-        param = param.split(LOOKUP_SEP, 1)[0]
-        f = cls.base_filters.get(param, None)
+        related_param = param.split(LOOKUP_SEP, 1)[0]
+        f = cls.base_filters.get(related_param, None)
         if isinstance(f, filters.RelatedFilter):
-            return param
+            return related_param
 
     def cache_key(self, filterset, filter_names):
         return '%sSubset-%s' % (filterset.__name__, '-'.join(sorted(filter_names)), )
