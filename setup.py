@@ -46,7 +46,7 @@ setup(
     #test_suite='rest_framework.runtests.runtests.main',
     install_requires=[
         'djangorestframework',
-        'django-filter',
+        'django-filter>=0.11.0',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
