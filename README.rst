@@ -164,6 +164,20 @@ then we can filter like so::
 
     /api/page/?author__username__icontains=john
 
+Automatic Filter Negation/Exclusion
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FilterSets also support automatic exclusion using a simple ``k!=v`` syntax. This syntax
+internally sets the ``exclude`` property on the filter.
+
+    /api/page/?title!=The%20Park
+
+This syntax supports regular filtering combined with exclusion filtering. For example,
+the following would search for all articles containing "Hello" in the title, while
+excluding those containing "World".
+
+    /api/articles/?title__contains=Hello&title__contains!=World
+
 DjangoFilterBackend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
