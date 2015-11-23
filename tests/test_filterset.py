@@ -124,12 +124,7 @@ class TestFilterSets(TestCase):
         C.objects.create(title="C3")
 
         john = Person.objects.create(name="John")
-
-        # Created at least one second apart
-        mark = Person.objects.create(name="Mark", best_friend=john)
-        mark.time_joined = add_timedelta(mark.time_joined, datetime.timedelta(seconds=1))
-        mark.datetime_joined += datetime.timedelta(seconds=1)
-        mark.save()
+        Person.objects.create(name="Mark", best_friend=john)
 
     def test_alllookupsfilter(self):
         # Test __iendswith
@@ -317,6 +312,39 @@ class TestFilterSets(TestCase):
         titles = set([p.title for p in f])
         self.assertEqual(titles, set(["First post", "Second post"]))
 
+    def test_get_filterset_subset(self):
+        related_filter = NoteFilterWithRelated.base_filters['author']
+        filterset_class = related_filter.get_filterset_subset(['email'])
+
+        # ensure that the class name is useful when debugging
+        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
+
+        # ensure that the FilterSet subset only contains the requested fields
+        self.assertIn('email', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 1)
+
+
+class DatetimeTests(TestCase):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
+        john = Person.objects.create(name="John")
+
+        # Created at least one second apart
+        mark = Person.objects.create(name="Mark", best_friend=john)
+        mark.time_joined = add_timedelta(mark.time_joined, datetime.timedelta(seconds=1))
+        mark.datetime_joined += datetime.timedelta(seconds=1)
+        mark.save()
+
     def test_implicit_date_filters(self):
         john = Person.objects.get(name="John")
         # Mark was created at least one second after John.
@@ -397,6 +425,23 @@ class TestFilterSets(TestCase):
         p = list(f)[0]
         self.assertEqual(p.name, "John")
 
+
+class FilterOverrideTests(TestCase):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
+        john = Person.objects.create(name="John")
+        Person.objects.create(name="Mark", best_friend=john)
+
     def test_inset_number_filter(self):
         p1 = Person.objects.get(name="John").pk
         p2 = Person.objects.get(name="Mark").pk
@@ -433,17 +478,6 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
-
-    def test_get_filterset_subset(self):
-        related_filter = NoteFilterWithRelated.base_filters['author']
-        filterset_class = related_filter.get_filterset_subset(['email'])
-
-        # ensure that the class name is useful when debugging
-        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
-
-        # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('email', filterset_class.base_filters)
-        self.assertEqual(len(filterset_class.base_filters), 1)
 
     def test_inset_char_filter(self):
         p1 = Person.objects.get(name="John").name
@@ -483,7 +517,7 @@ class TestFilterSets(TestCase):
         self.assertIn(p2, f)
 
 
-class FilterSetExclutionTests(TestCase):
+class FilterExclusionTests(TestCase):
 
     if django.VERSION >= (1, 8):
         @classmethod
