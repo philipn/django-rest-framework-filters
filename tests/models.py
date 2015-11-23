@@ -44,9 +44,9 @@ class Person(models.Model):
     name = models.CharField(max_length=100)
     best_friend = models.ForeignKey('self', null=True)
 
-    date_joined = models.DateField(auto_now=True)
-    time_joined = models.TimeField(auto_now=True)
-    datetime_joined = models.DateTimeField(auto_now=True)
+    date_joined = models.DateField(auto_now_add=True)
+    time_joined = models.TimeField(auto_now_add=True)
+    datetime_joined = models.DateTimeField(auto_now_add=True)
 
 
 class Tag(models.Model):

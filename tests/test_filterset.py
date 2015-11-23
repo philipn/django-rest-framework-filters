@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import time
 import datetime
 
 from django.utils.dateparse import parse_time, parse_datetime
@@ -42,6 +41,12 @@ from .filters import (
 )
 
 
+def add_timedelta(time, timedelta):
+    dt = datetime.datetime.combine(datetime.datetime.today(), time)
+    dt += timedelta
+    return dt.time()
+
+
 class TestFilterSets(TestCase):
 
     if django.VERSION >= (1, 8):
@@ -58,158 +63,73 @@ class TestFilterSets(TestCase):
         #######################
         # Create users
         #######################
-        user1 = User(
-            username="user1",
-            email="user1@example.org"
-        )
-        user1.save()
-
-        user2 = User(
-            username="user2",
-            email="user2@example.org"
-        )
-        user2.save()
-
-        n = Note(
-            title="Test 1",
-            content="Test content 1",
-            author=user1
-        )
-        n.save()
+        user1 = User.objects.create(username="user1", email="user1@example.org")
+        user2 = User.objects.create(username="user2", email="user2@example.org")
 
         #######################
         # Create notes
         #######################
-        n = Note(
-            title="Test 2",
-            content="Test content 2",
-            author=user1
-        )
-        n.save()
-
-        n = Note(
-            title="Hello Test 3",
-            content="Test content 3",
-            author=user1
-        )
-        n.save()
-
-        n = Note(
-            title="Hello Test 4",
-            content="Test content 4",
-            author=user2
-        )
-        n.save()
+        note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user1)
+        note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user1)
+        Note.objects.create(title="Hello Test 3", content="Test content 3", author=user1)
+        note4 = Note.objects.create(title="Hello Test 4", content="Test content 4", author=user2)
 
         #######################
         # Create posts
         #######################
-        post = Post(
-            note=Note.objects.get(title="Test 1"),
-            content="Test content in post 1",
-        )
-        post.save()
-
-        post = Post(
-            note=Note.objects.get(title="Test 2"),
-            content="Test content in post 2",
-        )
-        post.save()
-
-        post = Post(
-            note=Note.objects.get(title="Hello Test 4"),
-            content="Test content in post 3",
-        )
-        post.save()
+        post1 = Post.objects.create(note=note1, content="Test content in post 1")
+        Post.objects.create(note=note2, content="Test content in post 2")
+        post3 = Post.objects.create(note=note4, content="Test content in post 3")
 
         #######################
         # Create covers
         #######################
-        cover = Cover(
-            post=Post.objects.get(note__title="Test 1"),
-            comment="Cover 1"
-        )
-        cover.save()
-
-        cover = Cover(
-            post=Post.objects.get(note__title="Hello Test 4"),
-            comment="Cover 2"
-        )
-        cover.save()
+        Cover.objects.create(post=post1, comment="Cover 1")
+        Cover.objects.create(post=post3, comment="Cover 2")
 
         #######################
         # Create pages
         #######################
-        page = Page(
-            title="First page",
-            content="First first."
-        )
-        page.save()
-
-        page = Page(
-            title="Second page",
-            content="Second second.",
-            previous_page=Page.objects.get(title="First page")
-        )
-        page.save()
+        page1 = Page.objects.create(title="First page", content="First first.")
+        Page.objects.create(title="Second page", content="Second second.", previous_page=page1)
 
         ################################
         # ManyToMany
         ################################
-        tag = Tag(name="park")
-        tag.save()
-        tag = Tag(name="lake")
-        tag.save()
-        tag = Tag(name="house")
-        tag.save()
+        t1 = Tag.objects.create(name="park")
+        Tag.objects.create(name="lake")
+        t3 = Tag.objects.create(name="house")
 
-        blogpost = BlogPost(
-            title="First post",
-            content="First"
-        )
-        blogpost.save()
-        blogpost.tags = [Tag.objects.get(name="park"), Tag.objects.get(name="house")]
+        blogpost = BlogPost.objects.create(title="First post", content="First")
+        blogpost.tags = [t1, t3]
 
-        blogpost = BlogPost(
-            title="Second post",
-            content="Secon"
-        )
-        blogpost.save()
-        blogpost.tags = [Tag.objects.get(name="house")]
+        blogpost = BlogPost.objects.create(title="Second post", content="Secon")
+        blogpost.tags = [t3]
 
         ################################
         # Recursive relations
         ################################
-        a = A(title="A1")
-        a.save()
-
-        b = B(name="B1")
-        b.save()
-
-        c = C(title="C1")
-        c.save()
+        a = A.objects.create(title="A1")
+        b = B.objects.create(name="B1")
+        c = C.objects.create(title="C1")
 
         c.a = a
         c.save()
+
         a.b = b
         a.save()
 
-        a = A(title="A2")
-        a.save()
+        A.objects.create(title="A2")
+        C.objects.create(title="C2")
+        C.objects.create(title="C3")
 
-        c = C(title="C2")
-        c.save()
+        john = Person.objects.create(name="John")
 
-        c = C(title="C3")
-        c.save()
-
-        p = Person(name="John")
-        p.save()
-
-        time.sleep(1)  # Created at least one second apart
-        p = Person(name="Mark", best_friend=Person.objects.get(name="John"))
-        p.save()
-
+        # Created at least one second apart
+        mark = Person.objects.create(name="Mark", best_friend=john)
+        mark.time_joined = add_timedelta(mark.time_joined, datetime.timedelta(seconds=1))
+        mark.datetime_joined += datetime.timedelta(seconds=1)
+        mark.save()
 
     def test_alllookupsfilter(self):
         # Test __iendswith
@@ -400,7 +320,7 @@ class TestFilterSets(TestCase):
     def test_implicit_date_filters(self):
         john = Person.objects.get(name="John")
         # Mark was created at least one second after John.
-        mark = Person.objects.get(name="Mark")
+        # mark = Person.objects.get(name="Mark")
 
         from rest_framework import serializers
         from rest_framework.renderers import JSONRenderer
@@ -489,7 +409,6 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
-
 
         INVALID_GET = {
             'pk__in': '{:d},c{:d}'.format(p1, p2)
