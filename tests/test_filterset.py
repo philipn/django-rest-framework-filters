@@ -599,6 +599,25 @@ class FilterOverrideTests(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user2')
 
+    def test_isnull_override(self):
+        self.assertIsInstance(
+            PersonFilter().filters['best_friend__isnull'],
+            django_filters.filters.BooleanFilter
+        )
+
+        GET = {'best_friend__isnull': 'true'}
+        filterset = PersonFilter(GET, queryset=Person.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, 'John')
+
+        # Uppercase False
+        GET = {'best_friend__isnull': 'false'}
+        filterset = PersonFilter(GET, queryset=Person.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, 'Mark')
+
 
 class FilterExclusionTests(TestCase):
 
