@@ -165,7 +165,7 @@ then we can filter like so::
     /api/page/?author__username__icontains=john
 
 Automatic Filter Negation/Exclusion
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FilterSets also support automatic exclusion using a simple ``k!=v`` syntax. This syntax
 internally sets the ``exclude`` property on the filter.
@@ -178,8 +178,60 @@ excluding those containing "World".
 
     /api/articles/?title__contains=Hello&title__contains!=World
 
+MethodFilter Reimplementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``MethodFilter`` has been reimplemented to work across relationships. This is not a
+forwards-compatible change and requires adding a minimal amount of boilerplate to the
+filter method.
+
+When filtering across relationships, the queryset and lookup value will be different.
+For example:
+
+    class PostFilter(filters.FilterSet):
+        author = filters.RelatedFilter('AuthorFilter')
+        is_published = filters.MethodFilter()
+
+        class Meta:
+            model = Post
+            fields = ['title', 'content']
+
+        def filter_is_published(self, name, qs, value):
+            # convert value to boolean
+            null = value.lower() != 'true'
+
+            # The lookup name will end with `is_published`, but could be
+            # preceded by a related lookup path.
+            if LOOKUP_SEP in name:
+                rel, _ = name.rsplit(LOOKUP_SEP, 1)
+                name = LOOKUP_SEP.join([rel, 'date_published__isnull'])
+            else:
+                name = 'date_published__isnull'
+
+            return qs.filter(**{name: null})
+
+    class AuthorFilter(filters.FilterSet):
+        posts = filters.RelatedFilter('PostFilter')
+
+        class Meta:
+            model = Author
+            fields = ['name']
+
+And given these API calls:
+
+    /api/posts/?is_published=true
+
+    /api/authors/?posts__is_published=true
+
+
+In the first API call, the filter method receives a queryset of posts. In the second,
+it receives a queryset of users. The filter method in the example modifies the lookup
+name to work across the relationship, allowing you to find published posts, or authors
+who have published posts.
+
+
 DjangoFilterBackend
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 We implement our own subclass of ``DjangoFilterBackend``, which you should probably use instead
 of the default ``DjangoFilterBackend``.  Our ``DjangoFilterBackend`` caches repeated filter set
