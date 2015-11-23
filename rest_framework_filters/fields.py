@@ -1,5 +1,15 @@
 from django import forms
 
+# TODO: Remove when django-filter 0.12.0 is released
+try:
+    from django_filters import BooleanWidget
+except ImportError:
+    from .widgets import BooleanWidget
+
+
+class BooleanField(forms.BooleanField):
+    widget = BooleanWidget
+
 
 class ArrayDecimalField(forms.DecimalField):
     def clean(self, value):
