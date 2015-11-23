@@ -22,7 +22,7 @@ from .filters import (
     NoteFilterWithRelatedAll,
     NoteFilterWithRelatedAllDifferentFilterName,
     PostFilterWithRelated,
-    # PostFilterWithMethod,
+    PostFilterWithMethod,
     CoverFilterWithRelatedMethodFilter,
     CoverFilterWithRelated,
     # PageFilterWithRelated,
@@ -345,10 +345,19 @@ class MethodFilterTests(TestCase):
         note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user)
 
         post1 = Post.objects.create(note=note1, content="Test content in post 1")
-        post2 = Post.objects.create(note=note2, content="Test content in post 4", date_published=datetime.date.today())
+        post2 = Post.objects.create(note=note2, content="Test content in post 2", date_published=datetime.date.today())
 
         Cover.objects.create(post=post1, comment="Cover 1")
         Cover.objects.create(post=post2, comment="Cover 2")
+
+    def test_method_filter(self):
+        GET = {
+            'is_published': 'true'
+        }
+        filterset = PostFilterWithMethod(GET, queryset=Post.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].content, "Test content in post 2")
 
     def test_related_method_filter(self):
         """

@@ -71,14 +71,22 @@ class PostFilterWithMethod(FilterSet):
         model = Post
 
     def filter_is_published(self, name, qs, value):
+        """
+        `is_published` is based on the actual `date_published`.
+        If the publishing date is null, then the post is not published.
+        """
+        # convert value to boolean
         null = value.lower() != 'true'
 
-        # 'post', 'is_published'
-        name, _ = name.rsplit(LOOKUP_SEP, 1)
+        # The lookup name will end with `is_published`, but could be
+        # preceded by a related lookup path.
+        if LOOKUP_SEP in name:
+            rel, _ = name.rsplit(LOOKUP_SEP, 1)
+            name = LOOKUP_SEP.join([rel, 'date_published__isnull'])
+        else:
+            name = 'date_published__isnull'
 
-        return qs.filter(**{
-            LOOKUP_SEP.join([name, 'date_published__isnull']): null
-        })
+        return qs.filter(**{name: null})
 
 
 class CoverFilterWithRelatedMethodFilter(FilterSet):
