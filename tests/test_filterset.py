@@ -1,249 +1,50 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import time
 import datetime
 
 from django.utils.dateparse import parse_time, parse_datetime
 
 import django
-from django.db import models
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 
-from . import filters
-from .filters import RelatedFilter, AllLookupsFilter
-from .filterset import FilterSet
-
-
-class Note(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    author = models.ForeignKey(User)
-
-
-class Post(models.Model):
-    note = models.ForeignKey(Note)
-    content = models.TextField()
-
-
-class Cover(models.Model):
-    comment = models.CharField(max_length=100)
-    post = models.ForeignKey(Post)
-
-
-class Page(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    previous_page = models.ForeignKey('self', null=True)
-
-
-class A(models.Model):
-    title = models.CharField(max_length=100)
-    b = models.ForeignKey('B', null=True)
-
-
-class C(models.Model):
-    title = models.CharField(max_length=100)
-    a = models.ForeignKey(A, null=True)
-
-
-class B(models.Model):
-    name = models.CharField(max_length=100)
-    c = models.ForeignKey(C, null=True)
-
-
-class Person(models.Model):
-    name = models.CharField(max_length=100)
-    best_friend = models.ForeignKey('self', null=True)
-
-    date_joined = models.DateField(auto_now=True)
-    time_joined = models.TimeField(auto_now=True)
-    datetime_joined = models.DateTimeField(auto_now=True)
-
-
-class Tag(models.Model):
-    name = models.CharField(max_length=100)
-
-
-class BlogPost(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    tags = models.ManyToManyField(Tag, null=True)
-
-
-#################################################
-# FilterSets
-#################################################
-
-class NoteFilterWithAll(FilterSet):
-    title = AllLookupsFilter(name='title')
-
-    class Meta:
-        model = Note
-
-
-class UserFilter(FilterSet):
-    username = filters.CharFilter(name='username')
-    email = filters.CharFilter(name='email')
-
-    class Meta:
-        model = User
-
-
-class UserFilterWithAll(FilterSet):
-    username = AllLookupsFilter(name='username')
-    email = filters.CharFilter(name='email')
-
-    class Meta:
-        model = User
-
-
-class NoteFilterWithRelated(FilterSet):
-    title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilter, name='author')
-
-    class Meta:
-        model = Note
-
-
-class NoteFilterWithRelatedAll(FilterSet):
-    title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilterWithAll, name='author')
-
-    class Meta:
-        model = Note
-
-
-class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
-    title = filters.CharFilter(name='title')
-    writer = RelatedFilter(UserFilterWithAll, name='author')
-
-    class Meta:
-        model = Note
-
-
-class PostFilterWithRelated(FilterSet):
-    note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
-
-    class Meta:
-        model = Post
-
-
-class CoverFilterWithRelated(FilterSet):
-    comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilterWithRelated, name='post')
-
-    class Meta:
-        model = Cover
-
-
-class PageFilterWithRelated(FilterSet):
-    title = filters.CharFilter(name='title')
-    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
-
-    class Meta:
-        model = Page
-
-
-class TagFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-
-    class Meta:
-        model = Tag
-
-
-class BlogPostFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    tags = RelatedFilter(TagFilter, name='tags')
-
-    class Meta:
-        model = BlogPost
-
-
-class UserFilterWithDifferentName(FilterSet):
-    name = filters.CharFilter(name='username')
-
-    class Meta:
-        model = User
-
-
-class NoteFilterWithRelatedDifferentName(FilterSet):
-    author = RelatedFilter(UserFilterWithDifferentName, name='author')
-
-    class Meta:
-        model = Note
-
-
-#############################################################
-# Recursive filtersets
-#############################################################
-class AFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    b = RelatedFilter('rest_framework_filters.tests.BFilter', name='b')
-
-    class Meta:
-        model = A
-
-
-class CFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    a = RelatedFilter(AFilter, name='a')
-
-    class Meta:
-        model = C
-
-
-class BFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-    c = RelatedFilter(CFilter, name='c')
-
-    class Meta:
-        model = B
-
-
-class PersonFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-    best_friend = RelatedFilter('rest_framework_filters.tests.PersonFilter', name='best_friend')
-
-    class Meta:
-        model = Person
-
-#############################################################
-# Extensions to django_filter fields for DRF.
-#############################################################
-
-class AllLookupsPersonDateFilter(FilterSet):
-    date_joined = AllLookupsFilter(name='date_joined')
-    time_joined = AllLookupsFilter(name='time_joined')
-    datetime_joined = AllLookupsFilter(name='datetime_joined')
-
-    class Meta:
-        model = Person
-
-
-class ExplicitLookupsPersonDateFilter(FilterSet):
-    date_joined = AllLookupsFilter(name='date_joined')
-    time_joined = AllLookupsFilter(name='time_joined')
-    datetime_joined = AllLookupsFilter(name='datetime_joined')
-
-    class Meta:
-        model = Person
-
-
-class InSetLookupPersonIDFilter(FilterSet):
-    pk = AllLookupsFilter('id')
-
-    class Meta:
-        model = Person
-
-
-class InSetLookupPersonNameFilter(FilterSet):
-    name = AllLookupsFilter('name')
-
-    class Meta:
-        model = Person
+from .models import (
+    Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
+)
+
+from .filters import (
+    NoteFilterWithAll,
+    # UserFilter,
+    # UserFilterWithAll,
+    NoteFilterWithRelated,
+    NoteFilterWithRelatedAll,
+    NoteFilterWithRelatedAllDifferentFilterName,
+    PostFilterWithRelated,
+    CoverFilterWithRelated,
+    # PageFilterWithRelated,
+    TagFilter,
+    BlogPostFilter,
+    # UserFilterWithDifferentName,
+    NoteFilterWithRelatedDifferentName,
+
+    # AFilter,
+    # BFilter,
+    CFilter,
+    PersonFilter,
+
+    AllLookupsPersonDateFilter,
+    # ExplicitLookupsPersonDateFilter,
+    InSetLookupPersonIDFilter,
+    InSetLookupPersonNameFilter,
+)
+
+
+def add_timedelta(time, timedelta):
+    dt = datetime.datetime.combine(datetime.datetime.today(), time)
+    dt += timedelta
+    return dt.time()
 
 
 class TestFilterSets(TestCase):
@@ -262,158 +63,68 @@ class TestFilterSets(TestCase):
         #######################
         # Create users
         #######################
-        user1 = User(
-            username="user1",
-            email="user1@example.org"
-        )
-        user1.save()
-
-        user2 = User(
-            username="user2",
-            email="user2@example.org"
-        )
-        user2.save()
-
-        n = Note(
-            title="Test 1",
-            content="Test content 1",
-            author=user1
-        )
-        n.save()
+        user1 = User.objects.create(username="user1", email="user1@example.org")
+        user2 = User.objects.create(username="user2", email="user2@example.org")
 
         #######################
         # Create notes
         #######################
-        n = Note(
-            title="Test 2",
-            content="Test content 2",
-            author=user1
-        )
-        n.save()
-
-        n = Note(
-            title="Hello Test 3",
-            content="Test content 3",
-            author=user1
-        )
-        n.save()
-
-        n = Note(
-            title="Hello Test 4",
-            content="Test content 4",
-            author=user2
-        )
-        n.save()
+        note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user1)
+        note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user1)
+        Note.objects.create(title="Hello Test 3", content="Test content 3", author=user1)
+        note4 = Note.objects.create(title="Hello Test 4", content="Test content 4", author=user2)
 
         #######################
         # Create posts
         #######################
-        post = Post(
-            note=Note.objects.get(title="Test 1"),
-            content="Test content in post 1",
-        )
-        post.save()
-
-        post = Post(
-            note=Note.objects.get(title="Test 2"),
-            content="Test content in post 2",
-        )
-        post.save()
-
-        post = Post(
-            note=Note.objects.get(title="Hello Test 4"),
-            content="Test content in post 3",
-        )
-        post.save()
+        post1 = Post.objects.create(note=note1, content="Test content in post 1")
+        Post.objects.create(note=note2, content="Test content in post 2")
+        post3 = Post.objects.create(note=note4, content="Test content in post 3")
 
         #######################
         # Create covers
         #######################
-        cover = Cover(
-            post=Post.objects.get(note__title="Test 1"),
-            comment="Cover 1"
-        )
-        cover.save()
-
-        cover = Cover(
-            post=Post.objects.get(note__title="Hello Test 4"),
-            comment="Cover 2"
-        )
-        cover.save()
+        Cover.objects.create(post=post1, comment="Cover 1")
+        Cover.objects.create(post=post3, comment="Cover 2")
 
         #######################
         # Create pages
         #######################
-        page = Page(
-            title="First page",
-            content="First first."
-        )
-        page.save()
-
-        page = Page(
-            title="Second page",
-            content="Second second.",
-            previous_page=Page.objects.get(title="First page")
-        )
-        page.save()
+        page1 = Page.objects.create(title="First page", content="First first.")
+        Page.objects.create(title="Second page", content="Second second.", previous_page=page1)
 
         ################################
         # ManyToMany
         ################################
-        tag = Tag(name="park")
-        tag.save()
-        tag = Tag(name="lake")
-        tag.save()
-        tag = Tag(name="house")
-        tag.save()
+        t1 = Tag.objects.create(name="park")
+        Tag.objects.create(name="lake")
+        t3 = Tag.objects.create(name="house")
 
-        blogpost = BlogPost(
-            title="First post",
-            content="First"
-        )
-        blogpost.save()
-        blogpost.tags = [Tag.objects.get(name="park"), Tag.objects.get(name="house")]
+        blogpost = BlogPost.objects.create(title="First post", content="First")
+        blogpost.tags = [t1, t3]
 
-        blogpost = BlogPost(
-            title="Second post",
-            content="Secon"
-        )
-        blogpost.save()
-        blogpost.tags = [Tag.objects.get(name="house")]
+        blogpost = BlogPost.objects.create(title="Second post", content="Secon")
+        blogpost.tags = [t3]
 
         ################################
         # Recursive relations
         ################################
-        a = A(title="A1")
-        a.save()
-
-        b = B(name="B1")
-        b.save()
-
-        c = C(title="C1")
-        c.save()
+        a = A.objects.create(title="A1")
+        b = B.objects.create(name="B1")
+        c = C.objects.create(title="C1")
 
         c.a = a
         c.save()
+
         a.b = b
         a.save()
 
-        a = A(title="A2")
-        a.save()
+        A.objects.create(title="A2")
+        C.objects.create(title="C2")
+        C.objects.create(title="C3")
 
-        c = C(title="C2")
-        c.save()
-
-        c = C(title="C3")
-        c.save()
-
-        p = Person(name="John")
-        p.save()
-
-        time.sleep(1)  # Created at least one second apart
-        p = Person(name="Mark", best_friend=Person.objects.get(name="John"))
-        p.save()
-
+        john = Person.objects.create(name="John")
+        Person.objects.create(name="Mark", best_friend=john)
 
     def test_alllookupsfilter(self):
         # Test __iendswith
@@ -601,10 +312,43 @@ class TestFilterSets(TestCase):
         titles = set([p.title for p in f])
         self.assertEqual(titles, set(["First post", "Second post"]))
 
+    def test_get_filterset_subset(self):
+        related_filter = NoteFilterWithRelated.base_filters['author']
+        filterset_class = related_filter.get_filterset_subset(['email'])
+
+        # ensure that the class name is useful when debugging
+        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
+
+        # ensure that the FilterSet subset only contains the requested fields
+        self.assertIn('email', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 1)
+
+
+class DatetimeTests(TestCase):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
+        john = Person.objects.create(name="John")
+
+        # Created at least one second apart
+        mark = Person.objects.create(name="Mark", best_friend=john)
+        mark.time_joined = add_timedelta(mark.time_joined, datetime.timedelta(seconds=1))
+        mark.datetime_joined += datetime.timedelta(seconds=1)
+        mark.save()
+
     def test_implicit_date_filters(self):
         john = Person.objects.get(name="John")
         # Mark was created at least one second after John.
-        mark = Person.objects.get(name="Mark")
+        # mark = Person.objects.get(name="Mark")
 
         from rest_framework import serializers
         from rest_framework.renderers import JSONRenderer
@@ -681,6 +425,23 @@ class TestFilterSets(TestCase):
         p = list(f)[0]
         self.assertEqual(p.name, "John")
 
+
+class FilterOverrideTests(TestCase):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
+        john = Person.objects.create(name="John")
+        Person.objects.create(name="Mark", best_friend=john)
+
     def test_inset_number_filter(self):
         p1 = Person.objects.get(name="John").pk
         p2 = Person.objects.get(name="Mark").pk
@@ -693,7 +454,6 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
-
 
         INVALID_GET = {
             'pk__in': '{:d},c{:d}'.format(p1, p2)
@@ -718,17 +478,6 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
-
-    def test_get_filterset_subset(self):
-        related_filter = NoteFilterWithRelated.base_filters['author']
-        filterset_class = related_filter.get_filterset_subset(['email'])
-
-        # ensure that the class name is useful when debugging
-        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
-
-        # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('email', filterset_class.base_filters)
-        self.assertEqual(len(filterset_class.base_filters), 1)
 
     def test_inset_char_filter(self):
         p1 = Person.objects.get(name="John").name
@@ -768,7 +517,7 @@ class TestFilterSets(TestCase):
         self.assertIn(p2, f)
 
 
-class FilterSetExclutionTests(TestCase):
+class FilterExclusionTests(TestCase):
 
     if django.VERSION >= (1, 8):
         @classmethod
