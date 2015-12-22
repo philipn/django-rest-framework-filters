@@ -90,6 +90,18 @@ then we can automatically chain our filters through the ``author`` relation, as 
 
     /api/page/?author__username=philipn
 
+Recursive relations are also supported.  You will need to specify the full module
+path in the ``RelatedFilter`` definition in some cases, e.g.:
+
+.. code-block:: python
+
+    class PersonFilter(filters.FilterSet):
+        name = filters.AllLookupsFilter(name='name')
+        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
+
+        class Meta:
+            model = Person
+
 
 Allowing any lookup type on a field
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,20 +224,6 @@ Yes you can.  `django-rest-framework-filters` extends `django-filter`, and you c
 ``django-rest-framework-filters``, but you can use ``RelatedFilter`` to
 link to a filter relation defined elsewhere that uses vanilla ``django-filter``.
 
-More information on RelatedFilter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Recursive relations are supported.  You will need to specify the full module
-path in the ``RelatedFilter`` definition in some cases, e.g.:
-
-.. code-block:: python
-
-    class PersonFilter(filters.FilterSet):
-        name = filters.AllLookupsFilter(name='name')
-        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
-
-        class Meta:
-            model = Person
 
 License
 -------
