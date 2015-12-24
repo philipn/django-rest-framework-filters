@@ -4,11 +4,9 @@ from __future__ import unicode_literals
 
 import datetime
 
-from django.utils.dateparse import parse_time, parse_datetime
-
-import django
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
+from django.utils.dateparse import parse_time, parse_datetime
 
 from .models import (
     Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
@@ -49,17 +47,8 @@ def add_timedelta(time, timedelta):
 
 class TestFilterSets(TestCase):
 
-    if django.VERSION >= (1, 8):
-        @classmethod
-        def setUpTestData(cls):
-            cls.generateTestData()
-
-    else:
-        def setUp(self):
-            self.generateTestData()
-
     @classmethod
-    def generateTestData(cls):
+    def setUpTestData(cls):
         #######################
         # Create users
         #######################
@@ -326,17 +315,8 @@ class TestFilterSets(TestCase):
 
 class DatetimeTests(TestCase):
 
-    if django.VERSION >= (1, 8):
-        @classmethod
-        def setUpTestData(cls):
-            cls.generateTestData()
-
-    else:
-        def setUp(self):
-            self.generateTestData()
-
     @classmethod
-    def generateTestData(cls):
+    def setUpTestData(cls):
         john = Person.objects.create(name="John")
 
         # Created at least one second apart
@@ -428,17 +408,8 @@ class DatetimeTests(TestCase):
 
 class FilterOverrideTests(TestCase):
 
-    if django.VERSION >= (1, 8):
-        @classmethod
-        def setUpTestData(cls):
-            cls.generateTestData()
-
-    else:
-        def setUp(self):
-            self.generateTestData()
-
     @classmethod
-    def generateTestData(cls):
+    def setUpTestData(cls):
         john = Person.objects.create(name="John")
         Person.objects.create(name="Mark", best_friend=john)
 
@@ -519,17 +490,8 @@ class FilterOverrideTests(TestCase):
 
 class FilterExclusionTests(TestCase):
 
-    if django.VERSION >= (1, 8):
-        @classmethod
-        def setUpTestData(cls):
-            cls.generateTestData()
-
-    else:
-        def setUp(self):
-            self.generateTestData()
-
     @classmethod
-    def generateTestData(cls):
+    def setUpTestData(cls):
         t1 = Tag.objects.create(name='Tag 1')
         t2 = Tag.objects.create(name='Tag 2')
         t3 = Tag.objects.create(name='Something else entirely')

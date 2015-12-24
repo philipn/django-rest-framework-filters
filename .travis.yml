@@ -6,8 +6,8 @@ python:
   - "3.4"
   - "3.5"
 env:
-  - DJANGO="Django>=1.7,<1.8"
   - DJANGO="Django>=1.8,<1.9"
+  - DJANGO="Django>=1.9,<1.10"
 install:
   - travis_retry pip install -q $DJANGO
   - python setup.py install
@@ -15,6 +15,8 @@ script: python manage.py test rest_framework_filters
 
 matrix:
   exclude:
-    - python: "3.5"
-      env: DJANGO="Django>=1.7,<1.8"
+    - python: "3.2"
+      env: DJANGO="Django>=1.9,<1.10"
+    - python: "3.3"
+      env: DJANGO="Django>=1.9,<1.10"
   fast_finish: true

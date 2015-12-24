@@ -4,13 +4,9 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 import copy
 
-from django.db.models.constants import LOOKUP_SEP
 from django.db import models
-try:
-    from django.db.models.related import RelatedObject as ForeignObjectRel
-except ImportError:  # pragma: nocover
-    # Django >= 1.8 replaces RelatedObject with ForeignObjectRel
-    from django.db.models.fields.related import ForeignObjectRel
+from django.db.models.constants import LOOKUP_SEP
+from django.db.models.fields.related import ForeignObjectRel
 from django.utils import six
 
 import django_filters
