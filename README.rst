@@ -21,7 +21,7 @@ Requirements
 ------------
 
 * Python 2.7+
-* Django 1.7.10+
+* Django 1.8+
 * Django REST framework 3.0+
 
 Usage
