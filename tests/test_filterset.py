@@ -8,6 +8,8 @@ from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from django.utils.dateparse import parse_time, parse_datetime
 
+from rest_framework_filters import filters
+
 from .models import (
     Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
 )
@@ -24,6 +26,7 @@ from .filters import (
     # PageFilterWithRelated,
     TagFilter,
     BlogPostFilter,
+    BlogPostOverrideFilter,
     # UserFilterWithDifferentName,
     NoteFilterWithRelatedDifferentName,
 
@@ -486,6 +489,30 @@ class FilterOverrideTests(TestCase):
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
+
+    def test_declared_filters(self):
+        F = BlogPostOverrideFilter
+
+        # explicitly declared filters SHOULD NOT be overridden
+        self.assertIsInstance(
+            F.base_filters['declared_publish_date__isnull'],
+            filters.NumberFilter
+        )
+
+        # declared `AllLookupsFilter`s SHOULD generate filters that ARE overridden
+        self.assertIsInstance(
+            F.base_filters['all_declared_publish_date__isnull'],
+            filters.BooleanFilter
+        )
+
+    def test_dict_declaration(self):
+        F = BlogPostOverrideFilter
+
+        # dictionary style declared filters SHOULD be overridden
+        self.assertIsInstance(
+            F.base_filters['publish_date__isnull'],
+            filters.BooleanFilter
+        )
 
 
 class FilterExclusionTests(TestCase):

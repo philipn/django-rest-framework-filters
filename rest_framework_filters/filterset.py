@@ -43,6 +43,9 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
                     new_class.base_filters[filter_name] = f
 
+            elif name not in new_class.declared_filters:
+                new_class.base_filters[name] = new_class.fix_filter_field(filter_)
+
         return new_class
 
 
