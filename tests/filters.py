@@ -176,3 +176,12 @@ class InSetLookupPersonNameFilter(FilterSet):
 
     class Meta:
         model = Person
+
+
+class BlogPostOverrideFilter(FilterSet):
+    declared_publish_date__isnull = filters.NumberFilter(name='publish_date', lookup_type='isnull')
+    all_declared_publish_date = filters.AllLookupsFilter(name='publish_date')
+
+    class Meta:
+        model = BlogPost
+        fields = {'publish_date': filters.ALL_LOOKUPS, }
