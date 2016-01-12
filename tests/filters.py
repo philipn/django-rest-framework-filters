@@ -1,7 +1,7 @@
 
 from rest_framework_filters import filters
 from rest_framework_filters.filters import RelatedFilter, AllLookupsFilter
-from rest_framework_filters.filterset import FilterSet
+from rest_framework_filters.filterset import FilterSet, LOOKUP_SEP
 
 
 from .models import (
@@ -61,6 +61,40 @@ class PostFilterWithRelated(FilterSet):
 
     class Meta:
         model = Post
+
+
+class PostFilterWithMethod(FilterSet):
+    note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
+    is_published = filters.MethodFilter()
+
+    class Meta:
+        model = Post
+
+    def filter_is_published(self, name, qs, value):
+        """
+        `is_published` is based on the actual `date_published`.
+        If the publishing date is null, then the post is not published.
+        """
+        # convert value to boolean
+        null = value.lower() != 'true'
+
+        # The lookup name will end with `is_published`, but could be
+        # preceded by a related lookup path.
+        if LOOKUP_SEP in name:
+            rel, _ = name.rsplit(LOOKUP_SEP, 1)
+            name = LOOKUP_SEP.join([rel, 'date_published__isnull'])
+        else:
+            name = 'date_published__isnull'
+
+        return qs.filter(**{name: null})
+
+
+class CoverFilterWithRelatedMethodFilter(FilterSet):
+    comment = filters.CharFilter(name='comment')
+    post = RelatedFilter(PostFilterWithMethod, name='post')
+
+    class Meta:
+        model = Cover
 
 
 class CoverFilterWithRelated(FilterSet):

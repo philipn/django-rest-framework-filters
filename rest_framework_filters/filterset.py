@@ -73,6 +73,9 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
                 if isnull not in self.filters:
                     self.filters[isnull] = filters.BooleanFilter(name=isnull)
 
+            elif isinstance(filter_, filters.MethodFilter):
+                filter_.resolve_action()
+
     def get_filters(self):
         """
         Build a set of filters based on the requested data. The resulting set

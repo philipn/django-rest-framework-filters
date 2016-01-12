@@ -22,6 +22,8 @@ from .filters import (
     NoteFilterWithRelatedAll,
     NoteFilterWithRelatedAllDifferentFilterName,
     PostFilterWithRelated,
+    PostFilterWithMethod,
+    CoverFilterWithRelatedMethodFilter,
     CoverFilterWithRelated,
     # PageFilterWithRelated,
     TagFilter,
@@ -314,6 +316,53 @@ class TestFilterSets(TestCase):
         # ensure that the FilterSet subset only contains the requested fields
         self.assertIn('email', filterset_class.base_filters)
         self.assertEqual(len(filterset_class.base_filters), 1)
+
+
+class MethodFilterTests(TestCase):
+
+    if django.VERSION >= (1, 8):
+        @classmethod
+        def setUpTestData(cls):
+            cls.generateTestData()
+
+    else:
+        def setUp(self):
+            self.generateTestData()
+
+    @classmethod
+    def generateTestData(cls):
+        user = User.objects.create(username="user1", email="user1@example.org")
+
+        note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user)
+        note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user)
+
+        post1 = Post.objects.create(note=note1, content="Test content in post 1")
+        post2 = Post.objects.create(note=note2, content="Test content in post 2", date_published=datetime.date.today())
+
+        Cover.objects.create(post=post1, comment="Cover 1")
+        Cover.objects.create(post=post2, comment="Cover 2")
+
+    def test_method_filter(self):
+        GET = {
+            'is_published': 'true'
+        }
+        filterset = PostFilterWithMethod(GET, queryset=Post.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].content, "Test content in post 2")
+
+    def test_related_method_filter(self):
+        """
+        Missing MethodFilter filter methods are silently ignored, returning
+        the unfiltered queryset.
+        """
+        GET = {
+            'post__is_published': 'true'
+        }
+        filterset = CoverFilterWithRelatedMethodFilter(GET, queryset=Cover.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].comment, "Cover 2")
 
 
 class DatetimeTests(TestCase):
