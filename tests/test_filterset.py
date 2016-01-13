@@ -20,8 +20,7 @@ from .filters import (
     NoteFilterWithRelated,
     NoteFilterWithRelatedAll,
     NoteFilterWithRelatedAllDifferentFilterName,
-    PostFilterWithRelated,
-    PostFilterWithMethod,
+    PostFilter,
     CoverFilterWithRelatedMethodFilter,
     CoverFilterWithRelated,
     # PageFilterWithRelated,
@@ -256,7 +255,7 @@ class TestFilterSets(TestCase):
         GET = {
             'note__author__username__endswith': 'user2'
         }
-        f = PostFilterWithRelated(GET, queryset=Post.objects.all())
+        f = PostFilter(GET, queryset=Post.objects.all())
         self.assertEqual(len(list(f)), 1)
         post = list(f)[0]
         self.assertEqual(post.content, "Test content in post 3")
@@ -320,7 +319,7 @@ class TestFilterSets(TestCase):
 class MethodFilterTests(TestCase):
 
     @classmethod
-    def generateTestData(cls):
+    def setUpTestData(cls):
         user = User.objects.create(username="user1", email="user1@example.org")
 
         note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user)
@@ -336,7 +335,7 @@ class MethodFilterTests(TestCase):
         GET = {
             'is_published': 'true'
         }
-        filterset = PostFilterWithMethod(GET, queryset=Post.objects.all())
+        filterset = PostFilter(GET, queryset=Post.objects.all())
         results = list(filterset)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].content, "Test content in post 2")
