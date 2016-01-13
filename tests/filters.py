@@ -19,6 +19,8 @@ class NoteFilterWithAll(FilterSet):
 class UserFilter(FilterSet):
     username = filters.CharFilter(name='username')
     email = filters.CharFilter(name='email')
+    last_login = filters.AllLookupsFilter()
+    is_active = filters.BooleanFilter(name='is_active')
 
     class Meta:
         model = User
@@ -56,15 +58,10 @@ class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
         model = Note
 
 
-class PostFilterWithRelated(FilterSet):
+class PostFilter(FilterSet):
+    # Used for Related filter and MethodFilter tests
     note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
-
-    class Meta:
-        model = Post
-
-
-class PostFilterWithMethod(FilterSet):
-    note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
+    date_published = filters.AllLookupsFilter()
     is_published = filters.MethodFilter()
 
     class Meta:
@@ -91,7 +88,7 @@ class PostFilterWithMethod(FilterSet):
 
 class CoverFilterWithRelatedMethodFilter(FilterSet):
     comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilterWithMethod, name='post')
+    post = RelatedFilter(PostFilter, name='post')
 
     class Meta:
         model = Cover
@@ -99,7 +96,7 @@ class CoverFilterWithRelatedMethodFilter(FilterSet):
 
 class CoverFilterWithRelated(FilterSet):
     comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilterWithRelated, name='post')
+    post = RelatedFilter(PostFilter, name='post')
 
     class Meta:
         model = Cover
@@ -107,7 +104,7 @@ class CoverFilterWithRelated(FilterSet):
 
 class PageFilterWithRelated(FilterSet):
     title = filters.CharFilter(name='title')
-    previous_page = RelatedFilter(PostFilterWithRelated, name='previous_page')
+    previous_page = RelatedFilter(PostFilter, name='previous_page')
 
     class Meta:
         model = Page

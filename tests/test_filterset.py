@@ -5,24 +5,22 @@ from __future__ import unicode_literals
 import datetime
 
 from django.test import TestCase, override_settings
-from django.contrib.auth.models import User
 from django.utils.dateparse import parse_time, parse_datetime
 
 from rest_framework_filters import filters
 
 from .models import (
-    Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
+    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
 )
 
 from .filters import (
     NoteFilterWithAll,
-    # UserFilter,
+    UserFilter,
     # UserFilterWithAll,
     NoteFilterWithRelated,
     NoteFilterWithRelatedAll,
     NoteFilterWithRelatedAllDifferentFilterName,
-    PostFilterWithRelated,
-    PostFilterWithMethod,
+    PostFilter,
     CoverFilterWithRelatedMethodFilter,
     CoverFilterWithRelated,
     # PageFilterWithRelated,
@@ -257,7 +255,7 @@ class TestFilterSets(TestCase):
         GET = {
             'note__author__username__endswith': 'user2'
         }
-        f = PostFilterWithRelated(GET, queryset=Post.objects.all())
+        f = PostFilter(GET, queryset=Post.objects.all())
         self.assertEqual(len(list(f)), 1)
         post = list(f)[0]
         self.assertEqual(post.content, "Test content in post 3")
@@ -320,17 +318,8 @@ class TestFilterSets(TestCase):
 
 class MethodFilterTests(TestCase):
 
-    if django.VERSION >= (1, 8):
-        @classmethod
-        def setUpTestData(cls):
-            cls.generateTestData()
-
-    else:
-        def setUp(self):
-            self.generateTestData()
-
     @classmethod
-    def generateTestData(cls):
+    def setUpTestData(cls):
         user = User.objects.create(username="user1", email="user1@example.org")
 
         note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user)
@@ -346,7 +335,7 @@ class MethodFilterTests(TestCase):
         GET = {
             'is_published': 'true'
         }
-        filterset = PostFilterWithMethod(GET, queryset=Post.objects.all())
+        filterset = PostFilter(GET, queryset=Post.objects.all())
         results = list(filterset)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].content, "Test content in post 2")
@@ -465,6 +454,9 @@ class FilterOverrideTests(TestCase):
         john = Person.objects.create(name="John")
         Person.objects.create(name="Mark", best_friend=john)
 
+        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=datetime.date.today())
+        User.objects.create(username="user2", email="user2@example.org", is_active=False)
+
     def test_inset_number_filter(self):
         p1 = Person.objects.get(name="John").pk
         p2 = Person.objects.get(name="Mark").pk
@@ -562,6 +554,69 @@ class FilterOverrideTests(TestCase):
             F.base_filters['publish_date__isnull'],
             filters.BooleanFilter
         )
+
+    def test_boolean_filter(self):
+        # Capitalized True
+        GET = {'is_active': 'True'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user1')
+
+        # Lowercase True
+        GET = {'is_active': 'true'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user1')
+
+        # Uppercase True
+        GET = {'is_active': 'TRUE'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user1')
+
+        # Capitalized False
+        GET = {'is_active': 'False'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user2')
+
+        # Lowercase False
+        GET = {'is_active': 'false'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user2')
+
+        # Uppercase False
+        GET = {'is_active': 'FALSE'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user2')
+
+    def test_isnull_override(self):
+        import django_filters.filters
+
+        self.assertIsInstance(
+            UserFilter().filters['last_login__isnull'],
+            django_filters.filters.BooleanFilter
+        )
+
+        GET = {'last_login__isnull': 'false'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user1')
+
+        GET = {'last_login__isnull': 'true'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
+        results = list(filterset)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].username, 'user2')
 
 
 class FilterExclusionTests(TestCase):
