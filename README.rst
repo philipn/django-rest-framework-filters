@@ -200,6 +200,8 @@ filter method.
 When filtering across relationships, the queryset and lookup value will be different.
 For example:
 
+.. code-block:: python
+
     class PostFilter(filters.FilterSet):
         author = filters.RelatedFilter('AuthorFilter')
         is_published = filters.MethodFilter()
@@ -230,6 +232,8 @@ For example:
             fields = ['name']
 
 And given these API calls:
+
+.. code-block:: http
 
     /api/posts/?is_published=true
 
