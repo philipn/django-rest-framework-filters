@@ -454,7 +454,7 @@ class FilterOverrideTests(TestCase):
         john = Person.objects.create(name="John")
         Person.objects.create(name="Mark", best_friend=john)
 
-        User.objects.create(username="user1", email="user1@example.org", is_active=True)
+        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=datetime.date.today())
         User.objects.create(username="user2", email="user2@example.org", is_active=False)
 
     def test_inset_number_filter(self):
@@ -599,23 +599,24 @@ class FilterOverrideTests(TestCase):
         self.assertEqual(results[0].username, 'user2')
 
     def test_isnull_override(self):
+        import django_filters.filters
+
         self.assertIsInstance(
-            PersonFilter().filters['best_friend__isnull'],
+            UserFilter().filters['last_login__isnull'],
             django_filters.filters.BooleanFilter
         )
 
-        GET = {'best_friend__isnull': 'true'}
-        filterset = PersonFilter(GET, queryset=Person.objects.all())
+        GET = {'last_login__isnull': 'false'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
         results = list(filterset)
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].name, 'John')
+        self.assertEqual(results[0].username, 'user1')
 
-        # Uppercase False
-        GET = {'best_friend__isnull': 'false'}
-        filterset = PersonFilter(GET, queryset=Person.objects.all())
+        GET = {'last_login__isnull': 'true'}
+        filterset = UserFilter(GET, queryset=User.objects.all())
         results = list(filterset)
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].name, 'Mark')
+        self.assertEqual(results[0].username, 'user2')
 
 
 class FilterExclusionTests(TestCase):

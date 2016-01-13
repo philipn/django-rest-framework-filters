@@ -19,6 +19,7 @@ class NoteFilterWithAll(FilterSet):
 class UserFilter(FilterSet):
     username = filters.CharFilter(name='username')
     email = filters.CharFilter(name='email')
+    last_login = filters.AllLookupsFilter()
     is_active = filters.BooleanFilter(name='is_active')
 
     class Meta:
