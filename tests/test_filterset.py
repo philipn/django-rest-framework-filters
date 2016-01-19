@@ -6,6 +6,7 @@ import datetime
 
 from django.test import TestCase, override_settings
 from django.utils.dateparse import parse_time, parse_datetime
+from django.utils import timezone
 
 from rest_framework_filters import filters
 
@@ -451,13 +452,15 @@ class FilterOverrideTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        cls.now = timezone.now()
+
         john = Person.objects.create(name="John")
         Person.objects.create(name="Mark", best_friend=john)
 
-        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=datetime.date.today())
+        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=cls.now)
         User.objects.create(username="user2", email="user2@example.org", is_active=False)
 
-    def test_inset_number_filter(self):
+    def test_number_in_filter(self):
         p1 = Person.objects.get(name="John").pk
         p2 = Person.objects.get(name="Mark").pk
 
@@ -494,7 +497,7 @@ class FilterOverrideTests(TestCase):
         self.assertIn(p1, f)
         self.assertIn(p2, f)
 
-    def test_inset_char_filter(self):
+    def test_char_in_filter(self):
         p1 = Person.objects.get(name="John").name
         p2 = Person.objects.get(name="Mark").name
 
@@ -530,6 +533,19 @@ class FilterOverrideTests(TestCase):
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
+
+    def test_date_range_filter(self):
+        yesterday = self.now.replace(day=self.now.day - 1)
+        tomorrow = self.now.replace(day=self.now.day + 1)
+
+        GET = {
+            'last_login__range': '{},{}'.format(str(yesterday), str(tomorrow))
+        }
+
+        f = UserFilter(GET, queryset=User.objects.all())
+        f = [u.pk for u in f]
+        self.assertEqual(len(f), 1)
+        self.assertIn(User.objects.get(last_login=self.now).pk, f)
 
     def test_declared_filters(self):
         F = BlogPostOverrideFilter
