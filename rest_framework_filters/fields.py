@@ -11,23 +11,27 @@ class BooleanField(forms.BooleanField):
     widget = BooleanWidget
 
 
-class ArrayDecimalField(forms.DecimalField):
+class AbstractInField(object):
     def clean(self, value):
         if value is None:
             return None
 
         out = []
         for val in value.split(','):
-            out.append(super(ArrayDecimalField, self).clean(val))
+            out.append(super(AbstractInField, self).clean(val))
         return out
 
 
-class ArrayCharField(forms.CharField):
+class AbstractRangeField(object):
     def clean(self, value):
         if value is None:
             return None
 
+        vals = value.split(',')
+        if len(vals) != 2:
+            raise forms.ValidationError('Range query expects 2 values.')
+
         out = []
-        for val in value.split(','):
-            out.append(super(ArrayCharField, self).clean(val))
+        for val in vals:
+            out.append(super(AbstractRangeField, self).clean(val))
         return out

@@ -73,7 +73,20 @@ class BooleanFilter(BooleanFilter):
     field_class = fields.BooleanField
 
 
-class InSetFilterBase(object):
+class AbstractCSVFilter(object):
+    """
+    Abstract base class for CSV type filters, such as IN and RANGE.
+    """
+    abstract_field_class = None
+
+    def __init__(self, *args, **kwargs):
+        super(AbstractCSVFilter, self).__init__(*args, **kwargs)
+
+        class ConcreteCSVField(self.abstract_field_class, self.field_class):
+            pass
+
+        self.field_class = ConcreteCSVField
+
     def filter(self, qs, value):
         if value in ([], (), {}, None, ''):
             return qs
@@ -84,12 +97,12 @@ class InSetFilterBase(object):
         return qs
 
 
-class InSetNumberFilter(InSetFilterBase, NumberFilter):
-    field_class = fields.ArrayDecimalField
+class AbstractInFilter(AbstractCSVFilter):
+    abstract_field_class = fields.AbstractInField
 
 
-class InSetCharFilter(InSetFilterBase, NumberFilter):
-    field_class = fields.ArrayCharField
+class AbstractRangeFilter(AbstractCSVFilter):
+    abstract_field_class = fields.AbstractRangeField
 
 
 class MethodFilter(Filter):

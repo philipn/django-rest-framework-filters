@@ -192,8 +192,15 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':
             return filters.BooleanFilter(name=("%s%sisnull" % (f.name, LOOKUP_SEP)))
-        if lookup_type == 'in' and type(f) == filters.NumberFilter:
-            return filters.InSetNumberFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
-        if lookup_type == 'in' and type(f) == filters.CharFilter:
-            return filters.InSetCharFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
+
+        if lookup_type == 'in':
+            class ConcreteInFilter(filters.AbstractInFilter, f.__class__):
+                pass
+            return ConcreteInFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
+
+        if lookup_type == 'range':
+            class ConcreteRangeFilter(filters.AbstractRangeFilter, f.__class__):
+                pass
+            return ConcreteRangeFilter(name=("%s%srange" % (f.name, LOOKUP_SEP)))
+
         return f
