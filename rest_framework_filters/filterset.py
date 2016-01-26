@@ -122,6 +122,9 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
             filterset_class = related_filter.filterset
             filter_names = [filterset_class.get_filter_name(param) for param in rel_data.keys()]
 
+            # filter out empty values - indicates an unknown field (author__foobar__isnull)
+            filter_names = [f for f in filter_names if f is not None]
+
             # attempt to retrieve related filterset subset from the cache
             key = self.cache_key(filterset_class, filter_names)
             subset_class = self.cache_get(key)
