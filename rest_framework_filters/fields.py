@@ -29,7 +29,7 @@ class AbstractRangeField(object):
 
         vals = value.split(',')
         if len(vals) != 2:
-            raise ValueError('Range query expects 2 values.')
+            raise forms.ValidationError('Range query expects 2 values.')
 
         out = []
         for val in vals:
