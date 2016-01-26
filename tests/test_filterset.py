@@ -315,6 +315,25 @@ class TestFilterSets(TestCase):
         self.assertIn('email', filterset_class.base_filters)
         self.assertEqual(len(filterset_class.base_filters), 1)
 
+    def test_nonexistent_related_field(self):
+        """
+        Invalid filter keys (including those on related filters) are invalid
+        and should be ignored.
+
+        Related: https://github.com/philipn/django-rest-framework-filters/issues/58
+        """
+        GET = {
+            'author__nonexistent': 'foobar',
+        }
+        f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 4)
+
+        GET = {
+            'author__nonexistent__isnull': 'foobar',
+        }
+        f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 4)
+
 
 class MethodFilterTests(TestCase):
 
