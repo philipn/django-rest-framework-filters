@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
-import re
 import os
-import sys
 
 
 def get_packages(package):
@@ -43,10 +41,9 @@ setup(
     packages=get_packages('rest_framework_filters'),
     package_data=get_package_data('rest_framework_filters'),
     zip_safe=False,
-    #test_suite='rest_framework.runtests.runtests.main',
     install_requires=[
         'djangorestframework',
-        'django-filter>=0.11.0',
+        'django-filter>=0.12.0',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',

@@ -13,7 +13,7 @@ env:
   - DJANGO="Django>=1.9,<1.10"
 install:
   - travis_retry pip install -q $DJANGO
-  - python setup.py install
+  - pip install .
 script: python manage.py test rest_framework_filters
 
 matrix:
