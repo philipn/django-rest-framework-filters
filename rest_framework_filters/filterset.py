@@ -69,9 +69,9 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
                 filter_.setup_filterset()
 
                 # Add an 'isnull' filter to allow checking if the relation is empty.
-                isnull = "%s%sisnull" % (filter_.name, LOOKUP_SEP)
-                if isnull not in self.filters:
-                    self.filters[isnull] = filters.BooleanFilter(name=isnull)
+                filter_name = "%s%sisnull" % (filter_.name, LOOKUP_SEP)
+                if filter_name not in self.filters:
+                    self.filters[filter_name] = filters.BooleanFilter(name=filter_.name, lookup_type='isnull')
 
             elif isinstance(filter_, filters.MethodFilter):
                 filter_.resolve_action()
@@ -191,9 +191,9 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         """
         lookup_type = f.lookup_type
         if lookup_type == 'isnull':
-            return filters.BooleanFilter(name=("%s%sisnull" % (f.name, LOOKUP_SEP)))
+            return filters.BooleanFilter(name=f.name, lookup_type='isnull')
         if lookup_type == 'in' and type(f) == filters.NumberFilter:
-            return filters.InSetNumberFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
+            return filters.InSetNumberFilter(name=f.name, lookup_type='in')
         if lookup_type == 'in' and type(f) == filters.CharFilter:
-            return filters.InSetCharFilter(name=("%s%sin" % (f.name, LOOKUP_SEP)))
+            return filters.InSetCharFilter(name=f.name, lookup_type='in')
         return f

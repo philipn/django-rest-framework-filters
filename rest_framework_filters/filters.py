@@ -73,22 +73,11 @@ class BooleanFilter(BooleanFilter):
     field_class = fields.BooleanField
 
 
-class InSetFilterBase(object):
-    def filter(self, qs, value):
-        if value in ([], (), {}, None, ''):
-            return qs
-        method = qs.exclude if self.exclude else qs.filter
-        qs = method(**{self.name: value})
-        if self.distinct:
-            qs = qs.distinct()
-        return qs
-
-
-class InSetNumberFilter(InSetFilterBase, NumberFilter):
+class InSetNumberFilter(Filter):
     field_class = fields.ArrayDecimalField
 
 
-class InSetCharFilter(InSetFilterBase, NumberFilter):
+class InSetCharFilter(Filter):
     field_class = fields.ArrayCharField
 
 
