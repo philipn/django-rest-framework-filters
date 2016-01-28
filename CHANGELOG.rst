@@ -1,11 +1,13 @@
-Unreleased:
------------
+v0.6.0:
+-------
 
-* Adds support for Django 1.9
-* #47 Changes implementation of MethodFilterss
-* Drops support for Django 1.7
-* #49 Fix ALL_LOOKUPS shortcut to obey filter overrides (in, isnull)
-* #46 Fix boolean filter behavior (#25) and isnull override (#6)
+ * #61 Change django-filter requirement to 0.12.0
+ * Adds support for Django 1.9
+ * #47 Changes implementation of MethodFilterss
+ * Drops support for Django 1.7
+ * #49 Fix ALL_LOOKUPS shortcut to obey filter overrides (in, isnull)
+ * #46 Fix boolean filter behavior (#25) and isnull override (#6)
+ * #60 Fix filtering on nonexistent related field
 
 v0.6.0:
 -------
