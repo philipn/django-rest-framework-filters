@@ -1,4 +1,4 @@
-v0.6.0:
+v0.7.0:
 -------
 
  * #61 Change django-filter requirement to 0.12.0
