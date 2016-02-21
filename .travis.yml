@@ -14,7 +14,7 @@ env:
 install:
   - travis_retry pip install -q $DJANGO
   - pip install .
-script: python manage.py test rest_framework_filters
+script: python manage.py test
 
 matrix:
   exclude:
