@@ -304,9 +304,9 @@ class TestFilterSets(TestCase):
         titles = set([p.title for p in f])
         self.assertEqual(titles, set(["First post", "Second post"]))
 
-    def test_get_filterset_subset(self):
+    def test_get_subset(self):
         related_filter = NoteFilterWithRelated.base_filters['author']
-        filterset_class = related_filter.get_filterset_subset(['email'])
+        filterset_class = related_filter.filterset.get_subset(['email'])
 
         # ensure that the class name is useful when debugging
         self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
