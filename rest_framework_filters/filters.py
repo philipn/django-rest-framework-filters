@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import warnings
 from django.utils import six
 
 from django_filters.filters import *
@@ -60,9 +61,25 @@ class BooleanFilter(BooleanFilter):
 class InSetNumberFilter(Filter):
     field_class = fields.ArrayDecimalField
 
+    def __init__(self, *args, **kwargs):
+        super(InSetNumberFilter, self).__init__(*args, **kwargs)
+        warnings.warn(
+            'InSetNumberFilter is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=2
+        )
+
 
 class InSetCharFilter(Filter):
     field_class = fields.ArrayCharField
+
+    def __init__(self, *args, **kwargs):
+        super(InSetCharFilter, self).__init__(*args, **kwargs)
+        warnings.warn(
+            'InSetCharFilter is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=2
+        )
 
 
 class MethodFilter(Filter):

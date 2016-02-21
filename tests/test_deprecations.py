@@ -99,3 +99,38 @@ class AllLookupsDeprecationTests(TestCase):
                     fields = ['last_login']
 
             self.assertEqual(len(w), 0)
+
+
+class InLookupDeprecationTests(TestCase):
+
+    def test_char_filter_deprecations(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            class F(FilterSet):
+                username__in = filters.InSetCharFilter(name='username', lookup_expr='in')
+
+                class Meta:
+                    model = User
+
+            self.assertEqual(len(w), 1)
+
+            # Generate another warning for field
+            F({'username__in': 'a'}).qs
+            self.assertEqual(len(w), 2)
+
+    def test_number_filter_deprecations(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            class F(FilterSet):
+                id__in = filters.InSetNumberFilter(name='id', lookup_expr='in')
+
+                class Meta:
+                    model = User
+
+            self.assertEqual(len(w), 1)
+
+            # Generate another warning for field
+            F({'id__in': '1'}).qs
+            self.assertEqual(len(w), 2)

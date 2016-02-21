@@ -1,4 +1,7 @@
+
+import warnings
 from django import forms
+
 from django_filters.widgets import BooleanWidget
 
 
@@ -7,6 +10,14 @@ class BooleanField(forms.BooleanField):
 
 
 class ArrayDecimalField(forms.DecimalField):
+    def __init__(self, *args, **kwargs):
+        super(ArrayDecimalField, self).__init__(*args, **kwargs)
+        warnings.warn(
+            'ArrayDecimalField is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=3
+        )
+
     def clean(self, value):
         if value is None:
             return None
@@ -18,6 +29,14 @@ class ArrayDecimalField(forms.DecimalField):
 
 
 class ArrayCharField(forms.CharField):
+    def __init__(self, *args, **kwargs):
+        super(ArrayCharField, self).__init__(*args, **kwargs)
+        warnings.warn(
+            'ArrayCharField is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=3
+        )
+
     def clean(self, value):
         if value is None:
             return None
