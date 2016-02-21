@@ -223,4 +223,4 @@ class BlogPostOverrideFilter(FilterSet):
 
     class Meta:
         model = BlogPost
-        fields = {'publish_date': filters.ALL_LOOKUPS, }
+        fields = {'publish_date': '__all__', }

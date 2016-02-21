@@ -4,11 +4,12 @@ from __future__ import unicode_literals
 from django.utils import six
 
 from django_filters.filters import *
-from django_filters.filters import LOOKUP_TYPES
 
 from . import fields
 
-ALL_LOOKUPS = LOOKUP_TYPES
+
+class ALL_LOOKUPS(object):
+    pass
 
 
 def _import_class(path):

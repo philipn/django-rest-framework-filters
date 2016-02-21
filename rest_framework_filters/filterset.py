@@ -13,6 +13,7 @@ from django.utils import six
 from django_filters import filterset
 
 from . import filters
+from . import utils
 
 
 def _base(f):
@@ -33,6 +34,8 @@ def _get_fix_filter_field(cls):
 
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
+        cls.convert__all__(attrs)
+
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
         fix_filter_field = _get_fix_filter_field(new_class)
 
@@ -43,7 +46,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 model = new_class._meta.model
                 field = filterset.get_model_field(model, filter_.name)
 
-                for lookup_expr in filters.LOOKUP_TYPES:
+                for lookup_expr in utils.lookups_for_field(field):
                     if isinstance(field, ForeignObjectRel):
                         f = new_class.filter_for_reverse_field(field, filter_.name)
                     else:
@@ -76,6 +79,29 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 if isinstance(f, filters.RelatedFilter)
             ])
         return self._related_filters
+
+    @staticmethod
+    def convert__all__(attrs):
+        """
+        Extract Meta.fields and convert any fields w/ `__all__`
+        to a declared AllLookupsFilter.
+        """
+        meta = attrs.get('Meta', None)
+        fields = getattr(meta, 'fields', None)
+
+        if isinstance(fields, dict):
+            for name, lookups in six.iteritems(fields.copy()):
+                if lookups == filters.ALL_LOOKUPS:
+                    warnings.warn(
+                        "ALL_LOOKUPS has been deprecated in favor of '__all__'. See: "
+                        "https://github.com/philipn/django-rest-framework-filters/issues/62",
+                        DeprecationWarning, stacklevel=2
+                    )
+                    lookups = '__all__'
+
+                if lookups == '__all__':
+                    del fields[name]
+                    attrs[name] = filters.AllLookupsFilter()
 
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
