@@ -58,6 +58,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
             'filter_class': filters.IsoDateTimeFilter,
         },
     }
+    _subset_cache = {}
 
     def __init__(self, *args, **kwargs):
         self._related_filterset_cache = kwargs.pop('cache', {})
@@ -116,21 +117,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
             if not isinstance(related_filter, filters.RelatedFilter):
                 continue
 
-            # get known filter names
-            filterset_class = related_filter.filterset
-            filter_names = [filterset_class.get_filter_name(param) for param in rel_data.keys()]
-
-            # filter out empty values - indicates an unknown field (author__foobar__isnull)
-            filter_names = [f for f in filter_names if f is not None]
-
-            # attempt to retrieve related filterset subset from the cache
-            key = self.cache_key(filterset_class, filter_names)
-            subset_class = self.cache_get(key)
-
-            # otherwise build and insert it into the cache
-            if subset_class is None:
-                subset_class = related_filter.filterset.get_subset(filter_names)
-                self.cache_set(key, subset_class)
+            subset_class = related_filter.filterset.get_subset(rel_data)
 
             # initialize and copy filters
             filterset = subset_class(data=rel_data)
@@ -163,33 +150,56 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
             return related_param
 
     @classmethod
-    def get_subset(cls, filter_names):
+    def get_subset(cls, params):
         """
-        Returns a FilterSet subclass that contains the subset of filters
-        specified in `filter_names`. This is useful for creating FilterSets
-        used across relationships, as it minimizes the deepcopy overhead
-        incurred when instantiating the FilterSet.
+        Returns a FilterSubset class that contains the subset of filters
+        specified in the requested `params`. This is useful for creating
+        FilterSets that traverse relationships, as it helps to minimize
+        the deepcopy overhead incurred when instantiating the FilterSet.
         """
-        class FilterSetSubset(cls):
+        # Determine names of filters from query params and remove empty values.
+        # param names that traverse relations are translated to just the local
+        # filter names. eg, `author__username` => `author`. Empty values are
+        # removed, as they indicate an unknown field eg, author__foobar__isnull
+        filter_names = [cls.get_filter_name(param) for param in params]
+        filter_names = [f for f in filter_names if f is not None]
+
+        # attempt to retrieve related filterset subset from the cache
+        key = cls.cache_key(filter_names)
+        subset_class = cls.cache_get(key)
+
+        # if no cached subset, then derive base_filters and create new subset
+        if subset_class is not None:
+            return subset_class
+
+        class FilterSubsetMetaclass(FilterSetMetaclass):
+            def __new__(cls, name, bases, attrs):
+                new_class = super(FilterSubsetMetaclass, cls).__new__(cls, name, bases, attrs)
+                new_class.base_filters = OrderedDict([
+                    (name, f)
+                    for name, f in six.iteritems(new_class.base_filters)
+                    if name in filter_names
+                ])
+                return new_class
+
+        class FilterSubset(six.with_metaclass(FilterSubsetMetaclass, cls)):
             pass
 
-        FilterSetSubset.__name__ = str('%sSubset' % (cls.__name__))
-        FilterSetSubset.base_filters = OrderedDict([
-            (name, f)
-            for name, f in six.iteritems(cls.base_filters)
-            if name in filter_names
-        ])
+        FilterSubset.__name__ = str('%sSubset' % (cls.__name__, ))
+        cls.cache_set(key, FilterSubset)
+        return FilterSubset
 
-        return FilterSetSubset
+    @classmethod
+    def cache_key(cls, filter_names):
+        return '%sSubset-%s' % (cls.__name__, '-'.join(sorted(filter_names)), )
 
-    def cache_key(self, filterset, filter_names):
-        return '%sSubset-%s' % (filterset.__name__, '-'.join(sorted(filter_names)), )
+    @classmethod
+    def cache_get(cls, key):
+        return cls._subset_cache.get(key)
 
-    def cache_get(self, key):
-        return self._related_filterset_cache.get(key)
-
-    def cache_set(self, key, value):
-        self._related_filterset_cache[key] = value
+    @classmethod
+    def cache_set(cls, key, value):
+        cls._subset_cache[key] = value
 
     @property
     def qs(self):

@@ -304,17 +304,6 @@ class TestFilterSets(TestCase):
         titles = set([p.title for p in f])
         self.assertEqual(titles, set(["First post", "Second post"]))
 
-    def test_get_subset(self):
-        related_filter = NoteFilterWithRelated.base_filters['author']
-        filterset_class = related_filter.filterset.get_subset(['email'])
-
-        # ensure that the class name is useful when debugging
-        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
-
-        # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('email', filterset_class.base_filters)
-        self.assertEqual(len(filterset_class.base_filters), 1)
-
     def test_nonexistent_related_field(self):
         """
         Invalid filter keys (including those on related filters) are invalid
@@ -333,6 +322,32 @@ class TestFilterSets(TestCase):
         }
         f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f)), 4)
+
+
+class FilterSubsetTests(TestCase):
+
+    def test_get_subset(self):
+        filterset_class = UserFilter.get_subset(['email'])
+
+        # ensure that the class name is useful when debugging
+        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
+
+        # ensure that the FilterSet subset only contains the requested fields
+        self.assertIn('email', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 1)
+
+    def test_related_subset(self):
+        # related filters should only return the local RelatedFilter
+        filterset_class = NoteFilterWithRelated.get_subset(['title', 'author__email'])
+
+        self.assertIn('title', filterset_class.base_filters)
+        self.assertIn('author', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 2)
+
+    def test_non_filter_subset(self):
+        # non-filter params should be ignored
+        filterset_class = NoteFilterWithRelated.get_subset(['foobar'])
+        self.assertEqual(len(filterset_class.base_filters), 0)
 
 
 class MethodFilterTests(TestCase):
