@@ -43,18 +43,20 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 model = new_class._meta.model
                 field = filterset.get_model_field(model, filter_.name)
 
-                for lookup_type in filters.LOOKUP_TYPES:
+                for lookup_expr in filters.LOOKUP_TYPES:
                     if isinstance(field, ForeignObjectRel):
                         f = new_class.filter_for_reverse_field(field, filter_.name)
                     else:
-                        f = new_class.filter_for_field(field, filter_.name, lookup_type)
+                        f = new_class.filter_for_field(field, filter_.name, lookup_expr)
                     f = fix_filter_field(f)
 
                     # compute filter name
-                    filter_name = name
+                    filter_name = LOOKUP_SEP.join([name, lookup_expr])
+
                     # Don't add "exact" to filter names
-                    if lookup_type != 'exact':
-                        filter_name = LOOKUP_SEP.join([name, lookup_type])
+                    _exact = LOOKUP_SEP + 'exact'
+                    if filter_name.endswith(_exact):
+                        filter_name = filter_name[:-len(_exact)]
 
                     new_class.base_filters[filter_name] = f
 
@@ -106,7 +108,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
                 # Add an 'isnull' filter to allow checking if the relation is empty.
                 filter_name = "%s%sisnull" % (filter_.name, LOOKUP_SEP)
                 if filter_name not in self.filters:
-                    self.filters[filter_name] = filters.BooleanFilter(name=filter_.name, lookup_type='isnull')
+                    self.filters[filter_name] = filters.BooleanFilter(name=filter_.name, lookup_expr='isnull')
 
             elif isinstance(filter_, filters.MethodFilter):
                 filter_.resolve_action()
