@@ -22,7 +22,6 @@ def _import_class(path):
 class RelatedFilter(ModelChoiceFilter):
     def __init__(self, filterset, *args, **kwargs):
         self.filterset = filterset
-        # self.parent_relation = kwargs.get('parent_relation', None)
         return super(RelatedFilter, self).__init__(*args, **kwargs)
 
     def filterset():
@@ -58,8 +57,11 @@ class RelatedFilter(ModelChoiceFilter):
 
         return FilterSetSubset
 
-    def setup_filterset(self):
-        self.extra['queryset'] = self.filterset._meta.model.objects.all()
+    @property
+    def field(self):
+        # if no queryset is provided, default to the filterset's default queryset
+        self.extra.setdefault('queryset', self.filterset._meta.model._default_manager.all())
+        return super(RelatedFilter, self).field
 
 
 class AllLookupsFilter(Filter):

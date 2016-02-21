@@ -66,8 +66,6 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
 
         for name, filter_ in six.iteritems(self.filters.copy()):
             if isinstance(filter_, filters.RelatedFilter):
-                filter_.setup_filterset()
-
                 # Add an 'isnull' filter to allow checking if the relation is empty.
                 filter_name = "%s%sisnull" % (filter_.name, LOOKUP_SEP)
                 if filter_name not in self.filters:
