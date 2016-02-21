@@ -129,7 +129,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
 
             # otherwise build and insert it into the cache
             if subset_class is None:
-                subset_class = related_filter.get_filterset_subset(filter_names)
+                subset_class = related_filter.filterset.get_subset(filter_names)
                 self.cache_set(key, subset_class)
 
             # initialize and copy filters
@@ -161,6 +161,26 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         f = cls.base_filters.get(related_param, None)
         if isinstance(f, filters.RelatedFilter):
             return related_param
+
+    @classmethod
+    def get_subset(cls, filter_names):
+        """
+        Returns a FilterSet subclass that contains the subset of filters
+        specified in `filter_names`. This is useful for creating FilterSets
+        used across relationships, as it minimizes the deepcopy overhead
+        incurred when instantiating the FilterSet.
+        """
+        class FilterSetSubset(cls):
+            pass
+
+        FilterSetSubset.__name__ = str('%sSubset' % (cls.__name__))
+        FilterSetSubset.base_filters = OrderedDict([
+            (name, f)
+            for name, f in six.iteritems(cls.base_filters)
+            if name in filter_names
+        ])
+
+        return FilterSetSubset
 
     def cache_key(self, filterset, filter_names):
         return '%sSubset-%s' % (filterset.__name__, '-'.join(sorted(filter_names)), )

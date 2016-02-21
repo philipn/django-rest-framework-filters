@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from collections import OrderedDict
 from django.utils import six
 
 from django_filters.filters import *
@@ -35,27 +34,6 @@ class RelatedFilter(ModelChoiceFilter):
 
         return locals()
     filterset = property(**filterset())
-
-    def get_filterset_subset(self, filter_names):
-        """
-        Returns a FilterSet subclass that contains the subset of filters
-        specified in `filter_names`. This is useful for creating FilterSets
-        used across relationships, as it minimizes the deepcopy overhead
-        incurred when instantiating the FilterSet.
-        """
-        BaseFilterSet = self.filterset
-
-        class FilterSetSubset(BaseFilterSet):
-            pass
-
-        FilterSetSubset.__name__ = str('%sSubset' % (BaseFilterSet.__name__))
-        FilterSetSubset.base_filters = OrderedDict([
-            (name, f)
-            for name, f in six.iteritems(BaseFilterSet.base_filters)
-            if name in filter_names
-        ])
-
-        return FilterSetSubset
 
     @property
     def field(self):
