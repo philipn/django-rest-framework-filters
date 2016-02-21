@@ -10,16 +10,31 @@ from django.db.models.constants import LOOKUP_SEP
 from django.db.models.fields.related import ForeignObjectRel
 from django.utils import six
 
-import django_filters
-import django_filters.filters
 from django_filters import filterset
 
 from . import filters
 
 
+def _base(f):
+    f._base = True
+    return f
+
+
+def _get_fix_filter_field(cls):
+    method = getattr(cls, 'fix_filter_field')
+    if not getattr(method, '_base', False):
+        warnings.warn(
+            'fix_filter_field is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=2
+        )
+    return cls.fix_filter_field
+
+
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
+        fix_filter_field = _get_fix_filter_field(new_class)
 
         # Populate our FilterSet fields with all the possible
         # filters for the AllLookupsFilter field.
@@ -28,13 +43,12 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 model = new_class._meta.model
                 field = filterset.get_model_field(model, filter_.name)
 
-                for lookup_type in django_filters.filters.LOOKUP_TYPES:
+                for lookup_type in filters.LOOKUP_TYPES:
                     if isinstance(field, ForeignObjectRel):
                         f = new_class.filter_for_reverse_field(field, filter_.name)
                     else:
-                        f = new_class.filter_for_field(field, filter_.name)
-                    f.lookup_type = lookup_type
-                    f = new_class.fix_filter_field(f)
+                        f = new_class.filter_for_field(field, filter_.name, lookup_type)
+                    f = fix_filter_field(f)
 
                     # compute filter name
                     filter_name = name
@@ -45,7 +59,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                     new_class.base_filters[filter_name] = f
 
             elif name not in new_class.declared_filters:
-                new_class.base_filters[name] = new_class.fix_filter_field(filter_)
+                new_class.base_filters[name] = fix_filter_field(filter_)
 
         return new_class
 
@@ -64,6 +78,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     filter_overrides = {
+        # uses API-friendly django_filters.BooleanWidget
         models.BooleanField: {
             'filter_class': filters.BooleanFilter,
         },
@@ -276,15 +291,6 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         return qs
 
     @classmethod
+    @_base
     def fix_filter_field(cls, f):
-        """
-        Fix the filter field based on the lookup type.
-        """
-        lookup_type = f.lookup_type
-        if lookup_type == 'isnull':
-            return filters.BooleanFilter(name=f.name, lookup_type='isnull')
-        if lookup_type == 'in' and type(f) == filters.NumberFilter:
-            return filters.InSetNumberFilter(name=f.name, lookup_type='in')
-        if lookup_type == 'in' and type(f) == filters.CharFilter:
-            return filters.InSetCharFilter(name=f.name, lookup_type='in')
         return f

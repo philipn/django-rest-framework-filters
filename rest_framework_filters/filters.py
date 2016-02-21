@@ -49,6 +49,9 @@ class AllLookupsFilter(Filter):
 ###################################################
 # Fixed-up versions of some of the default filters
 ###################################################
+
+# This class is necessary, as directly django-filter's BooleanFilter
+# is using the incorrect form widget.
 class BooleanFilter(BooleanFilter):
     field_class = fields.BooleanField
 
