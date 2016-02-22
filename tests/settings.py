@@ -1,13 +1,21 @@
+
+DEBUG = True
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+        'NAME': 'db.sqlite3',
+
+        'TEST': {
+            'NAME': ':memory:',
+        },
     },
 }
 
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.staticfiles',
     'rest_framework',
     'tests.testapp',
 )
@@ -26,9 +34,12 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'debug': True,
         },
     },
 ]
 
 
 ROOT_URLCONF = 'tests.testapp.urls'
+
+STATIC_URL = '/static/'
