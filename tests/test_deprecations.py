@@ -2,7 +2,7 @@
 import warnings
 from django.test import TestCase
 
-from .filters import UserFilter
+from .testapp.filters import UserFilter
 
 
 class FilterSetCacheDeprecationTests(TestCase):

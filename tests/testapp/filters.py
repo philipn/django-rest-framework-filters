@@ -144,7 +144,7 @@ class NoteFilterWithRelatedDifferentName(FilterSet):
 #############################################################
 class AFilter(FilterSet):
     title = filters.CharFilter(name='title')
-    b = RelatedFilter('tests.filters.BFilter', name='b')
+    b = RelatedFilter('tests.testapp.filters.BFilter', name='b')
 
     class Meta:
         model = A
@@ -168,7 +168,7 @@ class BFilter(FilterSet):
 
 class PersonFilter(FilterSet):
     name = AllLookupsFilter(name='name')
-    best_friend = RelatedFilter('tests.filters.PersonFilter', name='best_friend')
+    best_friend = RelatedFilter('tests.testapp.filters.PersonFilter', name='best_friend')
 
     class Meta:
         model = Person

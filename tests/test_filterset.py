@@ -9,11 +9,11 @@ from django.utils.dateparse import parse_time, parse_datetime
 
 from rest_framework_filters import filters
 
-from .models import (
+from .testapp.models import (
     User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
 )
 
-from .filters import (
+from .testapp.filters import (
     NoteFilterWithAll,
     UserFilter,
     # UserFilterWithAll,
