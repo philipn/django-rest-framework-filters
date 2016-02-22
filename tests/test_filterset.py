@@ -324,6 +324,84 @@ class TestFilterSets(TestCase):
         self.assertEqual(len(list(f)), 4)
 
 
+class GetFilterNameTests(TestCase):
+
+    def test_regular_filter(self):
+        name = UserFilter.get_filter_name('email')
+        self.assertEqual('email', name)
+
+    def test_exclusion_filter(self):
+        name = UserFilter.get_filter_name('email!')
+        self.assertEqual('email', name)
+
+    def test_non_filter(self):
+        name = UserFilter.get_filter_name('foobar')
+        self.assertEqual(None, name)
+
+    def test_related_filter(self):
+        # 'exact' matches
+        name = NoteFilterWithRelated.get_filter_name('author')
+        self.assertEqual('author', name)
+
+        # related attribute filters
+        name = NoteFilterWithRelated.get_filter_name('author__email')
+        self.assertEqual('author', name)
+
+        # non-existent related filters should match, as it's the responsibility
+        # of the related filterset to handle non-existent filters
+        name = NoteFilterWithRelated.get_filter_name('author__foobar')
+        self.assertEqual('author', name)
+
+    def test_twice_removed_related_filter(self):
+        class PostFilterWithDirectAuthor(PostFilter):
+            note__author = filters.RelatedFilter(UserFilter)
+            note = filters.RelatedFilter(NoteFilterWithAll)
+
+            class Meta:
+                model = Post
+
+        name = PostFilterWithDirectAuthor.get_filter_name('note__title')
+        self.assertEqual('note', name)
+
+        # 'exact' matches, preference more specific filter name, as less specific
+        # filter may not have related access.
+        name = PostFilterWithDirectAuthor.get_filter_name('note__author')
+        self.assertEqual('note__author', name)
+
+        # related attribute filters
+        name = PostFilterWithDirectAuthor.get_filter_name('note__author__email')
+        self.assertEqual('note__author', name)
+
+        # non-existent related filters should match, as it's the responsibility
+        # of the related filterset to handle non-existent filters
+        name = PostFilterWithDirectAuthor.get_filter_name('note__author__foobar')
+        self.assertEqual('note__author', name)
+
+    def test_name_hiding(self):
+        class PostFilterWithDirectAuthor(PostFilter):
+            note__author = filters.RelatedFilter(UserFilter)
+            note = filters.RelatedFilter(NoteFilterWithAll)
+            note2 = filters.RelatedFilter(NoteFilterWithAll)
+
+            class Meta:
+                model = Post
+
+        name = PostFilterWithDirectAuthor.get_filter_name('note__author')
+        self.assertEqual('note__author', name)
+
+        name = PostFilterWithDirectAuthor.get_filter_name('note__title')
+        self.assertEqual('note', name)
+
+        name = PostFilterWithDirectAuthor.get_filter_name('note')
+        self.assertEqual('note', name)
+
+        name = PostFilterWithDirectAuthor.get_filter_name('note2')
+        self.assertEqual('note2', name)
+
+        name = PostFilterWithDirectAuthor.get_filter_name('note2__author')
+        self.assertEqual('note2', name)
+
+
 class FilterSubsetTests(TestCase):
 
     def test_get_subset(self):

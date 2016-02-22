@@ -134,6 +134,21 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     def get_filter_name(cls, param):
         """
         Get the filter name for the request data parameter.
+
+        ex::
+
+            # regular attribute filters
+            name = FilterSet.get_filter_name('email')
+            assert name == 'email'
+
+            # exclusion filters
+            name = FilterSet.get_filter_name('email!')
+            assert name == 'email'
+
+            # related filters
+            name = FilterSet.get_filter_name('author__email')
+            assert name == 'author'
+
         """
         # Attempt to match against filters with lookups first. (username__endswith)
         if param in cls.base_filters:
@@ -143,11 +158,18 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         if param[-1] == '!' and param[:-1] in cls.base_filters:
             return param[:-1]
 
-        # Fallback to matching against relationships. (author__username__endswith)
-        related_param = param.split(LOOKUP_SEP, 1)[0]
-        f = cls.base_filters.get(related_param, None)
-        if isinstance(f, filters.RelatedFilter):
-            return related_param
+        # Fallback to matching against relationships. (author__username__endswith).
+        related_filters = [
+            name for name, f in six.iteritems(cls.base_filters)
+            if isinstance(f, filters.RelatedFilter)
+        ]
+
+        # preference more specific filters. eg, `note__author` over `note`.
+        for name in sorted(related_filters)[::-1]:
+            # we need to match against '__' to prevent eager matching against
+            # like names. eg, note vs note2. Exact matches are handled above.
+            if param.startswith("%s__" % name):
+                return name
 
     @classmethod
     def get_subset(cls, params):
