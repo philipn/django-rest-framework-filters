@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from collections import OrderedDict
 import copy
+import warnings
 
 from django.db import models
 from django.db.models.constants import LOOKUP_SEP
@@ -61,7 +62,12 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     _subset_cache = {}
 
     def __init__(self, *args, **kwargs):
-        self._related_filterset_cache = kwargs.pop('cache', {})
+        if 'cache' in kwargs:
+            warnings.warn(
+                "'cache' argument is deprecated. Override '_subset_cache' instead.",
+                DeprecationWarning, stacklevel=2
+            )
+            self.__class__._subset_cache = kwargs.pop('cache', None)
 
         super(FilterSet, self).__init__(*args, **kwargs)
 
