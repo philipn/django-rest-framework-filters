@@ -64,6 +64,9 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     filter_overrides = {
+        models.BooleanField: {
+            'filter_class': filters.BooleanFilter,
+        },
 
         # In order to support ISO-8601 -- which is the default output for
         # DRF -- we need to use django-filter's IsoDateTimeFilter
