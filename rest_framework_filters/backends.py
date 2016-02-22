@@ -10,7 +10,8 @@ class DjangoFilterBackend(rest_framework.filters.DjangoFilterBackend):
         filter_class = self.get_filter_class(view, queryset)
 
         if filter_class:
-            subset_class = filter_class.get_subset(request.query_params)
-            return subset_class(request.query_params, queryset=queryset).qs
+            if hasattr(filter_class, 'get_subset'):
+                filter_class = filter_class.get_subset(request.query_params)
+            return filter_class(request.query_params, queryset=queryset).qs
 
         return queryset
