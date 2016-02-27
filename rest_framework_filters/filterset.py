@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from collections import OrderedDict
 import copy
+import warnings
 
 from django.db import models
 from django.db.models.constants import LOOKUP_SEP
@@ -48,9 +49,24 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         return new_class
 
+    @property
+    def related_filters(self):
+        # check __dict__ instead of use hasattr. we *don't* want to check
+        # parents for existence of existing cache. eg, we do not want
+        # FilterSet.get_subset([...]) to return the same cache.
+        if '_related_filters' not in self.__dict__:
+            self._related_filters = OrderedDict([
+                (name, f) for name, f in six.iteritems(self.base_filters)
+                if isinstance(f, filters.RelatedFilter)
+            ])
+        return self._related_filters
+
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     filter_overrides = {
+        models.BooleanField: {
+            'filter_class': filters.BooleanFilter,
+        },
 
         # In order to support ISO-8601 -- which is the default output for
         # DRF -- we need to use django-filter's IsoDateTimeFilter
@@ -58,9 +74,15 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
             'filter_class': filters.IsoDateTimeFilter,
         },
     }
+    _subset_cache = {}
 
     def __init__(self, *args, **kwargs):
-        self._related_filterset_cache = kwargs.pop('cache', {})
+        if 'cache' in kwargs:
+            warnings.warn(
+                "'cache' argument is deprecated. Override '_subset_cache' instead.",
+                DeprecationWarning, stacklevel=2
+            )
+            self.__class__._subset_cache = kwargs.pop('cache', None)
 
         super(FilterSet, self).__init__(*args, **kwargs)
 
@@ -79,67 +101,46 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         Build a set of filters based on the requested data. The resulting set
         will walk `RelatedFilter`s to recursively build the set of filters.
         """
-        requested_filters = OrderedDict()
+        # build param data for related filters: {rel: {param: value}}
+        related_data = OrderedDict(
+            [(name, OrderedDict()) for name in self.__class__.related_filters]
+        )
+        for param, value in six.iteritems(self.data):
+            filter_name, related_param = self.get_related_filter_param(param)
 
-        # Add plain lookup filters if match. ie, `username__icontains`
-        for filter_key, filter_value in six.iteritems(self.filters):
-            exclude_key = '%s!' % filter_key
-
-            if filter_key in self.data:
-                requested_filters[filter_key] = filter_value
-
-            if exclude_key in self.data:
-                filter_value = copy.deepcopy(filter_value)
-                filter_value.exclude = not filter_value.exclude
-                requested_filters[exclude_key] = filter_value
-
-        # build a map of potential {rel: {filter: value}} data
-        related_data = OrderedDict()
-        for filter_key, value in six.iteritems(self.data):
-            if filter_key not in self.filters:
-
-                # skip non lookup/related keys
-                if LOOKUP_SEP not in filter_key:
-                    continue
-
-                rel_name, filter_key = filter_key.split(LOOKUP_SEP, 1)
-
-                related_data.setdefault(rel_name, OrderedDict())
-                related_data[rel_name][filter_key] = value
-
-        # walk the related lookup data. If the filter is a RelatedFilter,
-        # then instantiate its filterset and append its filters.
-        for rel_name, rel_data in related_data.items():
-            related_filter = self.filters.get(rel_name, None)
-
-            # skip non-`RelatedFilter`s
-            if not isinstance(related_filter, filters.RelatedFilter):
+            # skip non lookup/related keys
+            if filter_name is None:
                 continue
 
-            # get known filter names
-            filterset_class = related_filter.filterset
-            filter_names = [filterset_class.get_filter_name(param) for param in rel_data.keys()]
+            if filter_name in related_data:
+                related_data[filter_name][related_param] = value
 
-            # filter out empty values - indicates an unknown field (author__foobar__isnull)
-            filter_names = [f for f in filter_names if f is not None]
+        # build the compiled set of all filters
+        requested_filters = OrderedDict()
+        for filter_name, f in six.iteritems(self.filters):
+            exclude_name = '%s!' % filter_name
 
-            # attempt to retrieve related filterset subset from the cache
-            key = self.cache_key(filterset_class, filter_names)
-            subset_class = self.cache_get(key)
+            # Add plain lookup filters if match. ie, `username__icontains`
+            if filter_name in self.data:
+                requested_filters[filter_name] = f
 
-            # otherwise build and insert it into the cache
-            if subset_class is None:
-                subset_class = related_filter.filterset.get_subset(filter_names)
-                self.cache_set(key, subset_class)
+            # include exclusion keys
+            if exclude_name in self.data:
+                f = copy.deepcopy(f)
+                f.exclude = not f.exclude
+                requested_filters[exclude_name] = f
 
-            # initialize and copy filters
-            filterset = subset_class(data=rel_data)
-            rel_filters = filterset.get_filters()
-            for filter_key, filter_value in six.iteritems(rel_filters):
-                # modify filter name to account for relationship
-                rel_filter_key = LOOKUP_SEP.join([rel_name, filter_key])
-                filter_value.name = LOOKUP_SEP.join([related_filter.name, filter_value.name])
-                requested_filters[rel_filter_key] = filter_value
+            # include filters from related subsets
+            if isinstance(f, filters.RelatedFilter) and filter_name in related_data:
+                subset_data = related_data[filter_name]
+                subset_class = f.filterset.get_subset(subset_data)
+                filterset = subset_class(data=subset_data)
+
+                # modify filter names to account for relationship
+                for related_name, related_f in six.iteritems(filterset.get_filters()):
+                    related_name = LOOKUP_SEP.join([filter_name, related_name])
+                    related_f.name = LOOKUP_SEP.join([f.name, related_f.name])
+                    requested_filters[related_name] = related_f
 
         return requested_filters
 
@@ -147,6 +148,21 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     def get_filter_name(cls, param):
         """
         Get the filter name for the request data parameter.
+
+        ex::
+
+            # regular attribute filters
+            name = FilterSet.get_filter_name('email')
+            assert name == 'email'
+
+            # exclusion filters
+            name = FilterSet.get_filter_name('email!')
+            assert name == 'email'
+
+            # related filters
+            name = FilterSet.get_filter_name('author__email')
+            assert name == 'author'
+
         """
         # Attempt to match against filters with lookups first. (username__endswith)
         if param in cls.base_filters:
@@ -156,40 +172,97 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         if param[-1] == '!' and param[:-1] in cls.base_filters:
             return param[:-1]
 
-        # Fallback to matching against relationships. (author__username__endswith)
-        related_param = param.split(LOOKUP_SEP, 1)[0]
-        f = cls.base_filters.get(related_param, None)
-        if isinstance(f, filters.RelatedFilter):
-            return related_param
+        # Fallback to matching against relationships. (author__username__endswith).
+        related_filters = cls.related_filters.keys()
+
+        # preference more specific filters. eg, `note__author` over `note`.
+        for name in sorted(related_filters)[::-1]:
+            # we need to match against '__' to prevent eager matching against
+            # like names. eg, note vs note2. Exact matches are handled above.
+            if param.startswith("%s%s" % (name, LOOKUP_SEP)):
+                return name
 
     @classmethod
-    def get_subset(cls, filter_names):
+    def get_related_filter_param(cls, param):
         """
-        Returns a FilterSet subclass that contains the subset of filters
-        specified in `filter_names`. This is useful for creating FilterSets
-        used across relationships, as it minimizes the deepcopy overhead
-        incurred when instantiating the FilterSet.
+        Get a tuple of (filter name, related param).
+
+        ex::
+
+            name, param = FilterSet.get_filter_name('author__email__foobar')
+            assert name == 'author'
+            assert param = 'email__foobar'
+
+            name, param = FilterSet.get_filter_name('author')
+            assert name is None
+            assert param is None
+
         """
-        class FilterSetSubset(cls):
+        related_filters = cls.related_filters.keys()
+
+        # preference more specific filters. eg, `note__author` over `note`.
+        for name in sorted(related_filters)[::-1]:
+            # we need to match against '__' to prevent eager matching against
+            # like names. eg, note vs note2. Exact matches are handled above.
+            if param.startswith("%s%s" % (name, LOOKUP_SEP)):
+                # strip param + LOOKUP_SET from param
+                related_param = param[len(name) + len(LOOKUP_SEP):]
+                return name, related_param
+
+        # not a related param
+        return None, None
+
+    @classmethod
+    def get_subset(cls, params):
+        """
+        Returns a FilterSubset class that contains the subset of filters
+        specified in the requested `params`. This is useful for creating
+        FilterSets that traverse relationships, as it helps to minimize
+        the deepcopy overhead incurred when instantiating the FilterSet.
+        """
+        # Determine names of filters from query params and remove empty values.
+        # param names that traverse relations are translated to just the local
+        # filter names. eg, `author__username` => `author`. Empty values are
+        # removed, as they indicate an unknown field eg, author__foobar__isnull
+        filter_names = [cls.get_filter_name(param) for param in params]
+        filter_names = [f for f in filter_names if f is not None]
+
+        # attempt to retrieve related filterset subset from the cache
+        key = cls.cache_key(filter_names)
+        subset_class = cls.cache_get(key)
+
+        # if no cached subset, then derive base_filters and create new subset
+        if subset_class is not None:
+            return subset_class
+
+        class FilterSubsetMetaclass(FilterSetMetaclass):
+            def __new__(cls, name, bases, attrs):
+                new_class = super(FilterSubsetMetaclass, cls).__new__(cls, name, bases, attrs)
+                new_class.base_filters = OrderedDict([
+                    (name, f)
+                    for name, f in six.iteritems(new_class.base_filters)
+                    if name in filter_names
+                ])
+                return new_class
+
+        class FilterSubset(six.with_metaclass(FilterSubsetMetaclass, cls)):
             pass
 
-        FilterSetSubset.__name__ = str('%sSubset' % (cls.__name__))
-        FilterSetSubset.base_filters = OrderedDict([
-            (name, f)
-            for name, f in six.iteritems(cls.base_filters)
-            if name in filter_names
-        ])
+        FilterSubset.__name__ = str('%sSubset' % (cls.__name__, ))
+        cls.cache_set(key, FilterSubset)
+        return FilterSubset
 
-        return FilterSetSubset
+    @classmethod
+    def cache_key(cls, filter_names):
+        return '%sSubset-%s' % (cls.__name__, '-'.join(sorted(filter_names)), )
 
-    def cache_key(self, filterset, filter_names):
-        return '%sSubset-%s' % (filterset.__name__, '-'.join(sorted(filter_names)), )
+    @classmethod
+    def cache_get(cls, key):
+        return cls._subset_cache.get(key)
 
-    def cache_get(self, key):
-        return self._related_filterset_cache.get(key)
-
-    def cache_set(self, key, value):
-        self._related_filterset_cache[key] = value
+    @classmethod
+    def cache_set(cls, key, value):
+        cls._subset_cache[key] = value
 
     @property
     def qs(self):

@@ -12,9 +12,11 @@ env:
   - DJANGO="Django>=1.8,<1.9"
   - DJANGO="Django>=1.9,<1.10"
 install:
-  - travis_retry pip install -q $DJANGO
+  - travis_retry pip install -q $DJANGO "coverage==3.7.1"
   - pip install .
-script: python manage.py test
+script:
+  - coverage run manage.py test
+  - coverage report
 
 matrix:
   exclude:

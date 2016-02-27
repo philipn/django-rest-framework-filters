@@ -9,11 +9,11 @@ from django.utils.dateparse import parse_time, parse_datetime
 
 from rest_framework_filters import filters
 
-from .models import (
+from .testapp.models import (
     User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
 )
 
-from .filters import (
+from .testapp.filters import (
     NoteFilterWithAll,
     UserFilter,
     # UserFilterWithAll,
@@ -304,17 +304,6 @@ class TestFilterSets(TestCase):
         titles = set([p.title for p in f])
         self.assertEqual(titles, set(["First post", "Second post"]))
 
-    def test_get_subset(self):
-        related_filter = NoteFilterWithRelated.base_filters['author']
-        filterset_class = related_filter.filterset.get_subset(['email'])
-
-        # ensure that the class name is useful when debugging
-        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
-
-        # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('email', filterset_class.base_filters)
-        self.assertEqual(len(filterset_class.base_filters), 1)
-
     def test_nonexistent_related_field(self):
         """
         Invalid filter keys (including those on related filters) are invalid
@@ -333,6 +322,178 @@ class TestFilterSets(TestCase):
         }
         f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f)), 4)
+
+    def test_related_filters_caching(self):
+        filters = PostFilter.related_filters
+
+        self.assertEqual(len(filters), 1)
+        self.assertIn('note', filters)
+        self.assertIn('_related_filters', PostFilter.__dict__)
+
+        # subset should not use parent's cached related filters.
+        PostSubset = PostFilter.get_subset(['title'])
+        self.assertNotIn('_related_filters', PostSubset.__dict__)
+
+        filters = PostSubset.related_filters
+        self.assertIn('_related_filters', PostFilter.__dict__)
+
+        self.assertEqual(len(filters), 0)
+
+        # ensure subsets don't interact
+        PostSubset = PostFilter.get_subset(['note'])
+        self.assertNotIn('_related_filters', PostSubset.__dict__)
+
+        filters = PostSubset.related_filters
+        self.assertIn('_related_filters', PostFilter.__dict__)
+
+        self.assertEqual(len(filters), 1)
+
+
+class GetFilterNameTests(TestCase):
+
+    def test_regular_filter(self):
+        name = UserFilter.get_filter_name('email')
+        self.assertEqual('email', name)
+
+    def test_exclusion_filter(self):
+        name = UserFilter.get_filter_name('email!')
+        self.assertEqual('email', name)
+
+    def test_non_filter(self):
+        name = UserFilter.get_filter_name('foobar')
+        self.assertEqual(None, name)
+
+    def test_related_filter(self):
+        # 'exact' matches
+        name = NoteFilterWithRelated.get_filter_name('author')
+        self.assertEqual('author', name)
+
+        # related attribute filters
+        name = NoteFilterWithRelated.get_filter_name('author__email')
+        self.assertEqual('author', name)
+
+        # non-existent related filters should match, as it's the responsibility
+        # of the related filterset to handle non-existent filters
+        name = NoteFilterWithRelated.get_filter_name('author__foobar')
+        self.assertEqual('author', name)
+
+    def test_twice_removed_related_filter(self):
+        class PostFilterWithDirectAuthor(PostFilter):
+            note__author = filters.RelatedFilter(UserFilter)
+            note = filters.RelatedFilter(NoteFilterWithAll)
+
+            class Meta:
+                model = Post
+
+        name = PostFilterWithDirectAuthor.get_filter_name('note__title')
+        self.assertEqual('note', name)
+
+        # 'exact' matches, preference more specific filter name, as less specific
+        # filter may not have related access.
+        name = PostFilterWithDirectAuthor.get_filter_name('note__author')
+        self.assertEqual('note__author', name)
+
+        # related attribute filters
+        name = PostFilterWithDirectAuthor.get_filter_name('note__author__email')
+        self.assertEqual('note__author', name)
+
+        # non-existent related filters should match, as it's the responsibility
+        # of the related filterset to handle non-existent filters
+        name = PostFilterWithDirectAuthor.get_filter_name('note__author__foobar')
+        self.assertEqual('note__author', name)
+
+    def test_name_hiding(self):
+        class PostFilterNameHiding(PostFilter):
+            note__author = filters.RelatedFilter(UserFilter)
+            note = filters.RelatedFilter(NoteFilterWithAll)
+            note2 = filters.RelatedFilter(NoteFilterWithAll)
+
+            class Meta:
+                model = Post
+
+        name = PostFilterNameHiding.get_filter_name('note__author')
+        self.assertEqual('note__author', name)
+
+        name = PostFilterNameHiding.get_filter_name('note__title')
+        self.assertEqual('note', name)
+
+        name = PostFilterNameHiding.get_filter_name('note')
+        self.assertEqual('note', name)
+
+        name = PostFilterNameHiding.get_filter_name('note2')
+        self.assertEqual('note2', name)
+
+        name = PostFilterNameHiding.get_filter_name('note2__author')
+        self.assertEqual('note2', name)
+
+
+class GetRelatedFilterParamTests(TestCase):
+
+    def test_regular_filter(self):
+        name, param = NoteFilterWithRelated.get_related_filter_param('title')
+        self.assertIsNone(name)
+        self.assertIsNone(param)
+
+    def test_related_filter_exact(self):
+        name, param = NoteFilterWithRelated.get_related_filter_param('author')
+        self.assertIsNone(name)
+        self.assertIsNone(param)
+
+    def test_related_filter_param(self):
+        name, param = NoteFilterWithRelated.get_related_filter_param('author__email')
+        self.assertEqual('author', name)
+        self.assertEqual('email', param)
+
+    def test_name_hiding(self):
+        class PostFilterNameHiding(PostFilter):
+            note__author = filters.RelatedFilter(UserFilter)
+            note = filters.RelatedFilter(NoteFilterWithAll)
+            note2 = filters.RelatedFilter(NoteFilterWithAll)
+
+            class Meta:
+                model = Post
+
+        name, param = PostFilterNameHiding.get_related_filter_param('note__author__email')
+        self.assertEqual('note__author', name)
+        self.assertEqual('email', param)
+
+        name, param = PostFilterNameHiding.get_related_filter_param('note__title')
+        self.assertEqual('note', name)
+        self.assertEqual('title', param)
+
+        name, param = PostFilterNameHiding.get_related_filter_param('note2__title')
+        self.assertEqual('note2', name)
+        self.assertEqual('title', param)
+
+        name, param = PostFilterNameHiding.get_related_filter_param('note2__author')
+        self.assertEqual('note2', name)
+        self.assertEqual('author', param)
+
+
+class FilterSubsetTests(TestCase):
+
+    def test_get_subset(self):
+        filterset_class = UserFilter.get_subset(['email'])
+
+        # ensure that the class name is useful when debugging
+        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
+
+        # ensure that the FilterSet subset only contains the requested fields
+        self.assertIn('email', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 1)
+
+    def test_related_subset(self):
+        # related filters should only return the local RelatedFilter
+        filterset_class = NoteFilterWithRelated.get_subset(['title', 'author__email'])
+
+        self.assertIn('title', filterset_class.base_filters)
+        self.assertIn('author', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 2)
+
+    def test_non_filter_subset(self):
+        # non-filter params should be ignored
+        filterset_class = NoteFilterWithRelated.get_subset(['foobar'])
+        self.assertEqual(len(filterset_class.base_filters), 0)
 
 
 class MethodFilterTests(TestCase):
