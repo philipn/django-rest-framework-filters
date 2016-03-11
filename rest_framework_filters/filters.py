@@ -1,14 +1,16 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import warnings
 from django.utils import six
 
 from django_filters.filters import *
-from django_filters.filters import LOOKUP_TYPES
 
 from . import fields
 
-ALL_LOOKUPS = LOOKUP_TYPES
+
+class ALL_LOOKUPS(object):
+    pass
 
 
 def _import_class(path):
@@ -49,6 +51,9 @@ class AllLookupsFilter(Filter):
 ###################################################
 # Fixed-up versions of some of the default filters
 ###################################################
+
+# This class is necessary, as directly django-filter's BooleanFilter
+# is using the incorrect form widget.
 class BooleanFilter(BooleanFilter):
     field_class = fields.BooleanField
 
@@ -56,9 +61,25 @@ class BooleanFilter(BooleanFilter):
 class InSetNumberFilter(Filter):
     field_class = fields.ArrayDecimalField
 
+    def __init__(self, *args, **kwargs):
+        super(InSetNumberFilter, self).__init__(*args, **kwargs)
+        warnings.warn(
+            'InSetNumberFilter is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=2
+        )
+
 
 class InSetCharFilter(Filter):
     field_class = fields.ArrayCharField
+
+    def __init__(self, *args, **kwargs):
+        super(InSetCharFilter, self).__init__(*args, **kwargs)
+        warnings.warn(
+            'InSetCharFilter is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=2
+        )
 
 
 class MethodFilter(Filter):

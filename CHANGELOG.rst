@@ -1,6 +1,20 @@
 Unreleased
 ----------
 
+This release is tied to a major update of django-filter (more details in #66),
+which fixes how lookup expressions are resolved. 'in', 'range', and 'isnull'
+lookups no longer require special handling by django-rest-framework-filters.
+This has the following effects:
+
+  * Deprecates ArrayDecimalField/InSetNumberFilter
+  * Deprecates ArrayCharField/InSetCharFilter
+  * Deprecates FilterSet.fix_filter_field
+  * Deprecates ALL_LOOKUPS in favor of '__all__' constant.
+  * AllLookupsFilter now generates only valid lookup expressions.
+
+* #2 'range' lookup types do not work
+* #15 Date lookup types do not work (year, day, ...)
+* #16 'in' lookup types do not work
 * #64 Fix browsable API filter form
 * #69 Fix compatibility with base django-filter `FilterSet`s
 * #70 Refactor related filter handling, fixing some edge cases

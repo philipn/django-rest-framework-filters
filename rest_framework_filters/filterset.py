@@ -10,16 +10,34 @@ from django.db.models.constants import LOOKUP_SEP
 from django.db.models.fields.related import ForeignObjectRel
 from django.utils import six
 
-import django_filters
-import django_filters.filters
 from django_filters import filterset
 
 from . import filters
+from . import utils
+
+
+def _base(f):
+    f._base = True
+    return f
+
+
+def _get_fix_filter_field(cls):
+    method = getattr(cls, 'fix_filter_field')
+    if not getattr(method, '_base', False):
+        warnings.warn(
+            'fix_filter_field is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/62',
+            DeprecationWarning, stacklevel=2
+        )
+    return cls.fix_filter_field
 
 
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
+        cls.convert__all__(attrs)
+
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
+        fix_filter_field = _get_fix_filter_field(new_class)
 
         # Populate our FilterSet fields with all the possible
         # filters for the AllLookupsFilter field.
@@ -28,24 +46,25 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 model = new_class._meta.model
                 field = filterset.get_model_field(model, filter_.name)
 
-                for lookup_type in django_filters.filters.LOOKUP_TYPES:
+                for lookup_expr in utils.lookups_for_field(field):
                     if isinstance(field, ForeignObjectRel):
                         f = new_class.filter_for_reverse_field(field, filter_.name)
                     else:
-                        f = new_class.filter_for_field(field, filter_.name)
-                    f.lookup_type = lookup_type
-                    f = new_class.fix_filter_field(f)
+                        f = new_class.filter_for_field(field, filter_.name, lookup_expr)
+                    f = fix_filter_field(f)
 
                     # compute filter name
-                    filter_name = name
+                    filter_name = LOOKUP_SEP.join([name, lookup_expr])
+
                     # Don't add "exact" to filter names
-                    if lookup_type != 'exact':
-                        filter_name = LOOKUP_SEP.join([name, lookup_type])
+                    _exact = LOOKUP_SEP + 'exact'
+                    if filter_name.endswith(_exact):
+                        filter_name = filter_name[:-len(_exact)]
 
                     new_class.base_filters[filter_name] = f
 
             elif name not in new_class.declared_filters:
-                new_class.base_filters[name] = new_class.fix_filter_field(filter_)
+                new_class.base_filters[name] = fix_filter_field(filter_)
 
         return new_class
 
@@ -61,9 +80,33 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             ])
         return self._related_filters
 
+    @staticmethod
+    def convert__all__(attrs):
+        """
+        Extract Meta.fields and convert any fields w/ `__all__`
+        to a declared AllLookupsFilter.
+        """
+        meta = attrs.get('Meta', None)
+        fields = getattr(meta, 'fields', None)
+
+        if isinstance(fields, dict):
+            for name, lookups in six.iteritems(fields.copy()):
+                if lookups == filters.ALL_LOOKUPS:
+                    warnings.warn(
+                        "ALL_LOOKUPS has been deprecated in favor of '__all__'. See: "
+                        "https://github.com/philipn/django-rest-framework-filters/issues/62",
+                        DeprecationWarning, stacklevel=2
+                    )
+                    lookups = '__all__'
+
+                if lookups == '__all__':
+                    del fields[name]
+                    attrs[name] = filters.AllLookupsFilter()
+
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     filter_overrides = {
+        # uses API-friendly django_filters.BooleanWidget
         models.BooleanField: {
             'filter_class': filters.BooleanFilter,
         },
@@ -91,7 +134,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
                 # Add an 'isnull' filter to allow checking if the relation is empty.
                 filter_name = "%s%sisnull" % (filter_.name, LOOKUP_SEP)
                 if filter_name not in self.filters:
-                    self.filters[filter_name] = filters.BooleanFilter(name=filter_.name, lookup_type='isnull')
+                    self.filters[filter_name] = filters.BooleanFilter(name=filter_.name, lookup_expr='isnull')
 
             elif isinstance(filter_, filters.MethodFilter):
                 filter_.resolve_action()
@@ -276,15 +319,6 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         return qs
 
     @classmethod
+    @_base
     def fix_filter_field(cls, f):
-        """
-        Fix the filter field based on the lookup type.
-        """
-        lookup_type = f.lookup_type
-        if lookup_type == 'isnull':
-            return filters.BooleanFilter(name=f.name, lookup_type='isnull')
-        if lookup_type == 'in' and type(f) == filters.NumberFilter:
-            return filters.InSetNumberFilter(name=f.name, lookup_type='in')
-        if lookup_type == 'in' and type(f) == filters.CharFilter:
-            return filters.InSetCharFilter(name=f.name, lookup_type='in')
         return f
