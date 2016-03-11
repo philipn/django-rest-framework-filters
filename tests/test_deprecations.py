@@ -61,6 +61,22 @@ class FixFilterFieldDeprecationTests(TestCase):
             self.assertEqual(len(w), 0)
 
 
+class OrderByDeprecationTests(TestCase):
+
+    def test_override_notifcation(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            class F(FilterSet):
+                class Meta:
+                    model = User
+                    order_by = 'username'
+
+            F().qs
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+
 class AllLookupsDeprecationTests(TestCase):
 
     def test_ALL_LOOKUPS_notification(self):

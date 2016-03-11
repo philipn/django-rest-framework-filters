@@ -280,6 +280,13 @@ Yes you can.  `django-rest-framework-filters` extends `django-filter`, and you c
 ``django-rest-framework-filters``, but you can use ``RelatedFilter`` to
 link to a filter relation defined elsewhere that uses vanilla ``django-filter``.
 
+Caveats
+~~~~~~~
+
+djangorestframework-filters is not compatible with the filterset's `order_by`
+meta option. Use `rest_framework.filters.OrderingFilter` instead if you need
+to support ordering.
+
 
 License
 -------

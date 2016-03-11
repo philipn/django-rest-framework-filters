@@ -39,6 +39,16 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
         fix_filter_field = _get_fix_filter_field(new_class)
 
+        # order_by is not compatible.
+        if new_class._meta.order_by:
+            new_class._meta.order_by = False
+            warnings.warn(
+                'order_by is no longer supported. Use '
+                'rest_framework.filters.OrderingFilter instead. See: '
+                'https://github.com/philipn/django-rest-framework-filters/issues/62',
+                DeprecationWarning, stacklevel=2
+            )
+
         # Populate our FilterSet fields with all the possible
         # filters for the AllLookupsFilter field.
         for name, filter_ in six.iteritems(new_class.base_filters.copy()):
