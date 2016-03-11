@@ -26,6 +26,7 @@ from .testapp.filters import (
     # PageFilterWithRelated,
     TagFilter,
     BlogPostFilter,
+    OrderedBlogPostFilter,
     BlogPostOverrideFilter,
     # UserFilterWithDifferentName,
     NoteFilterWithRelatedDifferentName,
@@ -882,3 +883,62 @@ class FilterExclusionTests(TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], 'Post 2')
+
+
+class OrderTests(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        tag1 = Tag.objects.create(name='Tag 1')
+        tag2 = Tag.objects.create(name='Tag 2')
+        tag3 = Tag.objects.create(name='Something else entirely')
+
+        cls.post1 = BlogPost.objects.create(title='Post 1', content='content 1')
+        cls.post2 = BlogPost.objects.create(title='Post 2', content='content 2')
+
+        cls.post1.tags = [tag1, tag2]
+        cls.post2.tags = [tag3]
+
+        cls.post_number = 2
+
+    def test_order(self):
+        """
+        The number of results in the filterset is passed to a set
+        because we may have non distinct results.
+        """
+        queryset = BlogPost.objects.all()
+        filterset = OrderedBlogPostFilter({}, queryset=queryset)
+        results = [post.id for post in filterset]
+        self.assertEqual(len(set(results)), self.post_number)
+        # assert default order by -id
+        self.assertEqual(
+            results[0],
+            self.post2.id
+        )
+
+        GET = {
+            'o': 'tags'
+        }
+        filterset = OrderedBlogPostFilter(GET, queryset=BlogPost.objects.all())
+        results = set([post.id for post in filterset])
+        self.assertEqual(
+            len(results),
+            self.post_number
+        )
+
+        GET = {
+            'o': '-publish_date,tags__name,-id'
+        }
+        filterset = OrderedBlogPostFilter(GET, queryset=BlogPost.objects.all())
+        results = set([post.id for post in filterset])
+        self.assertEqual(
+            len(results),
+            self.post_number
+        )
+
+        GET = {
+            'o': 'bad_field'
+        }
+        filterset = OrderedBlogPostFilter(GET, queryset=BlogPost.objects.all())
+        results = [post.id for post in filterset]
+        self.assertEqual(len(results), 0)

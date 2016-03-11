@@ -9,6 +9,8 @@ from django.db import models
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.fields.related import ForeignObjectRel
 from django.utils import six
+from django.forms import CharField, Select
+from django.core.exceptions import FieldError, ValidationError
 
 import django_filters
 import django_filters.filters
@@ -288,3 +290,43 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
         if lookup_type == 'in' and type(f) == filters.CharFilter:
             return filters.InSetCharFilter(name=f.name, lookup_type='in')
         return f
+
+    def get_ordering_field(self):
+        """
+        Fixed get_ordering_field to not depend on self.filters because we
+        overwrite them when accessing self.qs.
+        """
+        ordering_field = super(FilterSet, self).get_ordering_field()
+        if self._meta.order_by is True:
+            if getattr(self, "default_order", None):
+                choices = [(",".join(self.default_order),) * 2]
+            else:
+                choices = []
+            for field in self._meta.model._meta.get_fields():  # pylint: disable=protected-access
+                label = getattr(field, "verbose_name", field.name.capitalize())
+                choices += [
+                    (field.name, label),
+                    ("-{}".format(field.name), "{} (descending)".format(label))
+                ]
+
+            def validator_factory(queryset):
+                def validate_order_by(value):
+                    ordered_queryset = queryset.order_by(*value.split(","))
+                    compiler = ordered_queryset.query.get_compiler(using=ordered_queryset.db)
+                    try:
+                        compiler.get_order_by()
+                    except FieldError:
+                        raise ValidationError("'{}' is not a valid order".format(value))
+                return validate_order_by
+
+            ordering_field = CharField(
+                label=ordering_field.label,
+                required=False,
+                widget=Select,
+                validators=[validator_factory(self.queryset)])
+            ordering_field.choices = choices
+            ordering_field.widget.choices = choices
+        return ordering_field
+
+    def get_order_by(self, order_value):
+        return order_value.split(",")
