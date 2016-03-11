@@ -133,6 +133,12 @@ class BlogPostFilter(FilterSet):
         model = BlogPost
 
 
+class OrderedBlogPostFilter(BlogPostFilter):
+    default_order = ['-id']
+    class Meta(BlogPostFilter.Meta):
+        order_by = True
+
+
 class UserFilterWithDifferentName(FilterSet):
     name = filters.CharFilter(name='username')
 
