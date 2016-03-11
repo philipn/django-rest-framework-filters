@@ -1,6 +1,9 @@
 Unreleased
 ----------
 
+v0.8.0
+------
+
 This release is tied to a major update of django-filter (more details in #66),
 which fixes how lookup expressions are resolved. 'in', 'range', and 'isnull'
 lookups no longer require special handling by django-rest-framework-filters.
@@ -19,6 +22,7 @@ This has the following effects:
 * #69 Fix compatibility with base django-filter `FilterSet`s
 * #70 Refactor related filter handling, fixing some edge cases
 * Deprecated 'cache' argument to FilterSet
+* #73 Warn use of `order_by`
 
 v0.7.0:
 -------
