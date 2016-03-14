@@ -45,7 +45,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             warnings.warn(
                 'order_by is no longer supported. Use '
                 'rest_framework.filters.OrderingFilter instead. See: '
-                'https://github.com/philipn/django-rest-framework-filters/issues/62',
+                'https://github.com/philipn/django-rest-framework-filters/issues/72',
                 DeprecationWarning, stacklevel=2
             )
 
