@@ -290,7 +290,8 @@ to support ordering.
 
 License
 -------
-Copyright (c) 2013-2015 Philip Neustrom <philipn@gmail.com>
+Copyright (c) 2013-2015 Philip Neustrom <philipn@gmail.com>,
+2016 Ryan P Kilby <rpkilby@ncsu.edu>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
