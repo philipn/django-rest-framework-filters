@@ -1,6 +1,6 @@
 
 from django.template import loader
-from rest_framework.compat import template_render
+from rest_framework import compat
 import rest_framework.filters
 
 from .filterset import FilterSet
@@ -32,4 +32,4 @@ class DjangoFilterBackend(rest_framework.filters.DjangoFilterBackend):
             'filter': filter_instance
         }
         template = loader.get_template(self.template)
-        return template_render(template, context)
+        return compat.template_render(template, context)
