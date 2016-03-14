@@ -15,6 +15,9 @@ import datetime
 from django.test import TestCase, override_settings
 from django.utils.dateparse import parse_time, parse_datetime
 
+from rest_framework import serializers
+from rest_framework.renderers import JSONRenderer
+
 from .testapp.models import (
     User, Person,
 )
@@ -33,6 +36,12 @@ def add_timedelta(time, timedelta):
     return dt.time()
 
 
+class PersonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Person
+        fields = ['date_joined', 'time_joined', 'datetime_joined']
+
+
 class IsoDatetimeTests(TestCase):
 
     @classmethod
@@ -49,14 +58,6 @@ class IsoDatetimeTests(TestCase):
         john = Person.objects.get(name="John")
         # Mark was created at least one second after John.
         # mark = Person.objects.get(name="Mark")
-
-        from rest_framework import serializers
-        from rest_framework.renderers import JSONRenderer
-
-        class PersonSerializer(serializers.ModelSerializer):
-            class Meta:
-                model = Person
-                fields = '__all__'
 
         # Figure out what the date strings should look like based on the
         # serializer output.
@@ -101,13 +102,6 @@ class IsoDatetimeTests(TestCase):
     def test_datetime_timezone_awareness(self):
         # Addresses issue #24 - ensure that datetime strings terminating
         # in 'Z' are correctly handled.
-        from rest_framework import serializers
-        from rest_framework.renderers import JSONRenderer
-
-        class PersonSerializer(serializers.ModelSerializer):
-            class Meta:
-                model = Person
-                fields = '__all__'
 
         # Figure out what the date strings should look like based on the
         # serializer output.
