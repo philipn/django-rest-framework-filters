@@ -9,10 +9,11 @@ python:
   - "3.4"
   - "3.5"
 env:
-  - DJANGO="Django>=1.8,<1.9"
-  - DJANGO="Django>=1.9,<1.10"
+  - DJANGO="django>=1.9.0,<1.10.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
+  - DJANGO="django>=1.8.0,<1.9.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
+  - DJANGO="django>=1.8.0,<1.9.0" REST_FRAMEWORK="djangorestframework>=3.2,<3.3"
 install:
-  - travis_retry pip install -q $DJANGO "coverage==3.7.1"
+  - travis_retry pip install -q $DJANGO $REST_FRAMEWORK "coverage==3.7.1"
   - pip install .
 script:
   - coverage run manage.py test
@@ -21,7 +22,7 @@ script:
 matrix:
   exclude:
     - python: "3.2"
-      env: DJANGO="Django>=1.9,<1.10"
+      env: DJANGO="django>=1.9.0,<1.10.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
     - python: "3.3"
-      env: DJANGO="Django>=1.9,<1.10"
+      env: DJANGO="django>=1.9.0,<1.10.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
   fast_finish: true
