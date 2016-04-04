@@ -1,6 +1,9 @@
 Unreleased
 ----------
 
+* Fixes #79, enabling compatibility with ``django.contrib.postgres``
+* Adds basic infinite recursion prevention for chainable transforms
+
 v0.8.0
 ------
 
