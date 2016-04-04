@@ -30,6 +30,16 @@ class LookupsForFieldTests(TestCase):
         self.assertIn('date__year__exact', lookups)
 
 
+@unittest.skipIf(django.VERSION < (1, 9), "version does not support transformed lookup expressions")
+class LookupsForTransformTests(TestCase):
+    def test_recursion_prevention(self):
+        model_field = Person._meta.get_field('name')
+        lookups = utils.lookups_for_field(model_field)
+
+        self.assertIn('unaccent__exact', lookups)
+        self.assertNotIn('unaccent__unaccent__exact', lookups)
+
+
 class ClassLookupsTests(TestCase):
     def test_standard_field(self):
         model_field = Person._meta.get_field('name')
