@@ -16,3 +16,14 @@ class BackendTest(APITestCase):
 
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'user1')
+
+    def test_filter_fields_reusability(self):
+        # Ensure auto-generated FilterSet is reusable w/ filter_fields. See:
+        # https://github.com/philipn/django-rest-framework-filters/issues/81
+        response = self.client.get('/ff-users/', {'username': 'user1'}, content_type='json')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['username'], 'user1')
+
+        response = self.client.get('/ff-users/', {'username': 'user1'}, content_type='json')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['username'], 'user1')

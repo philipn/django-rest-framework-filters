@@ -16,6 +16,15 @@ class DFUserViewSet(viewsets.ModelViewSet):
     filter_class = DFUserFilter
 
 
+class FilterFieldsUserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    filter_backends = (backends.DjangoFilterBackend, )
+    filter_fields = {
+        'username': '__all__',
+    }
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
