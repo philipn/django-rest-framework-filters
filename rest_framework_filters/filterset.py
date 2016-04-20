@@ -38,10 +38,11 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
         fix_filter_field = _get_fix_filter_field(new_class)
+        opts = new_class._meta
 
         # order_by is not compatible.
-        if new_class._meta.order_by:
-            new_class._meta.order_by = False
+        if opts.order_by:
+            opts.order_by = False
             warnings.warn(
                 'order_by is no longer supported. Use '
                 'rest_framework.filters.OrderingFilter instead. See: '
@@ -49,12 +50,15 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 DeprecationWarning, stacklevel=2
             )
 
+        # If no model is defined, skip all lookups processing
+        if not opts.model:
+            return new_class
+
         # Populate our FilterSet fields with all the possible
         # filters for the AllLookupsFilter field.
         for name, filter_ in six.iteritems(new_class.base_filters.copy()):
             if isinstance(filter_, filters.AllLookupsFilter):
-                model = new_class._meta.model
-                field = filterset.get_model_field(model, filter_.name)
+                field = filterset.get_model_field(opts.model, filter_.name)
 
                 for lookup_expr in utils.lookups_for_field(field):
                     if isinstance(field, ForeignObjectRel):
