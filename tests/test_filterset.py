@@ -6,7 +6,7 @@ import datetime
 
 from django.test import TestCase
 
-from rest_framework_filters import filters
+from rest_framework_filters import FilterSet, filters
 
 from .testapp.models import (
     User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
@@ -340,6 +340,22 @@ class TestFilterSets(TestCase):
         self.assertIn('_related_filters', PostFilter.__dict__)
 
         self.assertEqual(len(filters), 1)
+
+    def test_alllookups_filter_with_mixin(self):
+        # Mixin FilterSets should not error when no model is provided. See:
+        # https://github.com/philipn/django-rest-framework-filters/issues/82
+        class Mixin(FilterSet):
+            title = filters.AllLookupsFilter()
+
+        class Actual(Mixin):
+            class Meta:
+                model = Note
+
+        GET = {
+            'title__contains': 'Test',
+        }
+        f = Actual(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f)), 4)
 
 
 class GetFilterNameTests(TestCase):
