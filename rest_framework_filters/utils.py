@@ -4,6 +4,7 @@ from collections import OrderedDict
 import django
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import Expression
+from django.db.models.fields.related import ForeignObject
 from django.db.models.lookups import Transform
 from django.utils import six
 
@@ -12,6 +13,11 @@ def lookups_for_field(model_field):
     """
     Generates a list of all possible lookup expressions for a model field.
     """
+    # This is a hack to work around:
+    # https://github.com/django/django/pull/6906
+    if isinstance(model_field, ForeignObject):
+        return ['exact', 'gt', 'gte', 'lt', 'lte', 'in', 'isnull']
+
     lookups = []
 
     for expr, lookup in six.iteritems(class_lookups(model_field)):

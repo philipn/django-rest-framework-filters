@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from rest_framework_filters import utils
 
-from .testapp.models import Person
+from .testapp.models import Person, Note
 
 
 class LookupsForFieldTests(TestCase):
@@ -28,6 +28,15 @@ class LookupsForFieldTests(TestCase):
         self.assertIn('exact', lookups)
         self.assertIn('year__exact', lookups)
         self.assertIn('date__year__exact', lookups)
+
+    def test_relation_field(self):
+        # ForeignObject relations are special cased currently
+        model_field = Note._meta.get_field('author')
+        lookups = utils.lookups_for_field(model_field)
+
+        self.assertIn('exact', lookups)
+        self.assertIn('in', lookups)
+        self.assertNotIn('regex', lookups)
 
 
 @unittest.skipIf(django.VERSION < (1, 9), "version does not support transformed lookup expressions")
