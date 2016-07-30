@@ -1,11 +1,18 @@
-Unreleased
-----------
+Unreleased:
+-----------
 
-* Fixes #79, enabling compatibility with ``django.contrib.postgres``
-* Adds basic infinite recursion prevention for chainable transforms
+v0.8.1:
+-------
 
-v0.8.0
-------
+* Fix bug where AllLookupsFilter would override a declared filter of the same name
+* #84 Fix AllLookupsFilter compatibility with ``ForeignObject`` related fields
+* #82 Fix AllLookupsFilter compatibility with mixin FilterSets
+* #81 Fix bug where FilterSet modified ``ViewSet.filter_fields``
+* #79 Prevent infinite recursion for chainable transforms, fixing compatiblity
+  w/ ``django.contrib.postgres``
+
+v0.8.0:
+-------
 
 This release is tied to a major update of django-filter (more details in #66),
 which fixes how lookup expressions are resolved. 'in', 'range', and 'isnull'
@@ -15,8 +22,8 @@ This has the following effects:
   * Deprecates ArrayDecimalField/InSetNumberFilter
   * Deprecates ArrayCharField/InSetCharFilter
   * Deprecates FilterSet.fix_filter_field
-  * Deprecates ALL_LOOKUPS in favor of '__all__' constant.
-  * AllLookupsFilter now generates only valid lookup expressions.
+  * Deprecates ALL_LOOKUPS in favor of '__all__' constant
+  * AllLookupsFilter now generates only valid lookup expressions
 
 * #2 'range' lookup types do not work
 * #15 Date lookup types do not work (year, day, ...)
@@ -52,7 +59,7 @@ v0.5.0:
 * #31 Fix timezone-aware datetime handling
 * #36 Fix '__in' filter to work with strings
 * #33 Fix RelatedFilter handling to not override existing isnull filters
-* #35 Fix python 3.5 compatibility issue.
+* #35 Fix python 3.5 compatibility issue
 * Drops support for Django 1.6 and below
 
 v0.4.0:
