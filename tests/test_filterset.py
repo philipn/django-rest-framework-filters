@@ -7,6 +7,7 @@ import datetime
 from django.test import TestCase
 
 from rest_framework_filters import FilterSet, filters
+from django_filters.filters import BaseInFilter
 
 from .testapp.models import (
     User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
@@ -156,7 +157,48 @@ class TestFilterSets(TestCase):
         note = list(f)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
-    def test_relatedfilter_combined_with_alllookups(self):
+    def test_alllookupsfilter_for_relation(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/84
+        class F(FilterSet):
+            class Meta:
+                model = Note
+                fields = {
+                    'author': '__all__',
+                }
+
+        self.assertIsInstance(F.base_filters['author'], filters.ModelChoiceFilter)
+        self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
+
+    def test_relatedfilter_combined_with__all__(self):
+        # ensure that related filter is compatible with __all__ lookups.
+        class F(FilterSet):
+            author = filters.RelatedFilter(UserFilter)
+
+            class Meta:
+                model = Note
+                fields = {
+                    'author': '__all__',
+                }
+
+        self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
+        self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
+
+    def test_filter_persistence_with__all__(self):
+        # ensure that __all__ does not overwrite declared filters.
+        class F(FilterSet):
+            name = filters.ChoiceFilter(lookup_expr='iexact')
+
+            class Meta:
+                model = Person
+                fields = {
+                    'name': '__all__',
+                }
+
+        self.assertIsInstance(F.base_filters['name'], filters.ChoiceFilter)
+
+    def test_relatedfilter_for_related_alllookups(self):
+        # ensure that filters work for AllLookupsFilter across a RelatedFilter.
+
         # Test that the default exact filter works
         GET = {
             'author': User.objects.get(username='user2').pk,
@@ -195,7 +237,7 @@ class TestFilterSets(TestCase):
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f)), 4)
 
-    def test_relatedfilter_combined_with_alllookups_and_different_filter_name(self):
+    def test_relatedfilter_for_related_alllookups_and_different_filter_name(self):
         # Test that the default exact filter works
         GET = {
             'writer': User.objects.get(username='user2').pk,
@@ -294,7 +336,7 @@ class TestFilterSets(TestCase):
         }
         f = BlogPostFilter(GET, queryset=BlogPost.objects.all())
         self.assertEqual(len(list(f)), 2)
-        titles = set([p.title for p in f])
+        titles = set([person.title for person in f])
         self.assertEqual(titles, set(["First post", "Second post"]))
 
     def test_nonexistent_related_field(self):

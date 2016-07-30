@@ -99,11 +99,14 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         """
         Extract Meta.fields and convert any fields w/ `__all__`
         to a declared AllLookupsFilter.
+
+        This is a temporary hack to fix #87.
         """
         meta = attrs.get('Meta', None)
+        model = getattr(meta, 'model', None)
         fields = getattr(meta, 'fields', None)
 
-        if isinstance(fields, dict):
+        if model and isinstance(fields, dict):
             for name, lookups in six.iteritems(fields.copy()):
                 if lookups == filters.ALL_LOOKUPS:
                     warnings.warn(
@@ -114,8 +117,10 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                     lookups = '__all__'
 
                 if lookups == '__all__':
-                    del fields[name]
-                    attrs[name] = filters.AllLookupsFilter()
+                    # Modifying fields is incorrect. The correct behavior will
+                    # require hooking into filters_for_model
+                    field = model._meta.get_field(name)
+                    fields[name] = utils.lookups_for_field(field)
 
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
