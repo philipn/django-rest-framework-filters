@@ -4,7 +4,6 @@ sudo: false
 
 python:
   - "2.7"
-  - "3.2"
   - "3.3"
   - "3.4"
   - "3.5"
@@ -21,8 +20,6 @@ script:
 
 matrix:
   exclude:
-    - python: "3.2"
-      env: DJANGO="django>=1.9.0,<1.10.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
     - python: "3.3"
       env: DJANGO="django>=1.9.0,<1.10.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
   fast_finish: true
