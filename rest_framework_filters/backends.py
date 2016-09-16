@@ -1,6 +1,4 @@
 
-from copy import copy
-
 from django.template import loader
 from rest_framework import compat
 import rest_framework.filters
@@ -10,14 +8,6 @@ from .filterset import FilterSet
 
 class DjangoFilterBackend(rest_framework.filters.DjangoFilterBackend):
     default_filter_set = FilterSet
-
-    def get_filter_class(self, view, queryset=None):
-        # if creating an AutoFilterSet, copy the filter_fields as they may be
-        # destructively modified. See issue #81.
-        if hasattr(view, 'filter_fields'):
-            view.filter_fields = copy(view.filter_fields)
-
-        return super(DjangoFilterBackend, self).get_filter_class(view, queryset)
 
     def filter_queryset(self, request, queryset, view):
         filter_class = self.get_filter_class(view, queryset)
