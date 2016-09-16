@@ -71,6 +71,7 @@ class OrderByDeprecationTests(TestCase):
                 class Meta:
                     model = User
                     order_by = 'username'
+                    fields = []
 
             F().qs
             self.assertEqual(len(w), 1)
@@ -128,6 +129,7 @@ class InLookupDeprecationTests(TestCase):
 
                 class Meta:
                     model = User
+                    fields = []
 
             self.assertEqual(len(w), 1)
 
@@ -144,6 +146,7 @@ class InLookupDeprecationTests(TestCase):
 
                 class Meta:
                     model = User
+                    fields = []
 
             self.assertEqual(len(w), 1)
 
