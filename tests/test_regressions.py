@@ -77,16 +77,16 @@ class IsoDatetimeTests(TestCase):
             'date_joined__lte': date_str,
         }
         f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f)), 2)
-        p = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 2)
+        p = list(f.qs)[0]
 
         # DateTimeField
         GET = {
             'datetime_joined__lte': datetime_str,
         }
         f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        p = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        p = list(f.qs)[0]
         self.assertEqual(p.name, "John")
 
         # TimeField
@@ -94,8 +94,8 @@ class IsoDatetimeTests(TestCase):
             'time_joined__lte': time_str,
         }
         f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        p = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        p = list(f.qs)[0]
         self.assertEqual(p.name, "John")
 
     @override_settings(USE_TZ=True)
@@ -117,8 +117,8 @@ class IsoDatetimeTests(TestCase):
             'datetime_joined__lte': datetime_str,
         }
         f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        p = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        p = list(f.qs)[0]
         self.assertEqual(p.name, "John")
 
 
@@ -133,42 +133,42 @@ class BooleanFilterTests(TestCase):
         # Capitalized True
         GET = {'is_active': 'True'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user1')
 
         # Lowercase True
         GET = {'is_active': 'true'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user1')
 
         # Uppercase True
         GET = {'is_active': 'TRUE'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user1')
 
         # Capitalized False
         GET = {'is_active': 'False'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user2')
 
         # Lowercase False
         GET = {'is_active': 'false'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user2')
 
         # Uppercase False
         GET = {'is_active': 'FALSE'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user2')
 
@@ -191,7 +191,7 @@ class InLookupTests(TestCase):
             'pk__in': '{:d},{:d}'.format(p1, p2),
         }
         f = InSetLookupPersonIDFilter(ALL_GET, queryset=Person.objects.all())
-        f = [x.pk for x in f]
+        f = [x.pk for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
@@ -200,13 +200,13 @@ class InLookupTests(TestCase):
             'pk__in': '{:d},c{:d}'.format(p1, p2)
         }
         f = InSetLookupPersonIDFilter(INVALID_GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f)), 0)
+        self.assertEqual(len(list(f.qs)), 0)
 
         EXTRA_GET = {
             'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1*p2)
         }
         f = InSetLookupPersonIDFilter(EXTRA_GET, queryset=Person.objects.all())
-        f = [x.pk for x in f]
+        f = [x.pk for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
@@ -215,7 +215,7 @@ class InLookupTests(TestCase):
             'pk__in': '{:d},{:d},{:d}'.format(p2, p2*p1, p1)
         }
         f = InSetLookupPersonIDFilter(DISORDERED_GET, queryset=Person.objects.all())
-        f = [x.pk for x in f]
+        f = [x.pk for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
@@ -228,7 +228,7 @@ class InLookupTests(TestCase):
             'name__in': '{},{}'.format(p1, p2),
         }
         f = InSetLookupPersonNameFilter(ALL_GET, queryset=Person.objects.all())
-        f = [x.name for x in f]
+        f = [x.name for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
@@ -237,13 +237,13 @@ class InLookupTests(TestCase):
             'name__in': '{},Foo{}'.format(p1, p2)
         }
         f = InSetLookupPersonNameFilter(NONEXISTENT_GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f)), 1)
+        self.assertEqual(len(list(f.qs)), 1)
 
         EXTRA_GET = {
             'name__in': '{},{},{}'.format(p1, p2, p1+p2)
         }
         f = InSetLookupPersonNameFilter(EXTRA_GET, queryset=Person.objects.all())
-        f = [x.name for x in f]
+        f = [x.name for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
@@ -252,7 +252,7 @@ class InLookupTests(TestCase):
             'name__in': '{},{},{}'.format(p2, p2+p1, p1)
         }
         f = InSetLookupPersonNameFilter(DISORDERED_GET, queryset=Person.objects.all())
-        f = [x.name for x in f]
+        f = [x.name for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
         self.assertIn(p2, f)
@@ -275,12 +275,12 @@ class IsNullLookupTests(TestCase):
 
         GET = {'last_login__isnull': 'false'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user1')
 
         GET = {'last_login__isnull': 'true'}
         filterset = UserFilter(GET, queryset=User.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user2')
