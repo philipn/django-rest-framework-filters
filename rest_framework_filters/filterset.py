@@ -34,8 +34,6 @@ def _get_fix_filter_field(cls):
 
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
-        cls.convert__all__(attrs)
-
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
         fix_filter_field = _get_fix_filter_field(new_class)
         opts = new_class._meta
@@ -94,34 +92,6 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             ])
         return self._related_filters
 
-    @staticmethod
-    def convert__all__(attrs):
-        """
-        Extract Meta.fields and convert any fields w/ `__all__`
-        to a declared AllLookupsFilter.
-
-        This is a temporary hack to fix #87.
-        """
-        meta = attrs.get('Meta', None)
-        model = getattr(meta, 'model', None)
-        fields = getattr(meta, 'fields', None)
-
-        if model and isinstance(fields, dict):
-            for name, lookups in six.iteritems(fields.copy()):
-                if lookups == filters.ALL_LOOKUPS:
-                    warnings.warn(
-                        "ALL_LOOKUPS has been deprecated in favor of '__all__'. See: "
-                        "https://github.com/philipn/django-rest-framework-filters/issues/62",
-                        DeprecationWarning, stacklevel=2
-                    )
-                    lookups = '__all__'
-
-                if lookups == '__all__':
-                    # Modifying fields is incorrect. The correct behavior will
-                    # require hooking into filters_for_model
-                    field = model._meta.get_field(name)
-                    fields[name] = utils.lookups_for_field(field)
-
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
     filter_overrides = {
@@ -157,6 +127,34 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
 
             elif isinstance(filter_, filters.MethodFilter):
                 filter_.resolve_action()
+
+    @classmethod
+    def filters_for_model(cls, model, opts):
+        fields = opts.fields
+
+        if not isinstance(fields, dict):
+            return super(FilterSet, cls).filters_for_model(model, opts)
+
+        # replace all '__all__' values by the resolved list of all lookups
+        fields = fields.copy()
+        for name, lookups in six.iteritems(fields):
+            if lookups == filters.ALL_LOOKUPS:
+                warnings.warn(
+                    "ALL_LOOKUPS has been deprecated in favor of '__all__'. See: "
+                    "https://github.com/philipn/django-rest-framework-filters/issues/62",
+                    DeprecationWarning, stacklevel=2
+                )
+                lookups = '__all__'
+
+            if lookups == '__all__':
+                field = model._meta.get_field(name)
+                fields[name] = utils.lookups_for_field(field)
+
+        return filterset.filters_for_model(
+            model, fields, opts.exclude,
+            cls.filter_for_field,
+            cls.filter_for_reverse_field
+        )
 
     def get_filters(self):
         """
