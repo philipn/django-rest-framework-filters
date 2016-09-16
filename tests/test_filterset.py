@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import datetime
 
+import django
 from django.test import TestCase
 
 from rest_framework_filters import FilterSet, filters
@@ -40,6 +41,14 @@ from .testapp.filters import (
     # InSetLookupPersonIDFilter,
     # InSetLookupPersonNameFilter,
 )
+
+
+def set_many(instance, field, value):
+    if django.VERSION < (1, 10):
+        setattr(instance, field, value)
+    else:
+        field = getattr(instance, field)
+        field.set(value)
 
 
 class TestFilterSets(TestCase):
@@ -87,10 +96,10 @@ class TestFilterSets(TestCase):
         t3 = Tag.objects.create(name="house")
 
         blogpost = BlogPost.objects.create(title="First post", content="First")
-        blogpost.tags = [t1, t3]
+        set_many(blogpost, 'tags', [t1, t3])
 
         blogpost = BlogPost.objects.create(title="Second post", content="Secon")
-        blogpost.tags = [t3]
+        set_many(blogpost, 'tags', [t3])
 
         ################################
         # Recursive relations
@@ -118,8 +127,8 @@ class TestFilterSets(TestCase):
             'title__iendswith': '2',
         }
         f = NoteFilterWithAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Test 2")
 
         # Test __contains
@@ -127,15 +136,15 @@ class TestFilterSets(TestCase):
             'title__contains': 'Test',
         }
         f = NoteFilterWithAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 4)
+        self.assertEqual(len(list(f.qs)), 4)
 
         # Test that the default exact filter works
         GET = {
             'title': 'Hello Test 3',
         }
         f = NoteFilterWithAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 3")
 
     def test_relatedfilter(self):
@@ -144,8 +153,8 @@ class TestFilterSets(TestCase):
             'author': User.objects.get(username='user2').pk,
         }
         f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         # Test the username filter on the related UserFilter set.
@@ -153,8 +162,8 @@ class TestFilterSets(TestCase):
             'author__username': 'user2',
         }
         f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
     def test_alllookupsfilter_for_relation(self):
@@ -204,8 +213,8 @@ class TestFilterSets(TestCase):
             'author': User.objects.get(username='user2').pk,
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         # Test the username filter on the related UserFilter set.
@@ -213,29 +222,29 @@ class TestFilterSets(TestCase):
             'author__username': 'user2',
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         GET = {
             'author__username__endswith': '2',
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         GET = {
             'author__username__endswith': '1',
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 3)
+        self.assertEqual(len(list(f.qs)), 3)
 
         GET = {
             'author__username__contains': 'user',
         }
         f = NoteFilterWithRelatedAll(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 4)
+        self.assertEqual(len(list(f.qs)), 4)
 
     def test_relatedfilter_for_related_alllookups_and_different_filter_name(self):
         # Test that the default exact filter works
@@ -243,8 +252,8 @@ class TestFilterSets(TestCase):
             'writer': User.objects.get(username='user2').pk,
         }
         f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         # Test the username filter on the related UserFilter set.
@@ -252,29 +261,29 @@ class TestFilterSets(TestCase):
             'writer__username': 'user2',
         }
         f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         GET = {
             'writer__username__endswith': '2',
         }
         f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         GET = {
             'writer__username__endswith': '1',
         }
         f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 3)
+        self.assertEqual(len(list(f.qs)), 3)
 
         GET = {
             'writer__username__contains': 'user',
         }
         f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 4)
+        self.assertEqual(len(list(f.qs)), 4)
 
     def test_relatedfilter_different_name(self):
         # Test the name filter on the related UserFilter set.
@@ -282,8 +291,8 @@ class TestFilterSets(TestCase):
             'author__name': 'user2',
         }
         f = NoteFilterWithRelatedDifferentName(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        note = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
     def test_double_relation_filter(self):
@@ -291,8 +300,8 @@ class TestFilterSets(TestCase):
             'note__author__username__endswith': 'user2'
         }
         f = PostFilter(GET, queryset=Post.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        post = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        post = list(f.qs)[0]
         self.assertEqual(post.content, "Test content in post 3")
 
     def test_triple_relation_filter(self):
@@ -300,8 +309,8 @@ class TestFilterSets(TestCase):
             'post__note__author__username__endswith': 'user2'
         }
         f = CoverFilterWithRelated(GET, queryset=Cover.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        cover = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        cover = list(f.qs)[0]
         self.assertEqual(cover.comment, "Cover 2")
 
     def test_indirect_recursive_relation(self):
@@ -309,8 +318,8 @@ class TestFilterSets(TestCase):
             'a__b__name__endswith': '1'
         }
         f = CFilter(GET, queryset=C.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        c = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        c = list(f.qs)[0]
         self.assertEqual(c.title, "C1")
 
     def test_direct_recursive_relation(self):
@@ -318,8 +327,8 @@ class TestFilterSets(TestCase):
             'best_friend__name__endswith': 'hn'
         }
         f = PersonFilter(GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        p = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        p = list(f.qs)[0]
         self.assertEqual(p.name, "Mark")
 
     def test_m2m_relation(self):
@@ -327,16 +336,16 @@ class TestFilterSets(TestCase):
             'tags__name__endswith': 'ark',
         }
         f = BlogPostFilter(GET, queryset=BlogPost.objects.all())
-        self.assertEqual(len(list(f)), 1)
-        p = list(f)[0]
+        self.assertEqual(len(list(f.qs)), 1)
+        p = list(f.qs)[0]
         self.assertEqual(p.title, "First post")
 
         GET = {
             'tags__name__endswith': 'ouse',
         }
         f = BlogPostFilter(GET, queryset=BlogPost.objects.all())
-        self.assertEqual(len(list(f)), 2)
-        titles = set([person.title for person in f])
+        self.assertEqual(len(list(f.qs)), 2)
+        titles = set([person.title for person in f.qs])
         self.assertEqual(titles, set(["First post", "Second post"]))
 
     def test_nonexistent_related_field(self):
@@ -350,13 +359,13 @@ class TestFilterSets(TestCase):
             'author__nonexistent': 'foobar',
         }
         f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 4)
+        self.assertEqual(len(list(f.qs)), 4)
 
         GET = {
             'author__nonexistent__isnull': 'foobar',
         }
         f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 4)
+        self.assertEqual(len(list(f.qs)), 4)
 
     def test_related_filters_caching(self):
         filters = PostFilter.related_filters
@@ -397,7 +406,7 @@ class TestFilterSets(TestCase):
             'title__contains': 'Test',
         }
         f = Actual(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f)), 4)
+        self.assertEqual(len(list(f.qs)), 4)
 
 
 class GetFilterNameTests(TestCase):
@@ -567,7 +576,7 @@ class MethodFilterTests(TestCase):
             'is_published': 'true'
         }
         filterset = PostFilter(GET, queryset=Post.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].content, "Test content in post 2")
 
@@ -580,7 +589,7 @@ class MethodFilterTests(TestCase):
             'post__is_published': 'true'
         }
         filterset = CoverFilterWithRelatedMethodFilter(GET, queryset=Cover.objects.all())
-        results = list(filterset)
+        results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].comment, "Cover 2")
 
@@ -623,8 +632,8 @@ class FilterExclusionTests(TestCase):
         p1 = BlogPost.objects.create(title='Post 1', content='content 1')
         p2 = BlogPost.objects.create(title='Post 2', content='content 2')
 
-        p1.tags = [t1, t2]
-        p2.tags = [t3]
+        set_many(p1, 'tags', [t1, t2])
+        set_many(p2, 'tags', [t3])
 
     def test_exclude_property(self):
         """
@@ -670,7 +679,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        results = [r.name for r in filterset]
+        results = [r.name for r in filterset.qs]
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], 'Something else entirely')
 
@@ -681,7 +690,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        results = [r.name for r in filterset]
+        results = [r.name for r in filterset.qs]
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], 'Tag 1')
 
@@ -691,7 +700,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
-        results = [r.title for r in filterset]
+        results = [r.title for r in filterset.qs]
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], 'Post 2')
