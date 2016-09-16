@@ -73,8 +73,9 @@ class OrderByDeprecationTests(TestCase):
                     order_by = 'username'
                     fields = []
 
-            F().qs
-            self.assertEqual(len(w), 1)
+            # we should get a deprecation warning from django-filter and
+            # a compatibility warning from django-rest-framework-filters
+            self.assertEqual(len(w), 2)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
 
 

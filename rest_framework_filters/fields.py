@@ -2,12 +2,6 @@
 import warnings
 from django import forms
 
-from django_filters.widgets import BooleanWidget
-
-
-class BooleanField(forms.BooleanField):
-    widget = BooleanWidget
-
 
 class ArrayDecimalField(forms.DecimalField):
     def __init__(self, *args, **kwargs):

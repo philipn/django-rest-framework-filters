@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import warnings
 from django.utils import six
 
-from django_filters.filters import *
+from django_filters.rest_framework.filters import *
 
 from . import fields
 
@@ -51,12 +51,6 @@ class AllLookupsFilter(Filter):
 ###################################################
 # Fixed-up versions of some of the default filters
 ###################################################
-
-# This class is necessary, as directly django-filter's BooleanFilter
-# is using the incorrect form widget.
-class BooleanFilter(BooleanFilter):
-    field_class = fields.BooleanField
-
 
 class InSetNumberFilter(Filter):
     field_class = fields.ArrayDecimalField

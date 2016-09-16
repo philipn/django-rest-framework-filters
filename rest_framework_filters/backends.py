@@ -1,12 +1,12 @@
 
 from django.template import loader
 from rest_framework import compat
-import rest_framework.filters
+from django_filters.rest_framework import backends
 
 from .filterset import FilterSet
 
 
-class DjangoFilterBackend(rest_framework.filters.DjangoFilterBackend):
+class DjangoFilterBackend(backends.DjangoFilterBackend):
     default_filter_set = FilterSet
 
     def filter_queryset(self, request, queryset, view):
