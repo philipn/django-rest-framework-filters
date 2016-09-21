@@ -15,6 +15,7 @@ class DFUserFilter(django_filters.FilterSet):
 
     class Meta:
         model = User
+        fields = '__all__'
 
 
 class NoteFilterWithAll(FilterSet):

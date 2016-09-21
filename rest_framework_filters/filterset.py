@@ -5,12 +5,11 @@ from collections import OrderedDict
 import copy
 import warnings
 
-from django.db import models
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.fields.related import ForeignObjectRel
 from django.utils import six
 
-from django_filters import filterset
+from django_filters import filterset, rest_framework
 
 from . import filters
 from . import utils
@@ -93,19 +92,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         return self._related_filters
 
 
-class FilterSet(six.with_metaclass(FilterSetMetaclass, filterset.FilterSet)):
-    filter_overrides = {
-        # uses API-friendly django_filters.BooleanWidget
-        models.BooleanField: {
-            'filter_class': filters.BooleanFilter,
-        },
-
-        # In order to support ISO-8601 -- which is the default output for
-        # DRF -- we need to use django-filter's IsoDateTimeFilter
-        models.DateTimeField: {
-            'filter_class': filters.IsoDateTimeFilter,
-        },
-    }
+class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)):
     _subset_cache = {}
 
     def __init__(self, *args, **kwargs):
