@@ -1,6 +1,18 @@
 Unreleased:
 -----------
 
+v0.9.0:
+-------
+
+This release is tied to the 0.15.0 update of django-filter, and is in preparation of
+a (near) simultaneous 1.0 release. All current deprecations will be removed in the
+next release.
+
+* Updates django-filter requirement to 0.15.0
+* #101 Add support for Django 1.10, set DRF support to 3.3, 3.4, and drop support for python 3.2
+* #114 Add ``lookups`` argument to ``RelatedFilter``
+* #113 Deprecated ``MethodFilter`` for new ``Filter.method`` argument
+
 v0.8.1:
 -------
 
