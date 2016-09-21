@@ -21,8 +21,9 @@ def _import_class(path):
 
 
 class RelatedFilter(ModelChoiceFilter):
-    def __init__(self, filterset, *args, **kwargs):
+    def __init__(self, filterset, lookups=None, *args, **kwargs):
         self.filterset = filterset
+        self.lookups = lookups
         return super(RelatedFilter, self).__init__(*args, **kwargs)
 
     def filterset():
@@ -45,7 +46,7 @@ class RelatedFilter(ModelChoiceFilter):
 
 
 class AllLookupsFilter(Filter):
-    pass
+    lookups = '__all__'
 
 
 ###################################################
