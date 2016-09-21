@@ -19,7 +19,7 @@ from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 
 from .testapp.models import (
-    User, Person,
+    User, Person, Note, Post, Cover,
 )
 
 from .testapp.filters import (
@@ -27,6 +27,8 @@ from .testapp.filters import (
     AllLookupsPersonDateFilter,
     InSetLookupPersonIDFilter,
     InSetLookupPersonNameFilter,
+    PostFilter,
+    CoverFilterWithRelatedMethodFilter,
 )
 
 
@@ -284,3 +286,44 @@ class IsNullLookupTests(TestCase):
         results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user2')
+
+
+class FilterMethodTests(TestCase):
+    """
+    Old test case for MethodFilter. Ensure that the new Filter.method remains compatible.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        user = User.objects.create(username="user1", email="user1@example.org")
+
+        note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user)
+        note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user)
+
+        post1 = Post.objects.create(note=note1, content="Test content in post 1")
+        post2 = Post.objects.create(note=note2, content="Test content in post 2", date_published=datetime.date.today())
+
+        Cover.objects.create(post=post1, comment="Cover 1")
+        Cover.objects.create(post=post2, comment="Cover 2")
+
+    def test_method_filter(self):
+        GET = {
+            'is_published': 'true'
+        }
+        filterset = PostFilter(GET, queryset=Post.objects.all())
+        results = list(filterset.qs)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].content, "Test content in post 2")
+
+    def test_related_method_filter(self):
+        """
+        Missing MethodFilter filter methods are silently ignored, returning
+        the unfiltered queryset.
+        """
+        GET = {
+            'post__is_published': 'true'
+        }
+        filterset = CoverFilterWithRelatedMethodFilter(GET, queryset=Cover.objects.all())
+        results = list(filterset.qs)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].comment, "Cover 2")

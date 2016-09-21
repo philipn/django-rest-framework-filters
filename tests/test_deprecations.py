@@ -154,3 +154,19 @@ class InLookupDeprecationTests(TestCase):
             # Generate another warning for field
             F({'id__in': '1'}).qs
             self.assertEqual(len(w), 2)
+
+
+class MethodFilterDeprecationTests(TestCase):
+
+    def test_notification(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            class F(FilterSet):
+                username__in = filters.MethodFilter()
+
+                class Meta:
+                    model = User
+                    fields = []
+
+            self.assertEqual(len(w), 1)

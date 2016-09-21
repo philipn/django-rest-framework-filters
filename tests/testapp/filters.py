@@ -68,31 +68,23 @@ class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
 
 
 class PostFilter(FilterSet):
-    # Used for Related filter and MethodFilter tests
+    # Used for Related filter and Filter.method regression tests
     note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
     date_published = filters.AllLookupsFilter()
-    is_published = filters.MethodFilter()
+    is_published = filters.BooleanFilter(name='date_published', method='filter_is_published')
 
     class Meta:
         model = Post
 
-    def filter_is_published(self, name, qs, value):
+    def filter_is_published(self, qs, name, value):
         """
         `is_published` is based on the actual `date_published`.
         If the publishing date is null, then the post is not published.
         """
-        # convert value to boolean
-        null = value.lower() != 'true'
+        isnull = not value
+        lookup_expr = LOOKUP_SEP.join([name, 'isnull'])
 
-        # The lookup name will end with `is_published`, but could be
-        # preceded by a related lookup path.
-        if LOOKUP_SEP in name:
-            rel, _ = name.rsplit(LOOKUP_SEP, 1)
-            name = LOOKUP_SEP.join([rel, 'date_published__isnull'])
-        else:
-            name = 'date_published__isnull'
-
-        return qs.filter(**{name: null})
+        return qs.filter(**{lookup_expr: isnull})
 
 
 class CoverFilterWithRelatedMethodFilter(FilterSet):

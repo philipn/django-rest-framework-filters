@@ -84,6 +84,11 @@ class MethodFilter(Filter):
     def __init__(self, *args, **kwargs):
         self.action = kwargs.pop('action', '')
         super(MethodFilter, self).__init__(*args, **kwargs)
+        warnings.warn(
+            'MethodFilter is deprecated and no longer necessary. See: '
+            'https://github.com/philipn/django-rest-framework-filters/issues/109',
+            DeprecationWarning, stacklevel=2
+        )
 
     def resolve_action(self):
         """
