@@ -1,3 +1,16 @@
+Django Rest Framework Filters
+=============================
+
+.. image:: https://travis-ci.org/philipn/django-rest-framework-filters.png?branch=master
+  :target: https://travis-ci.org/philipn/django-rest-framework-filters
+
+.. image:: https://codecov.io/gh/philipn/django-rest-framework-filters/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/philipn/django-rest-framework-filters
+
+.. image:: https://img.shields.io/pypi/v/djangorestframework-filters.svg
+  :target: https://pypi.python.org/pypi/djangorestframework-filters
+
+
 ``django-rest-framework-filters`` is an extension to Django REST framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
 
 E.g. using ``django-rest-framework-filters`` instead of just ``django-filter``, we can do stuff like::
@@ -6,15 +19,6 @@ E.g. using ``django-rest-framework-filters`` instead of just ``django-filter``, 
     /api/page/?author__username__endswith=smith
 
 Without having to create a zillion filter fields by hand.
-
-.. image:: https://travis-ci.org/philipn/django-rest-framework-filters.png?branch=master
-  :target: https://travis-ci.org/philipn/django-rest-framework-filters
-
-.. image:: https://codecov.io/gh/philipn/djangorestframework-filters/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/philipn/djangorestframework-filters
-
-.. image:: https://img.shields.io/pypi/v/djangorestframework-filters.svg
-  :target: https://pypi.python.org/pypi/djangorestframework-filters
 
 Installation
 ------------
