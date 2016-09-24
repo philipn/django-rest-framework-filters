@@ -170,3 +170,33 @@ class MethodFilterDeprecationTests(TestCase):
                     fields = []
 
             self.assertEqual(len(w), 1)
+
+
+class AllLookupsFilterDeprecationTests(TestCase):
+
+    def test_notification(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            class F(FilterSet):
+                username = filters.AllLookupsFilter()
+
+                class Meta:
+                    model = User
+                    fields = []
+
+            self.assertEqual(len(w), 1)
+            self.assertIn("'AllLookupsFilter' is no longer supported.", str(w[0].message))
+
+    def test_no_notification(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            class F(FilterSet):
+                class Meta:
+                    model = User
+                    fields = {
+                        'username': '__all__',
+                    }
+
+            self.assertEqual(len(w), 0)
