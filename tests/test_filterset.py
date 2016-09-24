@@ -29,6 +29,17 @@ class LookupsFilterTests(TestCase):
     and `RelatedFilter.lookups`.
     """
 
+    def test_alllookupsfilter_replaced(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/118
+        class F(FilterSet):
+            id = filters.AllLookupsFilter()
+
+            class Meta:
+                model = Note
+
+        self.assertIsInstance(F.declared_filters['id'], filters.AllLookupsFilter)
+        self.assertIsInstance(F.base_filters['id'], filters.NumberFilter)
+
     def test_alllookupsfilter_for_relation(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/84
         class F(FilterSet):
