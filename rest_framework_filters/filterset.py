@@ -54,18 +54,10 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         # Populate our FilterSet fields with all the possible
         # filters for the AllLookupsFilter field.
         for name, filter_ in six.iteritems(new_class.base_filters.copy()):
-            if isinstance(filter_, (filters.AllLookupsFilter, filters.RelatedFilter)):
+            if isinstance(filter_, filters.AllLookupsFilter):
                 field = filterset.get_model_field(opts.model, filter_.name)
 
-                lookups = filter_.lookups or []
-                if lookups == '__all__':
-                    lookups = utils.lookups_for_field(field)
-
-                for lookup_expr in lookups:
-                    if isinstance(filter_, filters.RelatedFilter) and lookup_expr == 'exact':
-                        # Don't replace the RelatedFilter
-                        continue
-
+                for lookup_expr in utils.lookups_for_field(field):
                     if isinstance(field, ForeignObjectRel):
                         f = new_class.filter_for_reverse_field(field, filter_.name)
                     else:

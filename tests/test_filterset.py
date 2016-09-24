@@ -66,29 +66,6 @@ class LookupsFilterTests(TestCase):
         self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
         self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
 
-    def test_relatedfilter_lookups(self):
-        # ensure that related filter is compatible with __all__ lookups.
-        class F(FilterSet):
-            author = filters.RelatedFilter(UserFilter, lookups='__all__')
-
-            class Meta:
-                model = Note
-
-        self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
-        self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
-
-    def test_relatedfilter_lookups_list(self):
-        # ensure that related filter is compatible with __all__ lookups.
-        class F(FilterSet):
-            author = filters.RelatedFilter(UserFilter, lookups=['in'])
-
-            class Meta:
-                model = Note
-
-        self.assertEqual(len([f for f in F.base_filters if f.startswith('author')]), 2)
-        self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
-        self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
-
     def test_declared_filter_persistence_with__all__(self):
         # ensure that __all__ does not overwrite declared filters.
         class F(FilterSet):
