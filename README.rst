@@ -11,21 +11,28 @@ Django Rest Framework Filters
   :target: https://pypi.python.org/pypi/djangorestframework-filters
 
 
-``django-rest-framework-filters`` is an extension to Django REST framework that makes working with filtering much easier.  In addition to fixing some underlying warts and limitations of ``django-filter``, we allow arbitrary chaining of both relations and lookup filters.
+``django-rest-framework-filters`` is an extension to `Django REST framework`_ and `Django filter`_
+that makes it easy to filter across relationships. Historically, this extension also provided a
+number of additional features and fixes, however the number of features has shrunk as they are
+merged back into ``django-filter``.
 
-E.g. using ``django-rest-framework-filters`` instead of just ``django-filter``, we can do stuff like::
+.. _`Django REST framework`: https://github.com/tomchristie/django-rest-framework
+.. _`Django filter`: https://github.com/carltongibson/django-filter
 
-    /api/page/?author__username__icontains=john
-    /api/page/?author__username__endswith=smith
+Using ``django-rest-framework-filters``, we can easily do stuff like::
 
-Without having to create a zillion filter fields by hand.
+    /api/article?author__first_name__icontains=john
+    /api/article?is_published!=true
 
-Installation
-------------
 
-.. code-block:: bash
+Features
+--------
 
-    $ pip install djangorestframework-filters
+* Easy filtering across relationships
+* Support for method filtering across relationships
+* Automatic filter negation with a simple ``param!=value`` syntax
+* Backend caching to increase performance
+
 
 Requirements
 ------------
@@ -34,74 +41,101 @@ Requirements
 * Django 1.8, 1.9, 1.10
 * Django REST framework 3.3, 3.4
 
+
+Installation
+------------
+
+.. code-block:: bash
+
+    $ pip install djangorestframework-filters
+
+
 Usage
 -----
 
-Here's how you were probably doing filtering before:
+Upgrading from ``django-filter`` to ``django-rest-framework-filters`` is straightforward:
+
+* Import from ``rest_framework_filters`` instead of from ``django_filters``
+* Use the ``rest_framework_filters`` backend instead of the one provided by ``django_filter``.
 
 .. code-block:: python
 
-    import django_filters
-    from myapp.models import Product
+    # django-filter
+    from django_filters.rest_framework import FilterSet, filters
 
-    class ProductFilter(django_filters.FilterSet):
-        manufacturer = django_filters.CharFilter(name="manufacturer__name")
-
-        class Meta:
-            model = Product
-            fields = ['category', 'in_stock', 'manufacturer']
+    class ProductFilter(FilterSet):
+        manufacturer = filters.ModelChoiceFilter(queryset=Manufacturer.objects.all())
+        ...
 
 
-To use ``django-rest-framework-filters``, simply import ``rest_framework_filters`` instead of
-``django_filters``:
-
-.. code-block:: python
-
+    # django-rest-framework-filters
     import rest_framework_filters as filters
-    from myapp.models import Product
 
     class ProductFilter(filters.FilterSet):
-        manufacturer = filters.CharFilter(name="manufacturer__name")
-
-        class Meta:
-            model = Product
-            fields = ['category', 'in_stock', 'manufacturer']
-
-All filters found in ``django-filter`` are available for usage.  In this case, there's nothing new
-that's gained.  But read onward!
+        manufacturer = filters.ModelChoiceFilter(queryset=Manufacturer.objects.all())
+        ...
 
 
-Chaining filtering through relations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To use the django-rest-framework-filters backend, add the following to your settings:
 
-To enable chained filtering through relations:
+.. code-block:: python
+
+    REST_FRAMEWORK = {
+        'DEFAULT_FILTER_BACKENDS': (
+            'rest_framework_filters.backends.DjangoFilterBackend', ...
+        ),
+        ...
+
+
+Once configured, you can continue to use all of the filters found in ``django-filter``.
+
+
+Filtering across relationships
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can easily traverse multiple relationships when filtering by using ``RelatedFilter``:
 
 .. code-block:: python
 
     from rest_framework import viewsets
     import rest_framework_filters as filters
 
-    class UserFilter(filters.FilterSet):
-        username = filters.CharFilter(name='username')
+
+    class ManagerFilter(filters.FilterSet):
+        class Meta:
+            model = Manager
+            fields = {'name': ['exact', 'in', 'startswith']}
+
+
+    class DepartmentFilter(filters.FilterSet):
+        manager = filters.RelatedFilter(ManagerFilter, name='manager')
+
+        class Meta:
+            model = Department
+            fields = {'name': ['exact', 'in', 'startswith']}
+
+
+    class CompanyFilter(filters.FilterSet):
+        department = filters.RelatedFilter(DepartmentFilter, name='department')
+
+        class Meta:
+            model = Company
+            fields = {'name': ['exact', 'in', 'startswith']}
+
+
+    # company viewset
+    class CompanyView(viewsets.ModelViewSet):
+        filter_class = CompanyFilter
         ...
 
-    class PageFilter(filters.FilterSet):
-        title = filters.CharFilter(name='title')
-        author = filters.RelatedFilter(UserFilter, name='author')
-        ...
+Example filter calls:
 
-    # Then just use the PageFilter as you would any other FilterSet:
+.. code-block:: http
 
-    class PageView(viewsets.ModelViewSet):
-        ...
-        filter_class = PageFilter
+    /api/companies?department__name=Accounting
+    /api/companies?department__manager__name__startswith=Bob
 
-then we can automatically chain our filters through the ``author`` relation, as so::
-
-    /api/page/?author__username=philipn
-
-Recursive relations are also supported.  You will need to specify the full module
-path in the ``RelatedFilter`` definition in some cases, e.g.:
+Recursive relations are also supported. It may be necessary to specify the full module path.
 
 .. code-block:: python
 
@@ -112,127 +146,38 @@ path in the ``RelatedFilter`` definition in some cases, e.g.:
         class Meta:
             model = Person
 
+Supporting ``Filter.method``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Allowing any lookup type on a field
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``django_filters.MethodFilter`` has been deprecated and reimplemented as the ``method`` argument
+to all filter classes. It incorporates some of the implementation details of the old
+``rest_framework_filters.MethodFilter``, but requires less boilerplate and is simpler to write.
 
-We can use the ``AllLookupsFilter`` to allow all possible lookup types on a particular
-field.  While we could otherwise specify these by hand, e.g.:
-
-.. code-block:: python
-
-    class ProductFilter(filters.FilterSet):
-        min_price = filters.NumberFilter(name="price", lookup_type='gte')
-        ...
-
-to allow the ``price__gte`` lookup.  But this gets cumbersome, and we sometimes want to
-allow any possible lookups on particular fields.  We do this by using ``AllLookupsFilter``:
-
-.. code-block:: python
-
-    from rest_framework import viewsets
-    import rest_framework_filters as filters
-
-    class PageFilter(filters.FilterSet):
-        title = filters.AllLookupsFilter(name='title')
-        ...
-
-then we can use any possible lookup on the ``title`` field, e.g.::
-
-    /api/page/?title__icontains=park
-
-or ::
-
-    /api/page/?title__startswith=The
-
-and also filter on the default lookup (``exact``), as usual::
-
-    /api/page/?title=The%20Park
-
-Additionally, you may use ``ALL_LOOKUPS`` with dictionary style declarations.
-
-.. code-block:: python
-
-    import rest_framework_filters as filters
-
-    class PageFilter(filters.FilterSet):
-        ...
-
-        class Meta:
-            fields = {
-                'title': filters.ALL_LOOKUPS,
-            }
-
-
-Combining RelatedFilter and AllLookupsFilter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We can combine ``RelatedFilter`` and ``AllLookupsFilter``:
-
-.. code-block:: python
-
-    from rest_framework import viewsets
-    import rest_framework_filters as filters
-
-    class PageFilter(filters.FilterSet):
-        title = filters.CharFilter(name='title')
-        author = filters.RelatedFilter(UserFilter, name='author')
-
-    class UserFilter(filters.FilterSet):
-        username = AllLookupsFilter(name='username')
-        ...
-
-then we can filter like so::
-
-    /api/page/?author__username__icontains=john
-
-Automatic Filter Negation/Exclusion
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-FilterSets also support automatic exclusion using a simple ``k!=v`` syntax. This syntax
-internally sets the ``exclude`` property on the filter.
-
-    /api/page/?title!=The%20Park
-
-This syntax supports regular filtering combined with exclusion filtering. For example,
-the following would search for all articles containing "Hello" in the title, while
-excluding those containing "World".
-
-    /api/articles/?title__contains=Hello&title__contains!=World
-
-MethodFilter Reimplementation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``MethodFilter`` has been reimplemented to work across relationships. This is not a
-forwards-compatible change and requires adding a minimal amount of boilerplate to the
-filter method.
-
-When filtering across relationships, the queryset and lookup value will be different.
-For example:
+* It is no longer necessary to perform empty/null value checking.
+* You may use any filter class (``CharFilter``, ``BooleanFilter``, etc...) which will
+  validate input values for you.
+* The argument signature has changed from ``(name, qs, value)`` to ``(qs, name, value)``.
 
 .. code-block:: python
 
     class PostFilter(filters.FilterSet):
-        author = filters.RelatedFilter('AuthorFilter')
-        is_published = filters.MethodFilter()
+        # Note the use of BooleanFilter, the original model field's name, and the method argument.
+        is_published = filters.BooleanFilter(name='date_published', method='filter_is_published')
 
         class Meta:
             model = Post
             fields = ['title', 'content']
 
-        def filter_is_published(self, name, qs, value):
-            # convert value to boolean
-            null = value.lower() != 'true'
+        def filter_is_published(self, qs, name, value):
+            """
+            `is_published` is based on the `date_published` model field.
+            If the publishing date is null, then the post is not published.
+            """
+            # incoming value is normalized as a boolean by BooleanFilter
+            isnull = not value
+            lookup_expr = LOOKUP_SEP.join([name, 'isnull'])
 
-            # The lookup name will end with `is_published`, but could be
-            # preceded by a related lookup path.
-            if LOOKUP_SEP in name:
-                rel, _ = name.rsplit(LOOKUP_SEP, 1)
-                name = LOOKUP_SEP.join([rel, 'date_published__isnull'])
-            else:
-                name = 'date_published__isnull'
-
-            return qs.filter(**{name: null})
+            return qs.filter(**{lookup_expr: isnull})
 
     class AuthorFilter(filters.FilterSet):
         posts = filters.RelatedFilter('PostFilter')
@@ -241,13 +186,12 @@ For example:
             model = Author
             fields = ['name']
 
-And given these API calls:
+The above would enable the following filter calls:
 
 .. code-block:: http
 
-    /api/posts/?is_published=true
-
-    /api/authors/?posts__is_published=true
+    /api/posts?is_published=true
+    /api/authors?posts__is_published=true
 
 
 In the first API call, the filter method receives a queryset of posts. In the second,
@@ -255,47 +199,137 @@ it receives a queryset of users. The filter method in the example modifies the l
 name to work across the relationship, allowing you to find published posts, or authors
 who have published posts.
 
+Automatic Filter Negation/Exclusion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-DjangoFilterBackend
-~~~~~~~~~~~~~~~~~~~
+FilterSets support automatic exclusion using a simple ``param!=value`` syntax. This syntax
+internally sets the ``exclude`` property on the filter.
 
-We implement our own subclass of ``DjangoFilterBackend``, which you should probably use instead
-of the default ``DjangoFilterBackend``.  Our ``DjangoFilterBackend`` caches repeated filter set
-generation — a particularly important optimization when using ``RelatedFilter`` and ``AllLookupsFilter``.
+.. code-block:: http
 
-To use our ``FilterBackend``, in your `settings.py``, simply use:
+    /api/page?title!=The%20Park
+
+This syntax supports regular filtering combined with exclusion filtering. For example, the
+following would search for all articles containing "Hello" in the title, while excluding
+those containing "World".
+
+.. code-block:: http
+
+    /api/articles?title__contains=Hello&title__contains!=World
+
+Note that most filters only accept a single query parameter. In the above, ``title__contains``
+and ``title__contains!`` are interpreted as two separate query parameters. The following would
+probably be invalid, although it depends on the specifics of the individual filter class:
+
+.. code-block:: http
+
+    /api/articles?title__contains=Hello&title__contains!=World&title_contains!=Friend
+
+
+Allowing any lookup type on a field
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you need to enable several lookups for a field, django-filter provides the dict-syntax for
+``Meta.fields``.
 
 .. code-block:: python
 
-    REST_FRAMEWORK = {
-        ...
-        'DEFAULT_FILTER_BACKENDS': (
-            'rest_framework_filters.backends.DjangoFilterBackend', ...
-        ),
+    class ProductFilter(filters.FilterSet):
+        class Meta:
+            model = Product
+            fields = {
+                'price': ['exact', 'lt', 'gt', ...],
+            }
 
-instead of the default ``rest_framework.filters.DjangoFilterBackend``.
+``django-rest-framework-filters`` also allows you to enable all possible lookups for any field.
+This can be achieved through the use of ``AllLookupsFilter`` or using the ``'__all__'`` value in
+the ``Meta.fields`` dict-style syntax. Generated filters (``Meta.fields``, ``AllLookupsFilter``)
+will never override your declared filters.
 
-What warts are fixed?
-~~~~~~~~~~~~~~~~~~~~~
+Note that using all lookups comes with the same admonitions as enabling ``'__all__'`` fields in
+django forms (`docs`_). Exposing all lookups may allow users to construct queries that
+inadvertently leak data. Use this feature responsibly.
 
-Even if you're not using ``RelatedFilter`` or ``AllLookupsFilter``, you will probably want
-to use ``django-rest-framework-filters``.  For instance, if you simply use ``django-filter``
-it is very difficult to filter on a ``DateTimeFilter`` in the date format emitted by
-the default serializer (ISO 8601), which makes working with your API difficult.
+.. _`docs`: https://docs.djangoproject.com/en/1.10/topics/forms/modelforms/#selecting-the-fields-to-use
+
+.. code-block:: python
+
+    class ProductFilter(filters.FilterSet):
+        # Not overridden by `__all__`
+        price__gt = filters.NumberFilter(name='price', lookup_expr='gt', label='Minimum price')
+
+        class Meta:
+            model = Product
+            fields = {
+                'price': '__all__',
+            }
+
+    # or
+
+    class ProductFilter(filters.FilterSet):
+        price = filters.AllLookupsFilter()
+
+        # Not overridden by `AllLookupsFilter`
+        price__gt = filters.NumberFilter(name='price', lookup_expr='gt', label='Minimum price')
+
+        class Meta:
+            model = Product
+
+You cannot combine ``AllLookupsFilter`` with ``RelatedFilter`` as the filter names would clash.
+
+.. code-block:: python
+
+    class ProductFilter(filters.FilterSet):
+        manufacturer = filters.RelatedFilter('ManufacturerFilter')
+        manufacturer = filters.AllLookupsFilter()
+
+To work around this, you have the following options:
+
+.. code-block:: python
+
+    class ProductFilter(filters.FilterSet):
+        manufacturer = filters.RelatedFilter('ManufacturerFilter')
+
+        class Meta:
+            model = Product
+            fields = {
+                'manufacturer': '__all__',
+            }
+
+    # or
+
+    class ProductFilter(filters.FilterSet):
+        manufacturer = filters.RelatedFilter('ManufacturerFilter', lookups='__all__')  # `lookups` also accepts a list
+
+        class Meta:
+            model = Product
+
 
 Can I mix and match `django-filter` and `django-rest-framework-filters`?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Yes you can.  `django-rest-framework-filters` extends `django-filter`, and you can mix and match them as you please.  For a given class, you should use only one of ``django-filter`` or
-``django-rest-framework-filters``, but you can use ``RelatedFilter`` to
-link to a filter relation defined elsewhere that uses vanilla ``django-filter``.
+Yes you can. ``django-rest-framework-filters`` is simply an extension of ``django-filter``. Note
+that ``RelatedFilter`` and other ``django-rest-framework-filters`` features are designed to work
+with ``rest_framework_filters.FilterSet`` and will not function on a ``django_filters.FilterSet``.
+However, the target ``RelatedFilter.filterset`` may point to a ``FilterSet`` from either package
+and ``FilterSet``s from either package are compatible with the other's DRF backend.
 
-Caveats
-~~~~~~~
+.. code-block:: python
 
-djangorestframework-filters is not compatible with the filterset's `order_by`
-meta option. Use `rest_framework.filters.OrderingFilter` instead if you need
-to support ordering.
+    # valid
+    class VanillaFilter(django_filters.FilterSet):
+        ...
+
+    class DRFFilter(rest_framework_filters.FilterSet):
+        vanilla = rest_framework_filters.RelatedFilter(filterset=VanillaFilter)
+
+
+    # invalid
+    class DRFFilter(rest_framework_filters.FilterSet):
+        ...
+
+    class VanillaFilter(django_filters.FilterSet):
+        drf = rest_framework_filters.RelatedFilter(filterset=DRFFilter)
 
 
 License
