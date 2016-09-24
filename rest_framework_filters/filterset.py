@@ -55,6 +55,12 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         # filters for the AllLookupsFilter field.
         for name, filter_ in six.iteritems(new_class.base_filters.copy()):
             if isinstance(filter_, filters.AllLookupsFilter):
+                warnings.warn(
+                    "'AllLookupsFilter' is no longer supported. Use the 'Meta.fields' option instead. See: "
+                    "https://github.com/philipn/django-rest-framework-filters/issues/122",
+                    DeprecationWarning, stacklevel=2
+                )
+
                 field = filterset.get_model_field(opts.model, filter_.name)
 
                 for lookup_expr in utils.lookups_for_field(field):
