@@ -12,6 +12,7 @@ next release.
 * #101 Add support for Django 1.10, set DRF support to 3.3, 3.4, and drop support for python 3.2
 * #114 Add ``lookups`` argument to ``RelatedFilter``
 * #113 Deprecated ``MethodFilter`` for new ``Filter.method`` argument
+* #123 Fix declared filters being overwritten by ``AllLookupsFilter``
 
 v0.8.1:
 -------
