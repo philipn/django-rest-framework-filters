@@ -6,7 +6,6 @@ import copy
 import warnings
 
 from django.db.models.constants import LOOKUP_SEP
-from django.db.models.fields.related import ForeignObjectRel
 from django.utils import six
 
 from django_filters import filterset, rest_framework
@@ -35,7 +34,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
         fix_filter_field = _get_fix_filter_field(new_class)
-        opts = new_class._meta
+        opts = copy.deepcopy(new_class._meta)
 
         # order_by is not compatible.
         if opts.order_by:
@@ -51,38 +50,36 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         if not opts.model:
             return new_class
 
-        # Populate our FilterSet fields with all the possible
-        # filters for the AllLookupsFilter field.
+        # Determine declared filters and filters to generate lookups from. Declared
+        # filters have precedence over generated filters and should not be overwritten.
+        declared_filters, lookups_filters = OrderedDict(), OrderedDict()
+        for name, f in six.iteritems(new_class.declared_filters):
+            if isinstance(f, (filters.AllLookupsFilter, filters.RelatedFilter)):
+                lookups_filters[name] = f
+
+            # `AllLookupsFilter` is an exception, as it should be overwritten
+            if not isinstance(f, filters.AllLookupsFilter):
+                declared_filters[name] = f
+
+        # generate filters for AllLookups/Related filters
+        # name is the parameter name on the filterset, f.name is the model field's name
+        for name, f in six.iteritems(lookups_filters):
+            opts.fields = {f.name: f.lookups or []}
+            new_filters = new_class.filters_for_model(opts.model, opts)
+
+            # filters_for_model generate param names from the model field name
+            # replace model field name with the parameter name from the filerset
+            new_class.base_filters.update(OrderedDict(
+                (param.replace(f.name, name, 1), v)
+                for param, v in six.iteritems(new_filters)
+            ))
+
+        # re-apply declared filters (sans `AllLookupsFilter`s)
+        new_class.base_filters.update(declared_filters)
+
+        # TODO: remove with deprecations
         for name, filter_ in six.iteritems(new_class.base_filters.copy()):
-            if isinstance(filter_, (filters.AllLookupsFilter, filters.RelatedFilter)):
-                field = filterset.get_model_field(opts.model, filter_.name)
-
-                lookups = filter_.lookups or []
-                if lookups == '__all__':
-                    lookups = utils.lookups_for_field(field)
-
-                for lookup_expr in lookups:
-                    if isinstance(filter_, filters.RelatedFilter) and lookup_expr == 'exact':
-                        # Don't replace the RelatedFilter
-                        continue
-
-                    if isinstance(field, ForeignObjectRel):
-                        f = new_class.filter_for_reverse_field(field, filter_.name)
-                    else:
-                        f = new_class.filter_for_field(field, filter_.name, lookup_expr)
-                    f = fix_filter_field(f)
-
-                    # compute filter name
-                    filter_name = LOOKUP_SEP.join([name, lookup_expr])
-
-                    # Don't add "exact" to filter names
-                    _exact = LOOKUP_SEP + 'exact'
-                    if filter_name.endswith(_exact):
-                        filter_name = filter_name[:-len(_exact)]
-
-                    new_class.base_filters[filter_name] = f
-
-            elif name not in new_class.declared_filters:
+            if name not in new_class.declared_filters:
                 new_class.base_filters[name] = fix_filter_field(filter_)
 
         return new_class

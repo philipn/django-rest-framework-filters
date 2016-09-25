@@ -25,9 +25,20 @@ from .testapp.filters import (
 
 class LookupsFilterTests(TestCase):
     """
-    Test basic filter construction for `AllLookupsFilter`, '__all__',
-    and `RelatedFilter.lookups`.
+    Test basic filter construction for `AllLookupsFilter`, '__all__', and `RelatedFilter.lookups`.
     """
+
+    def test_alllookupsfilter_meta_fields_unmodified(self):
+        f = []
+
+        class F(FilterSet):
+            id = filters.AllLookupsFilter()
+
+            class Meta:
+                model = Note
+                fields = f
+
+        self.assertIs(F._meta.fields, f)
 
     def test_alllookupsfilter_replaced(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/118
@@ -91,16 +102,29 @@ class LookupsFilterTests(TestCase):
 
     def test_declared_filter_persistence_with__all__(self):
         # ensure that __all__ does not overwrite declared filters.
+        f = filters.Filter()
+
         class F(FilterSet):
-            name = filters.ChoiceFilter(lookup_expr='iexact')
+            name = f
 
             class Meta:
                 model = Person
-                fields = {
-                    'name': '__all__',
-                }
+                fields = {'name': '__all__'}
 
-        self.assertIsInstance(F.base_filters['name'], filters.ChoiceFilter)
+        self.assertIs(F.base_filters['name'], f)
+
+    def test_declared_filter_persistence_with_alllookupsfilter(self):
+        # ensure that AllLookupsFilter does not overwrite declared filters.
+        f = filters.Filter()
+
+        class F(FilterSet):
+            id = filters.AllLookupsFilter()
+            id__in = f
+
+            class Meta:
+                model = Note
+
+        self.assertIs(F.base_filters['id__in'], f)
 
 
 class GetFilterNameTests(TestCase):
