@@ -28,6 +28,18 @@ class LookupsFilterTests(TestCase):
     Test basic filter construction for `AllLookupsFilter`, '__all__', and `RelatedFilter.lookups`.
     """
 
+    def test_alllookupsfilter_meta_fields_unmodified(self):
+        f = []
+
+        class F(FilterSet):
+            id = filters.AllLookupsFilter()
+
+            class Meta:
+                model = Note
+                fields = f
+
+        self.assertIs(F._meta.fields, f)
+
     def test_alllookupsfilter_replaced(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/118
         class F(FilterSet):
