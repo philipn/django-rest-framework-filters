@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from collections import OrderedDict
 import copy
-import warnings
 
 from django.db.models.constants import LOOKUP_SEP
 from django.utils import six
@@ -14,37 +13,10 @@ from . import filters
 from . import utils
 
 
-def _base(f):
-    f._base = True
-    return f
-
-
-def _get_fix_filter_field(cls):
-    method = getattr(cls, 'fix_filter_field')
-    if not getattr(method, '_base', False):
-        warnings.warn(
-            'fix_filter_field is deprecated and no longer necessary. See: '
-            'https://github.com/philipn/django-rest-framework-filters/issues/62',
-            DeprecationWarning, stacklevel=2
-        )
-    return cls.fix_filter_field
-
-
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
-        fix_filter_field = _get_fix_filter_field(new_class)
         opts = copy.deepcopy(new_class._meta)
-
-        # order_by is not compatible.
-        if opts.order_by:
-            opts.order_by = False
-            warnings.warn(
-                'order_by is no longer supported. Use '
-                'rest_framework.filters.OrderingFilter instead. See: '
-                'https://github.com/philipn/django-rest-framework-filters/issues/72',
-                DeprecationWarning, stacklevel=2
-            )
 
         # If no model is defined, skip all lookups processing
         if not opts.model:
@@ -76,12 +48,6 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         # re-apply declared filters (sans `AllLookupsFilter`s)
         new_class.base_filters.update(declared_filters)
-
-        # TODO: remove with deprecations
-        for name, filter_ in six.iteritems(new_class.base_filters.copy()):
-            if name not in new_class.declared_filters:
-                new_class.base_filters[name] = fix_filter_field(filter_)
-
         return new_class
 
     @property
@@ -100,26 +66,6 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)):
     _subset_cache = {}
 
-    def __init__(self, *args, **kwargs):
-        if 'cache' in kwargs:
-            warnings.warn(
-                "'cache' argument is deprecated. Override '_subset_cache' instead.",
-                DeprecationWarning, stacklevel=2
-            )
-            self.__class__._subset_cache = kwargs.pop('cache', None)
-
-        super(FilterSet, self).__init__(*args, **kwargs)
-
-        for name, filter_ in six.iteritems(self.filters.copy()):
-            if isinstance(filter_, filters.RelatedFilter):
-                # Add an 'isnull' filter to allow checking if the relation is empty.
-                filter_name = "%s%sisnull" % (filter_.name, LOOKUP_SEP)
-                if filter_name not in self.filters:
-                    self.filters[filter_name] = filters.BooleanFilter(name=filter_.name, lookup_expr='isnull')
-
-            elif isinstance(filter_, filters.MethodFilter):
-                filter_.resolve_action()
-
     @classmethod
     def filters_for_model(cls, model, opts):
         fields = opts.fields
@@ -131,14 +77,6 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
         fields = fields.copy()
         for name, lookups in six.iteritems(fields):
             if lookups == filters.ALL_LOOKUPS:
-                warnings.warn(
-                    "ALL_LOOKUPS has been deprecated in favor of '__all__'. See: "
-                    "https://github.com/philipn/django-rest-framework-filters/issues/62",
-                    DeprecationWarning, stacklevel=2
-                )
-                lookups = '__all__'
-
-            if lookups == '__all__':
                 field = model._meta.get_field(name)
                 fields[name] = utils.lookups_for_field(field)
 
@@ -291,9 +229,9 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
             def __new__(cls, name, bases, attrs):
                 new_class = super(FilterSubsetMetaclass, cls).__new__(cls, name, bases, attrs)
                 new_class.base_filters = OrderedDict([
-                    (name, f)
-                    for name, f in six.iteritems(new_class.base_filters)
-                    if name in filter_names
+                    (param, f)
+                    for param, f in six.iteritems(new_class.base_filters)
+                    if param in filter_names
                 ])
                 return new_class
 
@@ -326,8 +264,3 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
         self.filters = available_filters
 
         return qs
-
-    @classmethod
-    @_base
-    def fix_filter_field(cls, f):
-        return f
