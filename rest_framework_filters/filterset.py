@@ -8,6 +8,7 @@ from django.db.models.constants import LOOKUP_SEP
 from django.utils import six
 
 from django_filters import filterset, rest_framework
+from django_filters.utils import get_model_field
 
 from . import filters
 from . import utils
@@ -77,7 +78,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
         fields = fields.copy()
         for name, lookups in six.iteritems(fields):
             if lookups == filters.ALL_LOOKUPS:
-                field = model._meta.get_field(name)
+                field = get_model_field(model, name)
                 fields[name] = utils.lookups_for_field(field)
 
         return filterset.filters_for_model(
