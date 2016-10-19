@@ -1,5 +1,5 @@
 
-from django.template import loader
+from django.template import Template, TemplateDoesNotExist, loader
 from rest_framework import compat
 from django_filters.rest_framework import backends
 
@@ -28,8 +28,11 @@ class DjangoFilterBackend(backends.DjangoFilterBackend):
         # forces `form` evaluation before `qs` is called. This prevents an empty form from being cached.
         filter_instance.form
 
-        context = {
+        try:
+            template = loader.get_template(self.template)
+        except TemplateDoesNotExist:
+            template = Template(backends.template_default)
+
+        return compat.template_render(template, context={
             'filter': filter_instance
-        }
-        template = loader.get_template(self.template)
-        return compat.template_render(template, context)
+        })

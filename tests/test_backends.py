@@ -1,7 +1,9 @@
 
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIRequestFactory
 
 from .testapp import models, views
+
+factory = APIRequestFactory()
 
 
 class BackendTest(APITestCase):
@@ -33,3 +35,27 @@ class BackendTest(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'user1')
         self.assertDictEqual(views.FilterFieldsUserViewSet.filter_fields, {'username': '__all__'})
+
+    def test_backend_output_sanity(self):
+        """
+        Sanity check to ensure backend can at least render something without crashing.
+        """
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filter_fields = ['username']
+
+        view = SimpleViewSet(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get('/'))
+        html = backend().to_html(request, view.get_queryset(), view)
+
+        self.assertHTMLEqual(html, """
+        <h2>Field filters</h2>
+        <form class="form" action="" method="get">
+            <p>
+                <label for="id_username">Username:</label>
+                <input id="id_username" name="username" type="text" />
+                <span class="helptext">Filter</span>
+            </p>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
