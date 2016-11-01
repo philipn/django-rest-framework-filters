@@ -226,7 +226,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
         if subset_class is not None:
             return subset_class
 
-        class FilterSubsetMetaclass(FilterSetMetaclass):
+        class FilterSubsetMetaclass(type(cls)):
             def __new__(cls, name, bases, attrs):
                 new_class = super(FilterSubsetMetaclass, cls).__new__(cls, name, bases, attrs)
                 new_class.base_filters = OrderedDict([
