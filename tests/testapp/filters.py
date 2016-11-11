@@ -6,7 +6,7 @@ from rest_framework_filters.filterset import FilterSet, LOOKUP_SEP
 
 
 from .models import (
-    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
+    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost, Project, Task
 )
 
 
@@ -217,3 +217,19 @@ class BlogPostOverrideFilter(FilterSet):
     class Meta:
         model = BlogPost
         fields = {'publish_date': '__all__', }
+
+
+class ProjectFilter(FilterSet):
+    name = AllLookupsFilter(name='name')
+
+    class Meta:
+        model = Project
+        fields = ('name', )
+
+
+class TaskFilter(FilterSet):
+    project = RelatedFilter(ProjectFilter, name='project')
+
+    class Meta:
+        model = Task
+        fields = ('project', )

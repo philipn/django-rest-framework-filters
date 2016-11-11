@@ -59,3 +59,11 @@ class BlogPost(models.Model):
     content = models.TextField()
     tags = models.ManyToManyField(Tag, null=True)
     publish_date = models.DateField(null=True)
+
+
+class Project(models.Model):
+    name = models.CharField("Project Name", max_length=30, db_index=True)
+
+
+class Task(models.Model):
+    project = models.ForeignKey(Project, blank=True, null=True, on_delete=models.SET_NULL)
