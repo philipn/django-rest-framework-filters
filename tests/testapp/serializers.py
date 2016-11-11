@@ -16,13 +16,20 @@ class NoteSerializer(serializers.ModelSerializer):
         fields = ('pk', 'title', 'content', 'author', )
 
 
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectSerializer(serializers.HyperlinkedModelSerializer):
+    name = serializers.CharField(max_length=30)
+
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = ('id', 'name', )
 
 
-class TaskSerializer(serializers.ModelSerializer):
+class TaskSerializer(serializers.HyperlinkedModelSerializer):
+    project = serializers.HyperlinkedRelatedField(
+        queryset=Project.objects.all(),
+        view_name='project-detail',
+        required=False)
+
     class Meta:
         model = Task
-        fields = '__all__'
+        fields = ('id', 'project', )
