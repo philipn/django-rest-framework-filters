@@ -36,11 +36,11 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
         return locals()
     filterset = property(**filterset())
 
-    @property
-    def field(self):
-        # if no queryset is provided, default to the filterset's default queryset
-        self.extra.setdefault('queryset', self.filterset._meta.model._default_manager.all())
-        return super(RelatedFilter, self).field
+    def get_queryset(self, request):
+        queryset = super(RelatedFilter, self).get_queryset(request)
+        if queryset is not None:
+            return queryset
+        return self.filterset._meta.model._default_manager.all()
 
 
 class AllLookupsFilter(AutoFilter):
