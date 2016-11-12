@@ -47,6 +47,7 @@ class LookupsFilterTests(TestCase):
 
             class Meta:
                 model = Note
+                fields = []
 
         self.assertIsInstance(F.declared_filters['id'], filters.AllLookupsFilter)
         self.assertIsInstance(F.base_filters['id'], filters.NumberFilter)
@@ -70,6 +71,7 @@ class LookupsFilterTests(TestCase):
 
             class Meta:
                 model = Note
+                fields = []
 
         self.assertIsInstance(F.base_filters['author'], filters.CharFilter)
         self.assertEqual(F.base_filters['author'].name, 'author__last_name')
@@ -95,6 +97,7 @@ class LookupsFilterTests(TestCase):
 
             class Meta:
                 model = Note
+                fields = []
 
         self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
         self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
@@ -106,6 +109,7 @@ class LookupsFilterTests(TestCase):
 
             class Meta:
                 model = Note
+                fields = []
 
         self.assertEqual(len([f for f in F.base_filters if f.startswith('author')]), 2)
         self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
@@ -134,6 +138,7 @@ class LookupsFilterTests(TestCase):
 
             class Meta:
                 model = Note
+                fields = []
 
         self.assertIs(F.base_filters['id__in'], f)
 
@@ -173,6 +178,7 @@ class GetFilterNameTests(TestCase):
 
             class Meta:
                 model = Post
+                fields = []
 
         name = PostFilterWithDirectAuthor.get_filter_name('note__title')
         self.assertEqual('note', name)
@@ -199,6 +205,7 @@ class GetFilterNameTests(TestCase):
 
             class Meta:
                 model = Post
+                fields = []
 
         name = PostFilterNameHiding.get_filter_name('note__author')
         self.assertEqual('note__author', name)
@@ -241,6 +248,7 @@ class GetRelatedFilterParamTests(TestCase):
 
             class Meta:
                 model = Post
+                fields = []
 
         name, param = PostFilterNameHiding.get_related_filter_param('note__author__email')
         self.assertEqual('note__author', name)

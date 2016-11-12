@@ -23,6 +23,7 @@ class NoteFilterWithAll(FilterSet):
 
     class Meta:
         model = Note
+        fields = []
 
 
 class UserFilter(FilterSet):
@@ -33,6 +34,7 @@ class UserFilter(FilterSet):
 
     class Meta:
         model = User
+        fields = []
 
 
 class UserFilterWithAll(FilterSet):
@@ -41,6 +43,7 @@ class UserFilterWithAll(FilterSet):
 
     class Meta:
         model = User
+        fields = []
 
 
 class NoteFilterWithRelated(FilterSet):
@@ -49,6 +52,7 @@ class NoteFilterWithRelated(FilterSet):
 
     class Meta:
         model = Note
+        fields = []
 
 
 class NoteFilterWithRelatedAll(FilterSet):
@@ -57,6 +61,7 @@ class NoteFilterWithRelatedAll(FilterSet):
 
     class Meta:
         model = Note
+        fields = []
 
 
 class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
@@ -65,6 +70,7 @@ class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
 
     class Meta:
         model = Note
+        fields = []
 
 
 class PostFilter(FilterSet):
@@ -75,6 +81,7 @@ class PostFilter(FilterSet):
 
     class Meta:
         model = Post
+        fields = []
 
     def filter_is_published(self, qs, name, value):
         """
@@ -93,6 +100,7 @@ class CoverFilterWithRelatedMethodFilter(FilterSet):
 
     class Meta:
         model = Cover
+        fields = []
 
 
 class CoverFilterWithRelated(FilterSet):
@@ -101,6 +109,7 @@ class CoverFilterWithRelated(FilterSet):
 
     class Meta:
         model = Cover
+        fields = []
 
 
 class PageFilterWithRelated(FilterSet):
@@ -109,6 +118,7 @@ class PageFilterWithRelated(FilterSet):
 
     class Meta:
         model = Page
+        fields = []
 
 
 class TagFilter(FilterSet):
@@ -116,6 +126,7 @@ class TagFilter(FilterSet):
 
     class Meta:
         model = Tag
+        fields = []
 
 
 class BlogPostFilter(FilterSet):
@@ -124,6 +135,7 @@ class BlogPostFilter(FilterSet):
 
     class Meta:
         model = BlogPost
+        fields = []
 
 
 class UserFilterWithDifferentName(FilterSet):
@@ -131,6 +143,7 @@ class UserFilterWithDifferentName(FilterSet):
 
     class Meta:
         model = User
+        fields = []
 
 
 class NoteFilterWithRelatedDifferentName(FilterSet):
@@ -138,6 +151,7 @@ class NoteFilterWithRelatedDifferentName(FilterSet):
 
     class Meta:
         model = Note
+        fields = []
 
 
 #############################################################
@@ -149,6 +163,7 @@ class AFilter(FilterSet):
 
     class Meta:
         model = A
+        fields = []
 
 
 class CFilter(FilterSet):
@@ -157,6 +172,7 @@ class CFilter(FilterSet):
 
     class Meta:
         model = C
+        fields = []
 
 
 class BFilter(FilterSet):
@@ -165,6 +181,7 @@ class BFilter(FilterSet):
 
     class Meta:
         model = B
+        fields = []
 
 
 class PersonFilter(FilterSet):
@@ -173,6 +190,7 @@ class PersonFilter(FilterSet):
 
     class Meta:
         model = Person
+        fields = []
 
 
 #############################################################
@@ -185,6 +203,7 @@ class AllLookupsPersonDateFilter(FilterSet):
 
     class Meta:
         model = Person
+        fields = []
 
 
 class ExplicitLookupsPersonDateFilter(FilterSet):
@@ -194,6 +213,7 @@ class ExplicitLookupsPersonDateFilter(FilterSet):
 
     class Meta:
         model = Person
+        fields = []
 
 
 class InSetLookupPersonIDFilter(FilterSet):
@@ -201,6 +221,7 @@ class InSetLookupPersonIDFilter(FilterSet):
 
     class Meta:
         model = Person
+        fields = []
 
 
 class InSetLookupPersonNameFilter(FilterSet):
@@ -208,6 +229,7 @@ class InSetLookupPersonNameFilter(FilterSet):
 
     class Meta:
         model = Person
+        fields = []
 
 
 class BlogPostOverrideFilter(FilterSet):

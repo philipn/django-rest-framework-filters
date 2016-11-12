@@ -70,6 +70,7 @@ class AllLookupsFilterTests(TestCase):
         class Actual(Mixin):
             class Meta:
                 model = Note
+                fields = []
 
         GET = {'title__contains': 'Test'}
         f = Actual(GET, queryset=Note.objects.all())
