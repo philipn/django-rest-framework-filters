@@ -1,8 +1,15 @@
+from __future__ import print_function
+
 import argparse
 import time
 
 from django.test import TestCase, Client, override_settings
-from django.core.urlresolvers import reverse
+
+try:
+    from django.urls import reverse
+except ImportError:
+    # Django < 1.10
+    from django.core.urlresolvers import reverse
 
 
 parser = argparse.ArgumentParser()
