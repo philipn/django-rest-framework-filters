@@ -1,15 +1,9 @@
 from __future__ import print_function
 
 import argparse
-import time
+from timeit import timeit
 
 from django.test import TestCase, Client, override_settings
-
-try:
-    from django.urls import reverse
-except ImportError:
-    # Django < 1.10
-    from django.core.urlresolvers import reverse
 
 
 parser = argparse.ArgumentParser()
@@ -31,25 +25,17 @@ class PerformanceTests(TestCase):
 
     def test_sanity(self):
         # sanity check to ensure our request are behaving as expected
-        response = self.client.get(reverse('df-notes-list'), {'author__username': 'bob'})
+        response = self.client.get('/df-notes/', {'author__username': 'bob'})
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(reverse('drf-notes-list'), {'author__username': 'bob'})
+        response = self.client.get('/drf-notes/', {'author__username': 'bob'})
         self.assertEqual(response.status_code, 200)
 
     def test_response_time(self):
+        data = {'author__username': 'bob'}
 
-        start = time.time()
-        for i in self.iterations:
-            self.client.get(reverse('df-notes-list'), {'author__username': 'bob'})
-        stop = time.time()
-        df_time = stop - start
-
-        start = time.time()
-        for i in self.iterations:
-            self.client.get(reverse('drf-notes-list'), {'author__username': 'bob'})
-        stop = time.time()
-        drf_time = stop - start
+        df_time = timeit(lambda: self.client.get('/df-notes/', data), number=1000)
+        drf_time = timeit(lambda: self.client.get('/drf-notes/', data), number=1000)
 
         if args.verbosity >= 2:
             print('\n' + '-' * 32)
