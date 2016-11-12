@@ -21,6 +21,7 @@ class UserFilterWithAll(DRFFilterSet):
 
     class Meta:
         model = User
+        fields = []
 
 
 class NoteFilterWithRelatedAll(DRFFilterSet):
@@ -29,3 +30,4 @@ class NoteFilterWithRelatedAll(DRFFilterSet):
 
     class Meta:
         model = Note
+        fields = []

@@ -1,7 +1,7 @@
 
 from rest_framework import viewsets
-from rest_framework import filters as df_backends
-from rest_framework_filters import backends
+from django_filters.rest_framework import backends as df_backends
+from rest_framework_filters import backends as drf_backends
 
 from ..testapp.models import Note
 from .serializers import NoteSerializer
@@ -18,5 +18,5 @@ class DFNoteViewSet(viewsets.ModelViewSet):
 class DRFFNoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    filter_backends = (backends.DjangoFilterBackend, )
+    filter_backends = (drf_backends.DjangoFilterBackend, )
     filter_class = NoteFilterWithRelatedAll
