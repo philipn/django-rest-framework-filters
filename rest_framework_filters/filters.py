@@ -4,16 +4,10 @@ from __future__ import unicode_literals
 from django.utils import six
 
 from django_filters.rest_framework.filters import *
+from rest_framework_filters.utils import import_class
 
 
 ALL_LOOKUPS = '__all__'
-
-
-def _import_class(path):
-    module_path, class_name = path.rsplit('.', 1)
-    class_name = str(class_name)  # Ensure not unicode on py2.x
-    module = __import__(module_path, fromlist=[class_name], level=0)
-    return getattr(module, class_name)
 
 
 class AutoFilter(Filter):
@@ -33,7 +27,7 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
     def filterset():
         def fget(self):
             if isinstance(self._filterset, six.string_types):
-                self._filterset = _import_class(self._filterset)
+                self._filterset = import_class(self._filterset)
             return self._filterset
 
         def fset(self, value):
