@@ -16,11 +16,19 @@ def _import_class(path):
     return getattr(module, class_name)
 
 
-class RelatedFilter(ModelChoiceFilter):
-    def __init__(self, filterset, lookups=None, *args, **kwargs):
+class AutoFilter(Filter):
+    def __init__(self, *args, **kwargs):
+        self.lookups = kwargs.pop('lookups', [])
+
+        super(AutoFilter, self).__init__(*args, **kwargs)
+
+
+class RelatedFilter(AutoFilter, ModelChoiceFilter):
+    def __init__(self, filterset, *args, **kwargs):
         self.filterset = filterset
-        self.lookups = lookups
-        return super(RelatedFilter, self).__init__(*args, **kwargs)
+        kwargs.setdefault('lookups', None)
+
+        super(RelatedFilter, self).__init__(*args, **kwargs)
 
     def filterset():
         def fget(self):
@@ -41,5 +49,8 @@ class RelatedFilter(ModelChoiceFilter):
         return super(RelatedFilter, self).field
 
 
-class AllLookupsFilter(Filter):
-    lookups = ALL_LOOKUPS
+class AllLookupsFilter(AutoFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('lookups', ALL_LOOKUPS)
+
+        super(AllLookupsFilter, self).__init__(*args, **kwargs)

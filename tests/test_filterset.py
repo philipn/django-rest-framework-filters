@@ -343,7 +343,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.get_filters()
+        requested_filters = filterset.expand_filters()
 
         self.assertTrue(requested_filters['name__contains!'].exclude)
 
@@ -357,7 +357,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.get_filters()
+        requested_filters = filterset.expand_filters()
 
         self.assertFalse(requested_filters['name__contains'].exclude)
         self.assertTrue(requested_filters['name__contains!'].exclude)
@@ -368,7 +368,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
-        requested_filters = filterset.get_filters()
+        requested_filters = filterset.expand_filters()
 
         self.assertTrue(requested_filters['tags__name__contains!'].exclude)
 

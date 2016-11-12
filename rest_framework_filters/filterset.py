@@ -17,38 +17,45 @@ from . import utils
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
-        opts = copy.deepcopy(new_class._meta)
 
-        # If no model is defined, skip all lookups processing
+        opts = copy.deepcopy(new_class._meta)
+        orig_meta = new_class._meta
+
+        declared_filters = new_class.declared_filters.copy()
+        orig_declared = new_class.declared_filters
+
+        # If no model is defined, skip auto filter processing
         if not opts.model:
             return new_class
 
-        # Determine declared filters and filters to generate lookups from. Declared
-        # filters have precedence over generated filters and should not be overwritten.
-        declared_filters, lookups_filters = OrderedDict(), OrderedDict()
-        for name, f in six.iteritems(new_class.declared_filters):
-            if isinstance(f, (filters.AllLookupsFilter, filters.RelatedFilter)):
-                lookups_filters[name] = f
+        # Generate filters for auto filters
+        auto_filters = OrderedDict([
+            (param, f) for param, f in six.iteritems(new_class.declared_filters)
+            if isinstance(f, filters.AutoFilter)
+        ])
 
-            # `AllLookupsFilter` is an exception, as it should be overwritten
-            if not isinstance(f, filters.AllLookupsFilter):
-                declared_filters[name] = f
+        # Remove auto filters from declared_filters so that they *are* overwritten
+        # RelatedFilter is an exception, and should *not* be overwritten
+        for param, f in six.iteritems(auto_filters):
+            if not isinstance(f, filters.RelatedFilter):
+                del declared_filters[param]
 
-        # generate filters for AllLookups/Related filters
-        # name is the parameter name on the filterset, f.name is the model field's name
-        for name, f in six.iteritems(lookups_filters):
+        for param, f in six.iteritems(auto_filters):
             opts.fields = {f.name: f.lookups or []}
-            new_filters = new_class.filters_for_model(opts.model, opts)
 
-            # filters_for_model generate param names from the model field name
-            # replace model field name with the parameter name from the filerset
+            # patch, generate auto filters
+            new_class._meta, new_class.declared_filters = opts, declared_filters
+            generated_filters = new_class.get_filters()
+
+            # get_filters() generates param names from the model field name
+            # Replace the field name with the parameter name from the filerset
             new_class.base_filters.update(OrderedDict(
-                (param.replace(f.name, name, 1), v)
-                for param, v in six.iteritems(new_filters)
+                (gen_param.replace(f.name, param, 1), gen_f)
+                for gen_param, gen_f in six.iteritems(generated_filters)
             ))
 
-        # re-apply declared filters (sans `AllLookupsFilter`s)
-        new_class.base_filters.update(declared_filters)
+        new_class._meta, new_class.declared_filters = orig_meta, orig_declared
+
         return new_class
 
     @property
@@ -68,26 +75,17 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
     _subset_cache = {}
 
     @classmethod
-    def filters_for_model(cls, model, opts):
-        fields = opts.fields
+    def get_fields(cls):
+        fields = super(FilterSet, cls).get_fields()
 
-        if not isinstance(fields, dict):
-            return super(FilterSet, cls).filters_for_model(model, opts)
-
-        # replace all '__all__' values by the resolved list of all lookups
-        fields = fields.copy()
         for name, lookups in six.iteritems(fields):
             if lookups == filters.ALL_LOOKUPS:
-                field = get_model_field(model, name)
+                field = get_model_field(cls._meta.model, name)
                 fields[name] = utils.lookups_for_field(field)
 
-        return filterset.filters_for_model(
-            model, fields, opts.exclude,
-            cls.filter_for_field,
-            cls.filter_for_reverse_field
-        )
+        return fields
 
-    def get_filters(self):
+    def expand_filters(self):
         """
         Build a set of filters based on the requested data. The resulting set
         will walk `RelatedFilter`s to recursively build the set of filters.
@@ -128,7 +126,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
                 filterset = subset_class(data=subset_data)
 
                 # modify filter names to account for relationship
-                for related_name, related_f in six.iteritems(filterset.get_filters()):
+                for related_name, related_f in six.iteritems(filterset.expand_filters()):
                     related_name = LOOKUP_SEP.join([filter_name, related_name])
                     related_f.name = LOOKUP_SEP.join([f.name, related_f.name])
                     requested_filters[related_name] = related_f
@@ -258,7 +256,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
     @property
     def qs(self):
         available_filters = self.filters
-        requested_filters = self.get_filters()
+        requested_filters = self.expand_filters()
 
         self.filters = requested_filters
         qs = super(FilterSet, self).qs

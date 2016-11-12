@@ -54,7 +54,6 @@ class BackendTest(APITestCase):
             <p>
                 <label for="id_username">Username:</label>
                 <input id="id_username" name="username" type="text" />
-                <span class="helptext">Filter</span>
             </p>
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
