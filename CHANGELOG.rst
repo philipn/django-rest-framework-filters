@@ -1,6 +1,12 @@
 Unreleased:
 -----------
 
+v0.9.1:
+-------
+
+* #128 Fix all lookups handling for related fields
+* #129 Fix backend template rendering
+
 v0.9.0:
 -------
 
