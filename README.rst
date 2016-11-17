@@ -28,6 +28,7 @@ Using ``django-rest-framework-filters``, we can easily do stuff like::
     **Table of Contents**
     :local:
     :depth: 2
+    :backlinks: none
 
 Features
 --------
