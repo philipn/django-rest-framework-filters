@@ -332,6 +332,49 @@ and ``FilterSet``s from either package are compatible with the other's DRF backe
         drf = rest_framework_filters.RelatedFilter(filterset=DRFFilter)
 
 
+Caveats & Limitations
+~~~~~~~~~~~~~~~~~~~~~
+
+``MultiWidget`` is incompatible
+"""""""""""""""""""""""""""""""
+
+djangorestframework-filters is not compatible with form widgets that parse query names that differ from the filter's
+attribute name. Although this only practically applies to ``MultiWidget``, it is a general limitation that affects
+custom widgets that also have this behavior. Affected filters include ``RangeFilter``, ``DateTimeFromToRangeFilter``,
+``DateFromToRangeFilter``, ``TimeRangeFilter``, and ``NumericRangeFilter``.
+
+To demonstrate the incompatiblity, take the following filterset:
+
+.. code-block:: python
+
+    class PostFilter(FilterSet):
+        publish_date = filters.DateFromToRangeFilter()
+
+The above filter allows users to perform a ``range`` query on the publication date. The filter class internally uses
+``MultiWidget`` to separately parse the upper and lower bound values. The incompatibility lies in that ``MultiWidget``
+appends an index to its inner widget names. Instead of parsing ``publish_date``, it expects ``publish_date_0`` and
+``publish_date_1``. It is possible to fix this by including the attribute name in the querystring, although this is
+not recommended.
+
+.. code-block::
+
+    ?publish_date_0=2016-01-01&publish_date_1=2016-02-01&publish_date=
+
+``MultiWidget`` is also discouraged since:
+
+* ``core-api`` field introspection fails for similar reasons
+* ``_0`` and ``_1`` are less API-friendly than ``_min`` and ``_max``
+
+The recommended solutions are to either:
+
+* Create separate filters for each of the sub-widgets (such as ``publish_date_min`` and ``publish_date_max``).
+* Use a CSV-based filter such as those derived from ``BaseCSVFilter``/``BaseInFilter``/``BaseRangeFilter``. eg,
+
+.. code-block::
+
+    ?publish_date__range=2016-01-01,2016-02-01
+
+
 License
 -------
 Copyright (c) 2013-2015 Philip Neustrom <philipn@gmail.com>,
