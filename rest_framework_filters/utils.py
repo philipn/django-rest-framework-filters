@@ -9,6 +9,13 @@ from django.db.models.lookups import Transform
 from django.utils import six
 
 
+def import_class(path):
+    module_path, class_name = path.rsplit('.', 1)
+    class_name = str(class_name)  # Ensure not unicode on py2.x
+    module = __import__(module_path, fromlist=[class_name], level=0)
+    return getattr(module, class_name)
+
+
 def lookups_for_field(model_field):
     """
     Generates a list of all possible lookup expressions for a model field.
