@@ -6,6 +6,7 @@ from django.test import TestCase
 
 from rest_framework_filters.compat import set_many
 from rest_framework_filters import FilterSet, filters
+from django_filters import FilterSet as DFFilterSet
 
 from .testapp.models import (
     User, Note, Post, Cover, A, B, C, Person, Tag, BlogPost,
@@ -324,3 +325,46 @@ class RelatedFilterTests(TestCase):
         self.assertIn('_related_filters', PostFilter.__dict__)
 
         self.assertEqual(len(filters), 1)
+
+
+class MiscTests(TestCase):
+    def test_multiwidget_incompatibility(self):
+        Person.objects.create(name='A')
+
+        # test django-filter functionality
+        class PersonFilter(DFFilterSet):
+            date_joined = filters.DateFromToRangeFilter(name='date_joined')
+
+            class Meta:
+                model = Person
+                fields = ['date_joined']
+
+        # Test from ... to 2016-01-01
+        GET = {
+            'date_joined_1': '2016-01-01',
+        }
+        f = PersonFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(f.qs.count(), 0)
+
+        # test drf-filters caveat
+        class PersonFilter(FilterSet):
+            date_joined = filters.DateFromToRangeFilter(name='date_joined')
+
+            class Meta:
+                model = Person
+                fields = ['date_joined']
+
+        # Test from ... to 2016-01-01, failure case
+        GET = {
+            'date_joined_1': '2016-01-01',
+        }
+        f = PersonFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(f.qs.count(), 1)
+
+        # Test from ... to 2016-01-01, "fix"
+        GET = {
+            'date_joined_1': '2016-01-01',
+            'date_joined': '',
+        }
+        f = PersonFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(f.qs.count(), 0)

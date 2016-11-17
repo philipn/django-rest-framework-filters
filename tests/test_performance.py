@@ -21,7 +21,7 @@ class PerformanceTests(TestCase):
     def setUpTestData(cls):
         cls.client = Client()
         cls.iterations = range(1000)
-        cls.threshold = 1.2
+        cls.threshold = 1.3
 
     def test_sanity(self):
         # sanity check to ensure our request are behaving as expected
