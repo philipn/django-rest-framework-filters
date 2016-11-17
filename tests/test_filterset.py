@@ -3,13 +3,15 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from django.test import TestCase
+from django.utils import six
 
 from rest_framework_filters.compat import set_many
+from rest_framework_filters.filterset import FilterSetMetaclass
 from rest_framework_filters import filters, FilterSet
 from django_filters.filters import BaseInFilter
 
 from .testapp.models import (
-    Note, Post, Person, Tag, BlogPost,
+    User, Note, Post, Person, Tag, BlogPost,
 )
 
 from .testapp.filters import (
@@ -291,6 +293,30 @@ class FilterSubsetTests(TestCase):
         # non-filter params should be ignored
         filterset_class = NoteFilterWithRelated.get_subset(['foobar'])
         self.assertEqual(len(filterset_class.base_filters), 0)
+
+    def test_metaclass_inheritance(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/132
+        class SubMetaclass(FilterSetMetaclass):
+            pass
+
+        class SubFilterSet(six.with_metaclass(SubMetaclass, FilterSet)):
+            pass
+
+        class NoteFilter(SubFilterSet):
+            author = filters.RelatedFilter(UserFilter)
+
+            class Meta:
+                model = Note
+                fields = ['title', 'content']
+
+        # ensure that the class name is useful when debugging
+        filterset_class = NoteFilter.get_subset(['author', 'content'])
+        self.assertEqual(filterset_class.__name__, 'NoteFilterSubset')
+
+        # ensure that the FilterSet subset only contains the requested fields
+        self.assertIn('author', filterset_class.base_filters)
+        self.assertIn('content', filterset_class.base_filters)
+        self.assertEqual(len(filterset_class.base_filters), 2)
 
 
 class FilterOverrideTests(TestCase):
