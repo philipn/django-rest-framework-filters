@@ -24,6 +24,10 @@ Using ``django-rest-framework-filters``, we can easily do stuff like::
     /api/article?author__first_name__icontains=john
     /api/article?is_published!=true
 
+.. contents::
+    **Table of Contents**
+    :local:
+    :depth: 2
 
 Features
 --------
@@ -305,8 +309,8 @@ To work around this, you have the following options:
             model = Product
 
 
-Can I mix and match `django-filter` and `django-rest-framework-filters`?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Can I mix and match ``django-filter`` and ``django-rest-framework-filters``?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Yes you can. ``django-rest-framework-filters`` is simply an extension of ``django-filter``. Note
 that ``RelatedFilter`` and other ``django-rest-framework-filters`` features are designed to work
