@@ -150,16 +150,16 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         ex::
 
             # regular attribute filters
-            name = FilterSet.get_param_filter_name('email')
-            assert name == 'email'
+            >>> FilterSet.get_param_filter_name('email')
+            'email'
 
             # exclusion filters
-            name = FilterSet.get_param_filter_name('email!')
-            assert name == 'email'
+            >>> FilterSet.get_param_filter_name('email!')
+            'email'
 
             # related filters
-            name = FilterSet.get_param_filter_name('author__email')
-            assert name == 'author'
+            >>> FilterSet.get_param_filter_name('author__email')
+            'author'
 
         """
         # Attempt to match against filters with lookups first. (username__endswith)
@@ -174,7 +174,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         related_filters = cls.related_filters.keys()
 
         # preference more specific filters. eg, `note__author` over `note`.
-        for name in sorted(related_filters)[::-1]:
+        for name in reversed(sorted(related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
             if param.startswith("%s%s" % (name, LOOKUP_SEP)):
@@ -187,19 +187,17 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         ex::
 
-            name, param = FilterSet.get_filter_name('author__email__foobar')
-            assert name == 'author'
-            assert param = 'email__foobar'
+            >>> FilterSet.get_related_filter_param('author__email__foobar')
+            ('author', 'email__foobar')
 
-            name, param = FilterSet.get_filter_name('author')
-            assert name is None
-            assert param is None
+            >>> FilterSet.get_related_filter_param('author')
+            (None, None)
 
         """
         related_filters = cls.related_filters.keys()
 
         # preference more specific filters. eg, `note__author` over `note`.
-        for name in sorted(related_filters)[::-1]:
+        for name in reversed(sorted(related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
             if param.startswith("%s%s" % (name, LOOKUP_SEP)):
@@ -237,8 +235,8 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             def __new__(cls, name, bases, attrs):
                 new_class = super(FilterSubsetMetaclass, cls).__new__(cls, name, bases, attrs)
                 new_class.base_filters = OrderedDict([
-                    (param, f)
-                    for param, f in new_class.base_filters.items()
+                    (param, base_filter) for param, base_filter
+                    in new_class.base_filters.items()
                     if param in filter_names
                 ])
                 return new_class
