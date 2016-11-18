@@ -140,6 +140,25 @@ Example filter calls:
     /api/companies?department__name=Accounting
     /api/companies?department__manager__name__startswith=Bob
 
+``queryset`` callables
+""""""""""""""""""""""
+
+Since ``RelatedFilter`` is a subclass of ``ModelChoiceFilter``, the ``queryset`` argument supports callable behavior.
+In the following example, the set of departments is restricted to those in the user's company.
+
+.. code-block:: python
+
+    def departments(request):
+        company = request.user.company
+        return company.department_set.all()
+
+    class EmployeeFilter(filters.FilterSet):
+        department = filters.RelatedFilter(filterset=DepartmentFilter, queryset=departments)
+        ...
+
+Recursive relationships
+"""""""""""""""""""""""
+
 Recursive relations are also supported. It may be necessary to specify the full module path.
 
 .. code-block:: python
@@ -379,6 +398,22 @@ The recommended solutions are to either:
 
     ?publish_date__range=2016-01-01,2016-02-01
 
+
+Migrating to 1.0
+----------------
+
+``RelatedFilter.queryset`` now required
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The related filterset's model is no longer used to provide the default value for ``RelatedFilter.queryset``. This
+change reduces the chance of unintentionally exposing data in the rendered filter forms. You must now explicitly
+provide the ``queryset`` argument, or override the ``get_queryset()`` method (see `queryset callables`_).
+
+
+``get_filters()`` renamed to ``expand_filters()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+django-filter has add a ``get_filters()`` classmethod to it's API, so this method has been renamed.
 
 License
 -------
