@@ -13,6 +13,7 @@ from .testapp.models import (
 )
 
 from .testapp.filters import (
+    UserFilter,
     PersonFilter,
     PostFilter,
     BlogPostFilter,
@@ -325,6 +326,28 @@ class RelatedFilterTests(TestCase):
         self.assertIn('_related_filters', PostFilter.__dict__)
 
         self.assertEqual(len(filters), 1)
+
+    def test_relatedfilter_queryset_required(self):
+        # Use a secure default queryset. Previous behavior was to use the default model
+        # manager's `all()`, however this has the side effect of exposing related data.
+        # The default behavior should not expose information, which requires users to
+        # explicitly set the `queryset` argument.
+        class NoteFilter(FilterSet):
+            title = filters.CharFilter(name='title')
+            author = filters.RelatedFilter(UserFilter, name='author')
+
+            class Meta:
+                model = Note
+                fields = []
+
+        GET = {'author': User.objects.get(username='user2').pk}
+        f = NoteFilter(GET, queryset=Note.objects.all())
+
+        with self.assertRaises(AssertionError) as excinfo:
+            f.qs
+
+        msg = str(excinfo.exception)
+        self.assertEqual("Expected `.get_queryset()` to return a `QuerySet`, but got `None`.", msg)
 
 
 class MiscTests(TestCase):

@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import argparse
-from timeit import timeit
+from timeit import repeat
 
 from django.test import TestCase, Client, override_settings
 
@@ -34,14 +34,16 @@ class PerformanceTests(TestCase):
     def test_response_time(self):
         data = {'author__username': 'bob'}
 
-        df_time = timeit(lambda: self.client.get('/df-notes/', data), number=1000)
-        drf_time = timeit(lambda: self.client.get('/drf-notes/', data), number=1000)
+        df_time = min(repeat(lambda: self.client.get('/df-notes/', data), number=200, repeat=5))
+        drf_time = min(repeat(lambda: self.client.get('/drf-notes/', data), number=200, repeat=5))
+        diff = (drf_time - df_time) / df_time * 100.0
 
         if args.verbosity >= 2:
             print('\n' + '-' * 32)
             print('Response time performance')
             print('django-filter time:\t%.4fs' % df_time)
             print('drf-filters time:\t%.4fs' % drf_time)
+            print('performance diff:\t%+.2f%% ' % diff)
             print('-' * 32)
 
         self.assertTrue(drf_time < (df_time * self.threshold))

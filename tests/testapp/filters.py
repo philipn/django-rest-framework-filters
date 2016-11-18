@@ -48,7 +48,7 @@ class UserFilterWithAll(FilterSet):
 
 class NoteFilterWithRelated(FilterSet):
     title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilter, name='author')
+    author = RelatedFilter(UserFilter, name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -57,7 +57,7 @@ class NoteFilterWithRelated(FilterSet):
 
 class NoteFilterWithRelatedAll(FilterSet):
     title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilterWithAll, name='author')
+    author = RelatedFilter(UserFilterWithAll, name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -66,7 +66,7 @@ class NoteFilterWithRelatedAll(FilterSet):
 
 class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
     title = filters.CharFilter(name='title')
-    writer = RelatedFilter(UserFilterWithAll, name='author')
+    writer = RelatedFilter(UserFilterWithAll, name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -75,7 +75,7 @@ class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
 
 class PostFilter(FilterSet):
     # Used for Related filter and Filter.method regression tests
-    note = RelatedFilter(NoteFilterWithRelatedAll, name='note')
+    note = RelatedFilter(NoteFilterWithRelatedAll, name='note', queryset=Note.objects.all())
     date_published = filters.AllLookupsFilter()
     is_published = filters.BooleanFilter(name='date_published', method='filter_is_published')
 
@@ -96,7 +96,7 @@ class PostFilter(FilterSet):
 
 class CoverFilterWithRelatedMethodFilter(FilterSet):
     comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilter, name='post')
+    post = RelatedFilter(PostFilter, name='post', queryset=Post.objects.all())
 
     class Meta:
         model = Cover
@@ -105,7 +105,7 @@ class CoverFilterWithRelatedMethodFilter(FilterSet):
 
 class CoverFilterWithRelated(FilterSet):
     comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilter, name='post')
+    post = RelatedFilter(PostFilter, name='post', queryset=Post.objects.all())
 
     class Meta:
         model = Cover
@@ -114,7 +114,7 @@ class CoverFilterWithRelated(FilterSet):
 
 class PageFilterWithRelated(FilterSet):
     title = filters.CharFilter(name='title')
-    previous_page = RelatedFilter(PostFilter, name='previous_page')
+    previous_page = RelatedFilter(PostFilter, name='previous_page', queryset=Post.objects.all())
 
     class Meta:
         model = Page
@@ -131,7 +131,7 @@ class TagFilter(FilterSet):
 
 class BlogPostFilter(FilterSet):
     title = filters.CharFilter(name='title')
-    tags = RelatedFilter(TagFilter, name='tags')
+    tags = RelatedFilter(TagFilter, name='tags', queryset=Tag.objects.all())
 
     class Meta:
         model = BlogPost
@@ -186,7 +186,7 @@ class BFilter(FilterSet):
 
 class PersonFilter(FilterSet):
     name = AllLookupsFilter(name='name')
-    best_friend = RelatedFilter('tests.testapp.filters.PersonFilter', name='best_friend')
+    best_friend = RelatedFilter('tests.testapp.filters.PersonFilter', name='best_friend', queryset=Person.objects.all())
 
     class Meta:
         model = Person

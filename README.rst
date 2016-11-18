@@ -113,7 +113,7 @@ You can easily traverse multiple relationships when filtering by using ``Related
 
 
     class DepartmentFilter(filters.FilterSet):
-        manager = filters.RelatedFilter(ManagerFilter, name='manager')
+        manager = filters.RelatedFilter(ManagerFilter, name='manager', queryset=Manager.objects.all())
 
         class Meta:
             model = Department
@@ -121,7 +121,7 @@ You can easily traverse multiple relationships when filtering by using ``Related
 
 
     class CompanyFilter(filters.FilterSet):
-        department = filters.RelatedFilter(DepartmentFilter, name='department')
+        department = filters.RelatedFilter(DepartmentFilter, name='department', queryset=Department.objects.all())
 
         class Meta:
             model = Company
@@ -140,13 +140,32 @@ Example filter calls:
     /api/companies?department__name=Accounting
     /api/companies?department__manager__name__startswith=Bob
 
+``queryset`` callables
+""""""""""""""""""""""
+
+Since ``RelatedFilter`` is a subclass of ``ModelChoiceFilter``, the ``queryset`` argument supports callable behavior.
+In the following example, the set of departments is restricted to those in the user's company.
+
+.. code-block:: python
+
+    def departments(request):
+        company = request.user.company
+        return company.department_set.all()
+
+    class EmployeeFilter(filters.FilterSet):
+        department = filters.RelatedFilter(filterset=DepartmentFilter, queryset=departments)
+        ...
+
+Recursive relationships
+"""""""""""""""""""""""
+
 Recursive relations are also supported. It may be necessary to specify the full module path.
 
 .. code-block:: python
 
     class PersonFilter(filters.FilterSet):
         name = filters.AllLookupsFilter(name='name')
-        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
+        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend', queryset=Person.objects.all())
 
         class Meta:
             model = Person
@@ -185,7 +204,7 @@ to all filter classes. It incorporates some of the implementation details of the
             return qs.filter(**{lookup_expr: isnull})
 
     class AuthorFilter(filters.FilterSet):
-        posts = filters.RelatedFilter('PostFilter')
+        posts = filters.RelatedFilter('PostFilter', queryset=Post.objects.all())
 
         class Meta:
             model = Author
@@ -285,7 +304,7 @@ You cannot combine ``AllLookupsFilter`` with ``RelatedFilter`` as the filter nam
 .. code-block:: python
 
     class ProductFilter(filters.FilterSet):
-        manufacturer = filters.RelatedFilter('ManufacturerFilter')
+        manufacturer = filters.RelatedFilter('ManufacturerFilter', queryset=Manufacturer.objects.all())
         manufacturer = filters.AllLookupsFilter()
 
 To work around this, you have the following options:
@@ -293,7 +312,7 @@ To work around this, you have the following options:
 .. code-block:: python
 
     class ProductFilter(filters.FilterSet):
-        manufacturer = filters.RelatedFilter('ManufacturerFilter')
+        manufacturer = filters.RelatedFilter('ManufacturerFilter', queryset=Manufacturer.objects.all())
 
         class Meta:
             model = Product
@@ -304,7 +323,7 @@ To work around this, you have the following options:
     # or
 
     class ProductFilter(filters.FilterSet):
-        manufacturer = filters.RelatedFilter('ManufacturerFilter', lookups='__all__')  # `lookups` also accepts a list
+        manufacturer = filters.RelatedFilter('ManufacturerFilter', queryset=Manufacturer.objects.all(), lookups='__all__')  # `lookups` also accepts a list
 
         class Meta:
             model = Product
@@ -326,7 +345,7 @@ and ``FilterSet``s from either package are compatible with the other's DRF backe
         ...
 
     class DRFFilter(rest_framework_filters.FilterSet):
-        vanilla = rest_framework_filters.RelatedFilter(filterset=VanillaFilter)
+        vanilla = rest_framework_filters.RelatedFilter(filterset=VanillaFilter, queryset=...)
 
 
     # invalid
@@ -334,7 +353,7 @@ and ``FilterSet``s from either package are compatible with the other's DRF backe
         ...
 
     class VanillaFilter(django_filters.FilterSet):
-        drf = rest_framework_filters.RelatedFilter(filterset=DRFFilter)
+        drf = rest_framework_filters.RelatedFilter(filterset=DRFFilter, queryset=...)
 
 
 Caveats & Limitations
@@ -379,6 +398,22 @@ The recommended solutions are to either:
 
     ?publish_date__range=2016-01-01,2016-02-01
 
+
+Migrating to 1.0
+----------------
+
+``RelatedFilter.queryset`` now required
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The related filterset's model is no longer used to provide the default value for ``RelatedFilter.queryset``. This
+change reduces the chance of unintentionally exposing data in the rendered filter forms. You must now explicitly
+provide the ``queryset`` argument, or override the ``get_queryset()`` method (see `queryset callables`_).
+
+
+``get_filters()`` renamed to ``expand_filters()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+django-filter has add a ``get_filters()`` classmethod to it's API, so this method has been renamed.
 
 License
 -------

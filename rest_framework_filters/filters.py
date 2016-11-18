@@ -38,9 +38,9 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
 
     def get_queryset(self, request):
         queryset = super(RelatedFilter, self).get_queryset(request)
-        if queryset is not None:
-            return queryset
-        return self.filterset._meta.model._default_manager.all()
+        assert queryset is not None, \
+            "Expected `.get_queryset()` to return a `QuerySet`, but got `None`."
+        return queryset
 
 
 class AllLookupsFilter(AutoFilter):
