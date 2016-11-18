@@ -113,7 +113,7 @@ You can easily traverse multiple relationships when filtering by using ``Related
 
 
     class DepartmentFilter(filters.FilterSet):
-        manager = filters.RelatedFilter(ManagerFilter, name='manager')
+        manager = filters.RelatedFilter(ManagerFilter, name='manager', queryset=Manager.objects.all())
 
         class Meta:
             model = Department
@@ -121,7 +121,7 @@ You can easily traverse multiple relationships when filtering by using ``Related
 
 
     class CompanyFilter(filters.FilterSet):
-        department = filters.RelatedFilter(DepartmentFilter, name='department')
+        department = filters.RelatedFilter(DepartmentFilter, name='department', queryset=Department.objects.all())
 
         class Meta:
             model = Company
@@ -146,7 +146,7 @@ Recursive relations are also supported. It may be necessary to specify the full 
 
     class PersonFilter(filters.FilterSet):
         name = filters.AllLookupsFilter(name='name')
-        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend')
+        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend', queryset=Person.objects.all())
 
         class Meta:
             model = Person
@@ -185,7 +185,7 @@ to all filter classes. It incorporates some of the implementation details of the
             return qs.filter(**{lookup_expr: isnull})
 
     class AuthorFilter(filters.FilterSet):
-        posts = filters.RelatedFilter('PostFilter')
+        posts = filters.RelatedFilter('PostFilter', queryset=Post.objects.all())
 
         class Meta:
             model = Author
@@ -285,7 +285,7 @@ You cannot combine ``AllLookupsFilter`` with ``RelatedFilter`` as the filter nam
 .. code-block:: python
 
     class ProductFilter(filters.FilterSet):
-        manufacturer = filters.RelatedFilter('ManufacturerFilter')
+        manufacturer = filters.RelatedFilter('ManufacturerFilter', queryset=Manufacturer.objects.all())
         manufacturer = filters.AllLookupsFilter()
 
 To work around this, you have the following options:
@@ -293,7 +293,7 @@ To work around this, you have the following options:
 .. code-block:: python
 
     class ProductFilter(filters.FilterSet):
-        manufacturer = filters.RelatedFilter('ManufacturerFilter')
+        manufacturer = filters.RelatedFilter('ManufacturerFilter', queryset=Manufacturer.objects.all())
 
         class Meta:
             model = Product
@@ -304,7 +304,7 @@ To work around this, you have the following options:
     # or
 
     class ProductFilter(filters.FilterSet):
-        manufacturer = filters.RelatedFilter('ManufacturerFilter', lookups='__all__')  # `lookups` also accepts a list
+        manufacturer = filters.RelatedFilter('ManufacturerFilter', queryset=Manufacturer.objects.all(), lookups='__all__')  # `lookups` also accepts a list
 
         class Meta:
             model = Product
@@ -326,7 +326,7 @@ and ``FilterSet``s from either package are compatible with the other's DRF backe
         ...
 
     class DRFFilter(rest_framework_filters.FilterSet):
-        vanilla = rest_framework_filters.RelatedFilter(filterset=VanillaFilter)
+        vanilla = rest_framework_filters.RelatedFilter(filterset=VanillaFilter, queryset=...)
 
 
     # invalid
@@ -334,7 +334,7 @@ and ``FilterSet``s from either package are compatible with the other's DRF backe
         ...
 
     class VanillaFilter(django_filters.FilterSet):
-        drf = rest_framework_filters.RelatedFilter(filterset=DRFFilter)
+        drf = rest_framework_filters.RelatedFilter(filterset=DRFFilter, queryset=...)
 
 
 Caveats & Limitations
