@@ -32,7 +32,7 @@ def get_package_data(package):
 
 setup(
     name='djangorestframework-filters',
-    version='0.9.0',
+    version='0.9.1',
     url='http://github.com/philipn/django-rest-framework-filters',
     license='MIT',
     description='Better filtering for Django REST Framework',
