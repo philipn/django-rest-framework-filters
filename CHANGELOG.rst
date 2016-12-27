@@ -1,6 +1,15 @@
 Unreleased:
 -----------
 
+* Add support for django-filter 1.0
+
+v0.9.1:
+-------
+
+* #128 Fix all lookups handling for related fields
+* #129 Fix backend template rendering
+* #148 Version lock django-filter<1.0 due to API incompatibilities
+
 v0.9.0:
 -------
 
