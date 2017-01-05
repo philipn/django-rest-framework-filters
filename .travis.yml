@@ -17,12 +17,15 @@ install:
   - travis_retry pip install -q $DJANGO $REST_FRAMEWORK coverage
   - pip install .
 script:
-  - coverage run manage.py test -v 2
+  - coverage run manage.py test -v 2 $OPTS
   - coverage report
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 matrix:
+  include:
+    - python: "3.6"
+      env: DJANGO="django>=1.10.0,<1.11.0" REST_FRAMEWORK="djangorestframework>=3.5,<3.6" OPTS="tests.perf"
   exclude:
     - python: "3.3"
       env: DJANGO="django>=1.10.0,<1.11.0" REST_FRAMEWORK="djangorestframework>=3.5,<3.6"
