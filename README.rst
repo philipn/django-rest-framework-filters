@@ -44,7 +44,7 @@ Requirements
 
 * Python 2.7 or 3.3+
 * Django 1.8, 1.9, 1.10
-* Django REST framework 3.3, 3.4
+* Django REST framework 3.4, 3.5
 
 
 Installation
