@@ -58,3 +58,25 @@ class BackendTest(APITestCase):
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
         """)
+
+
+class Test134(APITestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        a = models.Project.objects.create(name="Project A")
+        b = models.Project.objects.create(name="Project B")
+
+        models.Task.objects.create(project=a)
+        models.Task.objects.create(project=a)
+        models.Task.objects.create(project=b)
+
+    def test_related_name(self):
+        response = self.client.get('/tasks/', {'project__name': 'Project A'}, content_type='json')
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]['id'], 1)
+        self.assertEqual(response.data[1]['id'], 2)
+
+        response = self.client.get('/tasks/', {'project__name': 'Project B'}, content_type='json')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], 3)

@@ -2,9 +2,9 @@
 from rest_framework import viewsets
 from rest_framework_filters import backends
 
-from .models import User, Note
-from .serializers import UserSerializer, NoteSerializer
-from .filters import DFUserFilter, UserFilterWithAll, NoteFilterWithRelatedAll
+from .models import User, Note, Project, Task
+from .serializers import UserSerializer, NoteSerializer, ProjectSerializer, TaskSerializer
+from .filters import DFUserFilter, UserFilterWithAll, NoteFilterWithRelatedAll, ProjectFilter, TaskFilter
 
 
 class DFUserViewSet(viewsets.ModelViewSet):
@@ -37,3 +37,19 @@ class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
     filter_backends = (backends.DjangoFilterBackend, )
     filter_class = NoteFilterWithRelatedAll
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    serializer_class = ProjectSerializer
+    filter_backends = (backends.DjangoFilterBackend,)
+    filter_class = ProjectFilter
+    queryset = Project.objects.all()
+    model = Task
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskSerializer
+    filter_backends = (backends.DjangoFilterBackend,)
+    filter_class = TaskFilter
+    queryset = Task.objects.all()
+    model = Project
