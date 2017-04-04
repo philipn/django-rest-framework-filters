@@ -349,6 +349,28 @@ class RelatedFilterTests(TestCase):
         msg = str(excinfo.exception)
         self.assertEqual("Expected `.get_queryset()` to return a `QuerySet`, but got `None`.", msg)
 
+    def test_relatedfilter_request_is_passed(self):
+        class RequestCheck(FilterSet):
+            def __init__(self, *args, **kwargs):
+                super(RequestCheck, self).__init__(*args, **kwargs)
+                assert self.request is not None
+
+            class Meta:
+                model = User
+                fields = ['username']
+
+        class NoteFilter(FilterSet):
+            author = filters.RelatedFilter(RequestCheck, name='author')
+
+            class Meta:
+                model = Note
+                fields = []
+
+        GET = {'author__username': 'user2'}
+
+        # should pass
+        NoteFilter(GET, queryset=Note.objects.all(), request=object()).qs
+
 
 class MiscTests(TestCase):
     def test_multiwidget_incompatibility(self):
