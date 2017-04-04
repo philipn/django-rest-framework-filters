@@ -1,5 +1,6 @@
 
 from rest_framework.test import APITestCase, APIRequestFactory
+from rest_framework_filters import FilterSet
 
 from .testapp import models, views
 
@@ -58,3 +59,25 @@ class BackendTest(APITestCase):
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
         """)
+
+    def test_request_obj_is_passed(self):
+        """
+        Ensure that the request object is passed from the backend to the filterset.
+        See: https://github.com/philipn/django-rest-framework-filters/issues/149
+        """
+        class RequestCheck(FilterSet):
+            def __init__(self, *args, **kwargs):
+                super(RequestCheck, self).__init__(*args, **kwargs)
+                assert self.request is not None
+
+            class Meta:
+                model = models.User
+                fields = ['username']
+
+        class ViewSet(views.FilterFieldsUserViewSet):
+            filter_class = RequestCheck
+
+        view = ViewSet(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get('/'))
+        backend().filter_queryset(request, view.get_queryset(), view)

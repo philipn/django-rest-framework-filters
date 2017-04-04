@@ -123,7 +123,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
             if isinstance(f, filters.RelatedFilter) and filter_name in related_data:
                 subset_data = related_data[filter_name]
                 subset_class = f.filterset.get_subset(subset_data)
-                filterset = subset_class(data=subset_data)
+                filterset = subset_class(data=subset_data, request=self.request)
 
                 # modify filter names to account for relationship
                 for related_name, related_f in six.iteritems(filterset.expand_filters()):

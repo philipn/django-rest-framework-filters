@@ -1,6 +1,5 @@
 
-from django.template import Template, TemplateDoesNotExist, loader
-from rest_framework import compat
+from contextlib import contextmanager
 from django_filters.rest_framework import backends
 
 from .filterset import FilterSet
@@ -9,30 +8,27 @@ from .filterset import FilterSet
 class DjangoFilterBackend(backends.DjangoFilterBackend):
     default_filter_set = FilterSet
 
-    def filter_queryset(self, request, queryset, view):
-        filter_class = self.get_filter_class(view, queryset)
+    @contextmanager
+    def patched_filter_class(self, request):
+        """
+        Patch `get_filter_class()` to get the subset based on the request params
+        """
+        original = self.get_filter_class
 
-        if filter_class:
-            if hasattr(filter_class, 'get_subset'):
+        def get_subset_class(view, queryset=None):
+            filter_class = original(view, queryset)
+
+            if filter_class and hasattr(filter_class, 'get_subset'):
                 filter_class = filter_class.get_subset(request.query_params)
-            return filter_class(request.query_params, queryset=queryset).qs
 
-        return queryset
+            return filter_class
 
-    def to_html(self, request, queryset, view):
-        filter_class = self.get_filter_class(view, queryset)
-        if not filter_class:
-            return None
-        filter_instance = filter_class(request.query_params, queryset=queryset)
+        self.get_filter_class = get_subset_class
+        yield
+        self.get_filter_class = original
 
-        # forces `form` evaluation before `qs` is called. This prevents an empty form from being cached.
-        filter_instance.form
-
-        try:
-            template = loader.get_template(self.template)
-        except TemplateDoesNotExist:
-            template = Template(backends.template_default)
-
-        return compat.template_render(template, context={
-            'filter': filter_instance
-        })
+    def filter_queryset(self, request, queryset, view):
+        # patching the behavior of `get_filter_class()` in this method allows
+        # us to avoid maintenance issues with code duplication.
+        with self.patched_filter_class(request):
+            return super(DjangoFilterBackend, self).filter_queryset(request, queryset, view)
