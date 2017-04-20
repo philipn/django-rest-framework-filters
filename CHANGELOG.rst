@@ -1,7 +1,26 @@
 Unreleased:
 -----------
 
-* Add support for django-filter 1.0
+v0.10.0:
+--------
+
+This release primarily adds compatibility with django-filter 1.0 (more details
+in #144), and is an intermediate step to overhauling the behavior of filters
+that span relationships.
+
+As `RelatedFilter` is a subclass of `ModelChoiceFilter`, you may take advantage
+of the `callable` behavior for the `queryset` argument. The `queryset` is now a
+required argument, which is a forwards-incompatible change. You can provide the
+model's default queryset to maintain the current behavior, or a callable, which
+will allow you to filter the queryset by the request's properties.
+
+* #124 Removed deprecation warnings
+* #128 Fix all lookups handling for related fields
+* #129 Fix template rendering
+* #139 Fix metaclass inheritance bug
+* #146 Make `RelatedFilter.queryset` a required argument
+* #154 Add python 3.6 support
+* #161 Fix request-based filtering
 
 v0.9.1:
 -------
