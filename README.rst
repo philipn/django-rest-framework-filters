@@ -42,9 +42,9 @@ Features
 Requirements
 ------------
 
-* Python 2.7 or 3.3+
-* Django 1.8, 1.9, 1.10
-* Django REST framework 3.4, 3.5
+* **Python**: 2.7 or 3.3+
+* **Django**: 1.8, 1.9, 1.10, 1.11
+* **DRF**: 3.5, 3.6
 
 
 Installation
@@ -135,7 +135,7 @@ You can easily traverse multiple relationships when filtering by using ``Related
 
 Example filter calls:
 
-.. code-block:: http
+.. code-block::
 
     /api/companies?department__name=Accounting
     /api/companies?department__manager__name__startswith=Bob
@@ -212,7 +212,7 @@ to all filter classes. It incorporates some of the implementation details of the
 
 The above would enable the following filter calls:
 
-.. code-block:: http
+.. code-block::
 
     /api/posts?is_published=true
     /api/authors?posts__is_published=true
@@ -229,7 +229,7 @@ Automatic Filter Negation/Exclusion
 FilterSets support automatic exclusion using a simple ``param!=value`` syntax. This syntax
 internally sets the ``exclude`` property on the filter.
 
-.. code-block:: http
+.. code-block::
 
     /api/page?title!=The%20Park
 
@@ -237,7 +237,7 @@ This syntax supports regular filtering combined with exclusion filtering. For ex
 following would search for all articles containing "Hello" in the title, while excluding
 those containing "World".
 
-.. code-block:: http
+.. code-block::
 
     /api/articles?title__contains=Hello&title__contains!=World
 
@@ -245,7 +245,7 @@ Note that most filters only accept a single query parameter. In the above, ``tit
 and ``title__contains!`` are interpreted as two separate query parameters. The following would
 probably be invalid, although it depends on the specifics of the individual filter class:
 
-.. code-block:: http
+.. code-block::
 
     /api/articles?title__contains=Hello&title__contains!=World&title_contains!=Friend
 
