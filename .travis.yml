@@ -10,10 +10,11 @@ python:
   - "3.6"
 
 env:
-  - DJANGO=1.10 REST_FRAMEWORK=3.5
-  - DJANGO=1.9 REST_FRAMEWORK=3.5
+  - DJANGO=1.11 REST_FRAMEWORK=3.6
+  - DJANGO=1.10 REST_FRAMEWORK=3.6
+  - DJANGO=1.9 REST_FRAMEWORK=3.6
+  - DJANGO=1.8 REST_FRAMEWORK=3.6
   - DJANGO=1.8 REST_FRAMEWORK=3.5
-  - DJANGO=1.8 REST_FRAMEWORK=3.4
 
 install:
   - travis_retry pip install tox tox-travis coverage
@@ -30,10 +31,14 @@ matrix:
     - python: "3.6"
       env: TOXENV="warnings"
   exclude:
+    - python: "3.4"
+      env: DJANGO=1.11 REST_FRAMEWORK=3.6
     - python: "3.3"
-      env: DJANGO=1.10 REST_FRAMEWORK=3.5
+      env: DJANGO=1.11 REST_FRAMEWORK=3.6
     - python: "3.3"
-      env: DJANGO=1.9 REST_FRAMEWORK=3.5
+      env: DJANGO=1.10 REST_FRAMEWORK=3.6
+    - python: "3.3"
+      env: DJANGO=1.9 REST_FRAMEWORK=3.6
   allow_failures:
     - env: TOXENV="warnings"
   fast_finish: true
