@@ -347,7 +347,7 @@ class RelatedFilterTests(TestCase):
             f.qs
 
         msg = str(excinfo.exception)
-        self.assertEqual("Expected `.get_queryset()` to return a `QuerySet`, but got `None`.", msg)
+        self.assertEqual("Expected `.get_queryset()` for related filter 'NoteFilter.author' to return a `QuerySet`, but got `None`.", msg)
 
     def test_relatedfilter_request_is_passed(self):
         class RequestCheck(FilterSet):

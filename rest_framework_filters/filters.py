@@ -39,7 +39,8 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
     def get_queryset(self, request):
         queryset = super(RelatedFilter, self).get_queryset(request)
         assert queryset is not None, \
-            "Expected `.get_queryset()` to return a `QuerySet`, but got `None`."
+            "Expected `.get_queryset()` for related filter '%s.%s' to return a `QuerySet`, but got `None`." \
+            % (self.parent.__class__.__name__, self.name)
         return queryset
 
 
