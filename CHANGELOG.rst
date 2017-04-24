@@ -21,6 +21,7 @@ will allow you to filter the queryset by the request's properties.
 * #146 Make `RelatedFilter.queryset` a required argument
 * #154 Add python 3.6 support
 * #161 Fix request-based filtering
+* #170 Improve RelatedFilter queryset error message
 
 v0.9.1:
 -------
