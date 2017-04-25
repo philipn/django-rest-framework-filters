@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import sys
+
 from django.test import TestCase
 from django.utils import six
 
@@ -11,7 +13,7 @@ from rest_framework_filters import filters, FilterSet
 from django_filters.filters import BaseInFilter
 
 from .testapp.models import (
-    User, Note, Post, Person, Tag, BlogPost,
+    Note, Post, Person, Tag, BlogPost,
 )
 
 from .testapp.filters import (
@@ -23,6 +25,21 @@ from .testapp.filters import (
     BlogPostFilter,
     BlogPostOverrideFilter,
 )
+
+from rest_framework.views import APIView
+from rest_framework.test import APIRequestFactory
+factory = APIRequestFactory()
+
+
+class limit_recursion:
+    def __init__(self):
+        self.original_limit = sys.getrecursionlimit()
+
+    def __enter__(self):
+        sys.setrecursionlimit(100)
+
+    def __exit__(self, *args):
+        sys.setrecursionlimit(self.original_limit)
 
 
 class LookupsFilterTests(TestCase):
@@ -426,6 +443,22 @@ class FilterExclusionTests(TestCase):
 
         filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
         results = [r.title for r in filterset.qs]
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], 'Post 2')
+
+    def test_exclude_and_request_interaction(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/171
+        request = APIView().initialize_request(factory.get('/?tags__name__contains!=Tag'))
+        filterset = BlogPostFilter(request.query_params, request=request, queryset=BlogPost.objects.all())
+
+        try:
+            with limit_recursion():
+                qs = filterset.qs
+        except RuntimeError:
+            self.fail('Recursion limit reached')
+
+        results = [r.title for r in qs]
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], 'Post 2')
