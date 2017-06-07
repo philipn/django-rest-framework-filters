@@ -115,9 +115,13 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
 
             # include exclusion keys
             if exclude_name in self.data:
-                f = copy.deepcopy(f)
-                f.exclude = not f.exclude
-                requested_filters[exclude_name] = f
+                # deepcopy the *base* filter to prevent copying of model & parent
+                f_copy = copy.deepcopy(self.base_filters[filter_name])
+                f_copy.parent = f.parent
+                f_copy.model = f.model
+                f_copy.exclude = not f.exclude
+
+                requested_filters[exclude_name] = f_copy
 
             # include filters from related subsets
             if isinstance(f, filters.RelatedFilter) and filter_name in related_data:
