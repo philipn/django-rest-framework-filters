@@ -415,6 +415,18 @@ provide the ``queryset`` argument, or override the ``get_queryset()`` method (se
 
 django-filter has add a ``get_filters()`` classmethod to it's API, so this method has been renamed.
 
+
+Publishing
+----------
+
+.. code-block:: bash
+
+    $ pip install -U twine setuptools wheel
+    $ rm -rf dist/ build/
+    $ python setup.py sdist bdist_wheel
+    $ twine upload dist/*
+
+
 License
 -------
 Copyright (c) 2013-2015 Philip Neustrom <philipn@gmail.com>,
