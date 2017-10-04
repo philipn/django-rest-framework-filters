@@ -121,6 +121,15 @@ class PageFilterWithRelated(FilterSet):
         fields = []
 
 
+class PageFilterWithAliasedNestedRelated(FilterSet):
+    title = filters.CharFilter(name='title')
+    two_pages_back = RelatedFilter(PostFilter, name='previous_page__previous_page', queryset=Page.objects.all())
+
+    class Meta:
+        model = Page
+        fields = []
+
+
 class TagFilter(FilterSet):
     name = AllLookupsFilter(name='name')
 

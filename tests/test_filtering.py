@@ -9,7 +9,7 @@ from rest_framework_filters import FilterSet, filters
 from django_filters import FilterSet as DFFilterSet
 
 from .testapp.models import (
-    User, Note, Post, Cover, A, B, C, Person, Tag, BlogPost,
+    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
 )
 
 from .testapp.filters import (
@@ -18,6 +18,7 @@ from .testapp.filters import (
     PostFilter,
     BlogPostFilter,
     CoverFilterWithRelated,
+    PageFilterWithAliasedNestedRelated,
     NoteFilterWithAll,
     NoteFilterWithRelated,
     NoteFilterWithRelatedDifferentName,
@@ -110,11 +111,13 @@ class RelatedFilterTests(TestCase):
         Cover.objects.create(post=post1, comment="Cover 1")
         Cover.objects.create(post=post3, comment="Cover 2")
 
-        # #######################
-        # # Create pages
-        # #######################
-        # page1 = Page.objects.create(title="First page", content="First first.")
-        # Page.objects.create(title="Second page", content="Second second.", previous_page=page1)
+        #######################
+        # Create pages
+        #######################
+        Page.objects.create(title="First page", content="First first.")
+        Page.objects.create(title="Second page", content="Second second.", previous_page_id=1)
+        Page.objects.create(title="Third page", content="Third third.", previous_page_id=2)
+        Page.objects.create(title="Fourth page", content="Fourth fourth.", previous_page_id=3)
 
         ################################
         # ManyToMany
@@ -219,6 +222,19 @@ class RelatedFilterTests(TestCase):
         GET = {'writer__username__contains': 'user'}
         f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 4)
+
+    def test_relatedfilter_for_aliased_nested_relationships(self):
+        qs = Page.objects.order_by('pk')
+
+        f1 = PageFilterWithAliasedNestedRelated({'two_pages_back': '1'}, queryset=qs)
+        f2 = PageFilterWithAliasedNestedRelated({'two_pages_back': '2'}, queryset=qs)
+        f3 = PageFilterWithAliasedNestedRelated({'two_pages_back': '3'}, queryset=qs)
+        f4 = PageFilterWithAliasedNestedRelated({'two_pages_back': '4'}, queryset=qs)
+
+        self.assertQuerysetEqual(f1.qs, [3], lambda p: p.pk)
+        self.assertQuerysetEqual(f2.qs, [4], lambda p: p.pk)
+        self.assertQuerysetEqual(f3.qs, [], lambda p: p.pk)
+        self.assertQuerysetEqual(f4.qs, [], lambda p: p.pk)
 
     def test_relatedfilter_different_name(self):
         # Test the name filter on the related UserFilter set.

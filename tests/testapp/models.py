@@ -57,5 +57,5 @@ class Tag(models.Model):
 class BlogPost(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
-    tags = models.ManyToManyField(Tag, null=True)
+    tags = models.ManyToManyField(Tag)
     publish_date = models.DateField(null=True)
