@@ -335,8 +335,8 @@ Can I mix and match ``django-filter`` and ``django-rest-framework-filters``?
 Yes you can. ``django-rest-framework-filters`` is simply an extension of ``django-filter``. Note
 that ``RelatedFilter`` and other ``django-rest-framework-filters`` features are designed to work
 with ``rest_framework_filters.FilterSet`` and will not function on a ``django_filters.FilterSet``.
-However, the target ``RelatedFilter.filterset`` may point to a ``FilterSet`` from either package
-and ``FilterSet``s from either package are compatible with the other's DRF backend.
+However, the target ``RelatedFilter.filterset`` may point to a ``FilterSet`` from either package,
+and both ``FilterSet`` implementations are compatible with the other's DRF backend.
 
 .. code-block:: python
 
