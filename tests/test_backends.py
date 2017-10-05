@@ -60,7 +60,7 @@ class BackendTest(APITestCase):
         </form>
         """)
 
-    def test_request_obj_is_passed(self):
+    def test_request_obj_is_passed(test):
         """
         Ensure that the request object is passed from the backend to the filterset.
         See: https://github.com/philipn/django-rest-framework-filters/issues/149
@@ -68,7 +68,7 @@ class BackendTest(APITestCase):
         class RequestCheck(FilterSet):
             def __init__(self, *args, **kwargs):
                 super(RequestCheck, self).__init__(*args, **kwargs)
-                assert self.request is not None
+                test.assertIsNotNone(self.request)
 
             class Meta:
                 model = models.User
