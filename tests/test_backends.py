@@ -60,7 +60,7 @@ class BackendTest(APITestCase):
         </form>
         """)
 
-    def test_request_obj_is_passed(self):
+    def test_request_obj_is_passed(test):
         """
         Ensure that the request object is passed from the backend to the filterset.
         See: https://github.com/philipn/django-rest-framework-filters/issues/149
@@ -68,7 +68,7 @@ class BackendTest(APITestCase):
         class RequestCheck(FilterSet):
             def __init__(self, *args, **kwargs):
                 super(RequestCheck, self).__init__(*args, **kwargs)
-                assert self.request is not None
+                test.assertIsNotNone(self.request)
 
             class Meta:
                 model = models.User
@@ -81,3 +81,22 @@ class BackendTest(APITestCase):
         backend = view.filter_backends[0]
         request = view.initialize_request(factory.get('/'))
         backend().filter_queryset(request, view.get_queryset(), view)
+
+    def test_exclusion(self):
+        class RequestCheck(FilterSet):
+            class Meta:
+                model = models.User
+                fields = ['username']
+
+        class ViewSet(views.FilterFieldsUserViewSet):
+            filter_class = RequestCheck
+
+        view = ViewSet(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get('/?username=user1'))
+        qs = backend().filter_queryset(request, view.get_queryset(), view)
+        self.assertEqual([u.pk for u in qs], [1])
+
+        request = view.initialize_request(factory.get('/?username!=user1'))
+        qs = backend().filter_queryset(request, view.get_queryset(), view)
+        self.assertEqual([u.pk for u in qs], [2])
