@@ -3,6 +3,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 
 from django.db.models.constants import LOOKUP_SEP
+from django.http.request import QueryDict
 from django_filters import filterset, rest_framework
 from django_filters.utils import get_model_field
 
@@ -179,32 +180,53 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
                 return name
 
     @classmethod
-    def get_related_filter_param(cls, param):
+    def get_related_data(cls, data):
         """
-        Get a tuple of (filter name, related param).
+        Given the query data, return a map of {related filter: {related: data}}.
+        The related data is used as the `data` argument for related FilterSet
+        initialization.
+
+        Note that the related data dictionaries will be a QueryDict, regardless
+        of the type of the original data dict.
 
         ex::
 
-            >>> FilterSet.get_related_filter_param('author__email__foobar')
-            ('author', 'email__foobar')
-
-            >>> FilterSet.get_related_filter_param('author')
-            (None, None)
+            >>> NoteFilter.get_related_data({
+            >>>     'author__email': 'foo',
+            >>>     'author__name': 'bar',
+            >>>     'name': 'baz',
+            >>> })
+            OrderedDict([
+                ('author', <QueryDict: {'email': ['foo'], 'name': ['bar']}>)
+            ])
 
         """
         related_filters = cls.related_filters.keys()
+        related_data = OrderedDict()
+        data = data.copy()  # get a copy of the original data
 
         # preference more specific filters. eg, `note__author` over `note`.
         for name in reversed(sorted(related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
-            if param.startswith("%s%s" % (name, LOOKUP_SEP)):
-                # strip param + LOOKUP_SET from param
-                related_param = param[len(name) + len(LOOKUP_SEP):]
-                return name, related_param
+            related_prefix = "%s%s" % (name, LOOKUP_SEP)
 
-        # not a related param
-        return None, None
+            related = QueryDict('', mutable=True)
+            for param in list(data):
+                if param.startswith(related_prefix):
+                    value = data.pop(param)
+                    param = param[len(related_prefix):]
+
+                    # handle QueryDict & dict values
+                    if not isinstance(value, (list, tuple)):
+                        related[param] = value
+                    else:
+                        related.setlist(param, value)
+
+            if related:
+                related_data[name] = related
+
+        return related_data
 
     @classmethod
     def get_filter_subset(cls, params):
