@@ -81,3 +81,22 @@ class BackendTest(APITestCase):
         backend = view.filter_backends[0]
         request = view.initialize_request(factory.get('/'))
         backend().filter_queryset(request, view.get_queryset(), view)
+
+    def test_exclusion(self):
+        class RequestCheck(FilterSet):
+            class Meta:
+                model = models.User
+                fields = ['username']
+
+        class ViewSet(views.FilterFieldsUserViewSet):
+            filter_class = RequestCheck
+
+        view = ViewSet(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get('/?username=user1'))
+        qs = backend().filter_queryset(request, view.get_queryset(), view)
+        self.assertEqual([u.pk for u in qs], [1])
+
+        request = view.initialize_request(factory.get('/?username!=user1'))
+        qs = backend().filter_queryset(request, view.get_queryset(), view)
+        self.assertEqual([u.pk for u in qs], [2])
