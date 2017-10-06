@@ -77,6 +77,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         super(FilterSet, self).__init__(data, queryset, request=request, prefix=prefix, **kwargs)
 
+        self.related_filtersets = self.get_related_filtersets()
         self.request_filters = self.get_request_filters()
 
     @classmethod
@@ -92,23 +93,9 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     def get_request_filters(self):
         """
-        Build a set of filters based on the request data. The resulting set
-        will walk `RelatedFilter`s to recursively build the set of filters.
+        Build a set of filters based on the request data. This currently
+        includes only filter exclusion/negation.
         """
-        # build param data for related filters: {rel: {param: value}}
-        related_data = OrderedDict(
-            [(name, OrderedDict()) for name in self.__class__.related_filters]
-        )
-        for param, value in self.data.items():
-            filter_name, related_param = self.get_related_filter_param(param)
-
-            # skip non lookup/related keys
-            if filter_name is None:
-                continue
-
-            if filter_name in related_data:
-                related_data[filter_name][related_param] = value
-
         # build the compiled set of all filters
         requested_filters = OrderedDict()
         for filter_name, f in self.filters.items():
@@ -127,19 +114,22 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
                 f_copy.exclude = not f.exclude
 
                 requested_filters[exclude_name] = f_copy
-
-            # include filters from related subsets
-            if isinstance(f, filters.RelatedFilter) and filter_name in related_data:
-                subset_data = related_data[filter_name]
-                filterset = f.filterset(data=subset_data, request=self.request)
-
-                # modify filter names to account for relationship
-                for related_name, related_f in filterset.get_request_filters().items():
-                    related_name = LOOKUP_SEP.join([filter_name, related_name])
-                    related_f.field_name = LOOKUP_SEP.join([f.field_name, related_f.field_name])
-                    requested_filters[related_name] = related_f
-
         return requested_filters
+
+    def get_related_filtersets(self):
+        related_filtersets = OrderedDict()
+        related_data = self.get_related_data(self.data)
+
+        for related_name, subset_data in related_data.items():
+            f = self.filters[related_name]
+            related_filtersets[f.field_name] = f.filterset(
+                data=subset_data,
+                queryset=f.get_queryset(self.request),
+                request=self.request,
+                prefix=self.form_prefix,
+            )
+
+        return related_filtersets
 
     @classmethod
     def get_param_filter_name(cls, param):
@@ -254,8 +244,22 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     def filter_queryset(self, queryset):
         with self.override_filters():
-            return super(FilterSet, self).filter_queryset(queryset)
+            queryset = super(FilterSet, self).filter_queryset(queryset)
+            queryset = self.filter_related_filtersets(queryset)
+            return queryset
 
     def get_form_class(self):
         with self.override_filters():
             return super(FilterSet, self).get_form_class()
+
+    def filter_related_filtersets(self, queryset):
+        """
+        Filter the provided `qs` by the `related_filtersets`. It is recommended
+        that you override this method to change the filtering behavior across
+        relationships.
+        """
+        for field_name, related_filterset in self.related_filtersets.items():
+            lookup_expr = LOOKUP_SEP.join([field_name, 'in'])
+            queryset = queryset.filter(**{lookup_expr: related_filterset.qs})
+
+        return queryset

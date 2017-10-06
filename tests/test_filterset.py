@@ -458,9 +458,9 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
-        requested_filters = filterset.request_filters
+        requested_filters = filterset.related_filtersets['tags'].request_filters
 
-        self.assertTrue(requested_filters['tags__name__contains!'].exclude)
+        self.assertTrue(requested_filters['name__contains!'].exclude)
 
     def test_exclusion_results(self):
         GET = {
