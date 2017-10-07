@@ -376,7 +376,7 @@ class RelatedFilterTests(TestCase):
                 fields = ['username']
 
         class NoteFilter(FilterSet):
-            author = filters.RelatedFilter(RequestCheck, name='author')
+            author = filters.RelatedFilter(RequestCheck, name='author', queryset=User.objects.all())
 
             class Meta:
                 model = Note

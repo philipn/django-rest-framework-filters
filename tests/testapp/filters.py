@@ -156,7 +156,7 @@ class UserFilterWithDifferentName(FilterSet):
 
 
 class NoteFilterWithRelatedDifferentName(FilterSet):
-    author = RelatedFilter(UserFilterWithDifferentName, name='author')
+    author = RelatedFilter(UserFilterWithDifferentName, name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -168,7 +168,7 @@ class NoteFilterWithRelatedDifferentName(FilterSet):
 #############################################################
 class AFilter(FilterSet):
     title = filters.CharFilter(name='title')
-    b = RelatedFilter('tests.testapp.filters.BFilter', name='b')
+    b = RelatedFilter('tests.testapp.filters.BFilter', name='b', queryset=B.objects.all())
 
     class Meta:
         model = A
@@ -177,7 +177,7 @@ class AFilter(FilterSet):
 
 class CFilter(FilterSet):
     title = filters.CharFilter(name='title')
-    a = RelatedFilter(AFilter, name='a')
+    a = RelatedFilter(AFilter, name='a', queryset=A.objects.all())
 
     class Meta:
         model = C
@@ -186,7 +186,7 @@ class CFilter(FilterSet):
 
 class BFilter(FilterSet):
     name = AllLookupsFilter(name='name')
-    c = RelatedFilter(CFilter, name='c')
+    c = RelatedFilter(CFilter, name='c', queryset=C.objects.all())
 
     class Meta:
         model = B
