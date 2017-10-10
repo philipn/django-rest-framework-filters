@@ -11,6 +11,10 @@ class NoteFilterWithExplicitRelated(DFFilterSet):
     class Meta:
         model = Note
         fields = {
+            'title': [
+                'exact', 'contains', 'startswith', 'endswith',
+                'iexact', 'icontains', 'istartswith', 'iendswith',
+            ],
             'author__username': ['exact'],
         }
 
@@ -26,7 +30,7 @@ class UserFilterWithAll(DRFFilterSet):
 
 class NoteFilterWithRelatedAll(DRFFilterSet):
     title = filters.AllLookupsFilter()
-    author = filters.RelatedFilter(UserFilterWithAll)
+    author = filters.RelatedFilter(UserFilterWithAll, queryset=User.objects.all())
 
     class Meta:
         model = Note
