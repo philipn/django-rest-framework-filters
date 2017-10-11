@@ -318,21 +318,12 @@ class RelatedFilterTests(TestCase):
         f = NoteFilterWithRelated(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 4)
 
-    def test_related_filters_caching(self):
+    def test_related_filters_inheritance(self):
         class ChildFilter(PostFilter):
             foo = filters.RelatedFilter(PostFilter)
 
-        self.assertEqual(len(PostFilter.related_filters), 1)
-        self.assertIn('note', PostFilter.related_filters)
-        self.assertIn('_related_filters', PostFilter.__dict__)
-
-        # child filterset should not use parent's cached related filters.
-        self.assertNotIn('_related_filters', ChildFilter.__dict__)
-
-        self.assertEqual(len(ChildFilter.related_filters), 2)
-        self.assertIn('note', ChildFilter.related_filters)
-        self.assertIn('foo', ChildFilter.related_filters)
-        self.assertIn('_related_filters', ChildFilter.__dict__)
+        self.assertEqual(['note'], list(PostFilter.related_filters))
+        self.assertEqual(['note', 'foo'], list(ChildFilter.related_filters))
 
     def test_relatedfilter_queryset_required(self):
         # Use a secure default queryset. Previous behavior was to use the default model

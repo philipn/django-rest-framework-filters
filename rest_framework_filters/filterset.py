@@ -54,20 +54,15 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 for gen_param, gen_f in generated_filters.items()
             ))
 
+        # Gather related filters
+        new_class.related_filters = OrderedDict([
+            (name, f) for name, f in new_class.base_filters.items()
+            if isinstance(f, filters.RelatedFilter)
+        ])
+
         new_class._meta, new_class.declared_filters = orig_meta, orig_declared
 
         return new_class
-
-    @property
-    def related_filters(self):
-        # check __dict__ instead of use hasattr. we *don't* want to check
-        # parents for existence of existing cache.
-        if '_related_filters' not in self.__dict__:
-            self._related_filters = OrderedDict([
-                (name, f) for name, f in self.base_filters.items()
-                if isinstance(f, filters.RelatedFilter)
-            ])
-        return self._related_filters
 
 
 class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
