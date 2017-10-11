@@ -387,6 +387,23 @@ class RelatedFilterTests(TestCase):
         # should pass
         NoteFilter(GET, queryset=Note.objects.all(), request=object()).qs
 
+    def test_validation(self):
+        class F(PostFilter):
+            pk = filters.NumberFilter(name='id')
+
+        GET = {
+            'note__author': 'foo',
+            'pk': 'bar',
+        }
+
+        f = F(GET, queryset=Post.objects.all())
+        self.assertQuerysetEqual(f.qs, Post.objects.none())
+        self.assertFalse(f.form.is_valid())
+
+        self.assertEqual(len(f.form.errors.keys()), 2)
+        self.assertIn('note__author', f.form.errors)
+        self.assertIn('pk', f.form.errors)
+
 
 class MiscTests(TestCase):
     def test_multiwidget_incompatibility(self):
