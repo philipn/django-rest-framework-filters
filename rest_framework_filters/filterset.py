@@ -138,22 +138,22 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
         return requested_filters
 
     @classmethod
-    def get_filter_name(cls, param):
+    def get_param_filter_name(cls, param):
         """
         Get the filter name for the request data parameter.
 
         ex::
 
             # regular attribute filters
-            name = FilterSet.get_filter_name('email')
+            name = FilterSet.get_param_filter_name('email')
             assert name == 'email'
 
             # exclusion filters
-            name = FilterSet.get_filter_name('email!')
+            name = FilterSet.get_param_filter_name('email!')
             assert name == 'email'
 
             # related filters
-            name = FilterSet.get_filter_name('author__email')
+            name = FilterSet.get_param_filter_name('author__email')
             assert name == 'author'
 
         """
@@ -217,7 +217,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
         # param names that traverse relations are translated to just the local
         # filter names. eg, `author__username` => `author`. Empty values are
         # removed, as they indicate an unknown field eg, author__foobar__isnull
-        filter_names = [cls.get_filter_name(param) for param in params]
+        filter_names = [cls.get_param_filter_name(param) for param in params]
         filter_names = [f for f in filter_names if f is not None]
 
         # attempt to retrieve related filterset subset from the cache
