@@ -1,6 +1,22 @@
 Unreleased:
 -----------
 
+v0.10.2:
+--------
+
+This is a maintenance release that fixes compatibility with django-filter.
+
+* 189 Fix method name collision
+
+
+v0.10.1:
+--------
+
+This is a maintenance release that fixes the following bugs:
+
+* #172 Prevent deepcopying of filter's parent
+
+
 v0.10.0:
 --------
 

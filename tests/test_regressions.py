@@ -100,7 +100,7 @@ class IsoDatetimeTests(TestCase):
         p = list(f.qs)[0]
         self.assertEqual(p.name, "John")
 
-    @override_settings(USE_TZ=True)
+    @override_settings(USE_TZ=True, TIME_ZONE='UTC')
     def test_datetime_timezone_awareness(self):
         # Addresses issue #24 - ensure that datetime strings terminating
         # in 'Z' are correctly handled.

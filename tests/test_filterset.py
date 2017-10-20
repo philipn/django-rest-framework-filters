@@ -162,32 +162,32 @@ class LookupsFilterTests(TestCase):
         self.assertIs(F.base_filters['id__in'], f)
 
 
-class GetFilterNameTests(TestCase):
+class GetParamFilterNameTests(TestCase):
 
     def test_regular_filter(self):
-        name = UserFilter.get_filter_name('email')
+        name = UserFilter.get_param_filter_name('email')
         self.assertEqual('email', name)
 
     def test_exclusion_filter(self):
-        name = UserFilter.get_filter_name('email!')
+        name = UserFilter.get_param_filter_name('email!')
         self.assertEqual('email', name)
 
     def test_non_filter(self):
-        name = UserFilter.get_filter_name('foobar')
+        name = UserFilter.get_param_filter_name('foobar')
         self.assertEqual(None, name)
 
     def test_related_filter(self):
         # 'exact' matches
-        name = NoteFilterWithRelated.get_filter_name('author')
+        name = NoteFilterWithRelated.get_param_filter_name('author')
         self.assertEqual('author', name)
 
         # related attribute filters
-        name = NoteFilterWithRelated.get_filter_name('author__email')
+        name = NoteFilterWithRelated.get_param_filter_name('author__email')
         self.assertEqual('author', name)
 
         # non-existent related filters should match, as it's the responsibility
         # of the related filterset to handle non-existent filters
-        name = NoteFilterWithRelated.get_filter_name('author__foobar')
+        name = NoteFilterWithRelated.get_param_filter_name('author__foobar')
         self.assertEqual('author', name)
 
     def test_twice_removed_related_filter(self):
@@ -199,21 +199,21 @@ class GetFilterNameTests(TestCase):
                 model = Post
                 fields = []
 
-        name = PostFilterWithDirectAuthor.get_filter_name('note__title')
+        name = PostFilterWithDirectAuthor.get_param_filter_name('note__title')
         self.assertEqual('note', name)
 
         # 'exact' matches, preference more specific filter name, as less specific
         # filter may not have related access.
-        name = PostFilterWithDirectAuthor.get_filter_name('note__author')
+        name = PostFilterWithDirectAuthor.get_param_filter_name('note__author')
         self.assertEqual('note__author', name)
 
         # related attribute filters
-        name = PostFilterWithDirectAuthor.get_filter_name('note__author__email')
+        name = PostFilterWithDirectAuthor.get_param_filter_name('note__author__email')
         self.assertEqual('note__author', name)
 
         # non-existent related filters should match, as it's the responsibility
         # of the related filterset to handle non-existent filters
-        name = PostFilterWithDirectAuthor.get_filter_name('note__author__foobar')
+        name = PostFilterWithDirectAuthor.get_param_filter_name('note__author__foobar')
         self.assertEqual('note__author', name)
 
     def test_name_hiding(self):
@@ -226,19 +226,19 @@ class GetFilterNameTests(TestCase):
                 model = Post
                 fields = []
 
-        name = PostFilterNameHiding.get_filter_name('note__author')
+        name = PostFilterNameHiding.get_param_filter_name('note__author')
         self.assertEqual('note__author', name)
 
-        name = PostFilterNameHiding.get_filter_name('note__title')
+        name = PostFilterNameHiding.get_param_filter_name('note__title')
         self.assertEqual('note', name)
 
-        name = PostFilterNameHiding.get_filter_name('note')
+        name = PostFilterNameHiding.get_param_filter_name('note')
         self.assertEqual('note', name)
 
-        name = PostFilterNameHiding.get_filter_name('note2')
+        name = PostFilterNameHiding.get_param_filter_name('note2')
         self.assertEqual('note2', name)
 
-        name = PostFilterNameHiding.get_filter_name('note2__author')
+        name = PostFilterNameHiding.get_param_filter_name('note2__author')
         self.assertEqual('note2', name)
 
 
