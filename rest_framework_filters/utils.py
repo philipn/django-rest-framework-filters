@@ -6,7 +6,6 @@ from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import Expression
 from django.db.models.fields.related import ForeignObject
 from django.db.models.lookups import Transform
-from django.utils import six
 
 
 def import_class(path):
@@ -27,7 +26,7 @@ def lookups_for_field(model_field):
 
     lookups = []
 
-    for expr, lookup in six.iteritems(class_lookups(model_field)):
+    for expr, lookup in class_lookups(model_field).items():
         if issubclass(lookup, Transform) and django.VERSION >= (1, 9):
             transform = lookup(Expression(model_field))
             lookups += [
@@ -56,7 +55,7 @@ def lookups_for_transform(transform):
     """
     lookups = []
 
-    for expr, lookup in six.iteritems(class_lookups(transform.output_field)):
+    for expr, lookup in class_lookups(transform.output_field).items():
         if issubclass(lookup, Transform):
 
             # type match indicates recursion.

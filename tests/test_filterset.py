@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import sys
 
 from django.test import TestCase
-from django.utils import six
 
 from rest_framework_filters.compat import set_many
 from rest_framework_filters.filterset import FilterSetMetaclass
@@ -316,7 +315,7 @@ class FilterSubsetTests(TestCase):
         class SubMetaclass(FilterSetMetaclass):
             pass
 
-        class SubFilterSet(six.with_metaclass(SubMetaclass, FilterSet)):
+        class SubFilterSet(FilterSet, metaclass=SubMetaclass):
             pass
 
         class NoteFilter(SubFilterSet):

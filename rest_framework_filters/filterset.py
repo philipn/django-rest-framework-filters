@@ -6,7 +6,6 @@ from contextlib import contextmanager
 import copy
 
 from django.db.models.constants import LOOKUP_SEP
-from django.utils import six
 
 from django_filters import filterset, rest_framework
 from django_filters.utils import get_model_field
@@ -31,17 +30,17 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         # Generate filters for auto filters
         auto_filters = OrderedDict([
-            (param, f) for param, f in six.iteritems(new_class.declared_filters)
+            (param, f) for param, f in new_class.declared_filters.items()
             if isinstance(f, filters.AutoFilter)
         ])
 
         # Remove auto filters from declared_filters so that they *are* overwritten
         # RelatedFilter is an exception, and should *not* be overwritten
-        for param, f in six.iteritems(auto_filters):
+        for param, f in auto_filters.items():
             if not isinstance(f, filters.RelatedFilter):
                 del declared_filters[param]
 
-        for param, f in six.iteritems(auto_filters):
+        for param, f in auto_filters.items():
             opts.fields = {f.field_name: f.lookups or []}
 
             # patch, generate auto filters
@@ -52,7 +51,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             # Replace the field name with the parameter name from the filerset
             new_class.base_filters.update(OrderedDict(
                 (gen_param.replace(f.field_name, param, 1), gen_f)
-                for gen_param, gen_f in six.iteritems(generated_filters)
+                for gen_param, gen_f in generated_filters.items()
             ))
 
         new_class._meta, new_class.declared_filters = orig_meta, orig_declared
@@ -66,13 +65,13 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         # FilterSet.get_subset([...]) to return the same cache.
         if '_related_filters' not in self.__dict__:
             self._related_filters = OrderedDict([
-                (name, f) for name, f in six.iteritems(self.base_filters)
+                (name, f) for name, f in self.base_filters.items()
                 if isinstance(f, filters.RelatedFilter)
             ])
         return self._related_filters
 
 
-class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)):
+class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
     _subset_cache = {}
 
     def __init__(self, *args, **kwargs):
@@ -84,7 +83,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
     def get_fields(cls):
         fields = super(FilterSet, cls).get_fields()
 
-        for name, lookups in six.iteritems(fields):
+        for name, lookups in fields.items():
             if lookups == filters.ALL_LOOKUPS:
                 field = get_model_field(cls._meta.model, name)
                 fields[name] = utils.lookups_for_field(field)
@@ -100,7 +99,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
         related_data = OrderedDict(
             [(name, OrderedDict()) for name in self.__class__.related_filters]
         )
-        for param, value in six.iteritems(self.data):
+        for param, value in self.data.items():
             filter_name, related_param = self.get_related_filter_param(param)
 
             # skip non lookup/related keys
@@ -112,7 +111,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
 
         # build the compiled set of all filters
         requested_filters = OrderedDict()
-        for filter_name, f in six.iteritems(self.filters):
+        for filter_name, f in self.filters.items():
             exclude_name = '%s!' % filter_name
 
             # Add plain lookup filters if match. ie, `username__icontains`
@@ -136,7 +135,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
                 filterset = subset_class(data=subset_data, request=self.request)
 
                 # modify filter names to account for relationship
-                for related_name, related_f in six.iteritems(filterset.expand_filters()):
+                for related_name, related_f in filterset.expand_filters().items():
                     related_name = LOOKUP_SEP.join([filter_name, related_name])
                     related_f.field_name = LOOKUP_SEP.join([f.field_name, related_f.field_name])
                     requested_filters[related_name] = related_f
@@ -239,12 +238,12 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
                 new_class = super(FilterSubsetMetaclass, cls).__new__(cls, name, bases, attrs)
                 new_class.base_filters = OrderedDict([
                     (param, f)
-                    for param, f in six.iteritems(new_class.base_filters)
+                    for param, f in new_class.base_filters.items()
                     if param in filter_names
                 ])
                 return new_class
 
-        class FilterSubset(six.with_metaclass(FilterSubsetMetaclass, cls)):
+        class FilterSubset(cls, metaclass=FilterSubsetMetaclass):
             pass
 
         FilterSubset.__name__ = str('%sSubset' % (cls.__name__, ))
