@@ -202,7 +202,8 @@ class InLookupTests(TestCase):
             'pk__in': '{:d},c{:d}'.format(p1, p2)
         }
         f = InSetLookupPersonIDFilter(INVALID_GET, queryset=Person.objects.all())
-        self.assertEqual(len(list(f.qs)), 0)
+        self.assertFalse(f.is_valid())
+        self.assertEqual(f.qs.count(), 2)
 
         EXTRA_GET = {
             'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1*p2)

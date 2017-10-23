@@ -397,8 +397,8 @@ class RelatedFilterTests(TestCase):
         }
 
         f = F(GET, queryset=Post.objects.all())
-        self.assertQuerysetEqual(f.qs, Post.objects.none())
-        self.assertFalse(f.form.is_valid())
+        self.assertEqual(f.qs.count(), 3)
+        self.assertFalse(f.is_valid())
 
         self.assertEqual(len(f.form.errors.keys()), 2)
         self.assertIn('note__author', f.form.errors)
