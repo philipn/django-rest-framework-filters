@@ -419,7 +419,7 @@ class MiscTests(TestCase):
 
         # Test from ... to 2016-01-01
         GET = {
-            'date_joined_1': '2016-01-01',
+            'date_joined_before': '2016-01-01',
         }
         f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(f.qs.count(), 0)
@@ -434,14 +434,14 @@ class MiscTests(TestCase):
 
         # Test from ... to 2016-01-01, failure case
         GET = {
-            'date_joined_1': '2016-01-01',
+            'date_joined_before': '2016-01-01',
         }
         f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(f.qs.count(), 1)
 
         # Test from ... to 2016-01-01, "fix"
         GET = {
-            'date_joined_1': '2016-01-01',
+            'date_joined_before': '2016-01-01',
             'date_joined': '',
         }
         f = PersonFilter(GET, queryset=Person.objects.all())
