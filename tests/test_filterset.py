@@ -86,14 +86,14 @@ class LookupsFilterTests(TestCase):
     def test_alllookupsfilter_for_related_field(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/127
         class F(FilterSet):
-            author = filters.AllLookupsFilter(name='author__last_name')
+            author = filters.AllLookupsFilter(field_name='author__last_name')
 
             class Meta:
                 model = Note
                 fields = []
 
         self.assertIsInstance(F.base_filters['author'], filters.CharFilter)
-        self.assertEqual(F.base_filters['author'].name, 'author__last_name')
+        self.assertEqual(F.base_filters['author'].field_name, 'author__last_name')
 
     def test_relatedfilter_combined_with__all__(self):
         # ensure that related filter is compatible with __all__ lookups.

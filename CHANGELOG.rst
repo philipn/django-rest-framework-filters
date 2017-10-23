@@ -1,12 +1,15 @@
 Unreleased:
 -----------
 
+* #191 Fix ``name`` => ``field_name`` warnings
+
+
 v0.10.2:
 --------
 
 This is a maintenance release that fixes compatibility with django-filter.
 
-* 189 Fix method name collision
+* #189 Fix method name collision
 
 
 v0.10.1:
