@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from collections import OrderedDict
+from contextlib import contextmanager
 import copy
 
 from django.db.models.constants import LOOKUP_SEP
@@ -73,6 +74,11 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)):
     _subset_cache = {}
+
+    def __init__(self, *args, **kwargs):
+        super(FilterSet, self).__init__(*args, **kwargs)
+
+        self.expanded_filters = self.expand_filters()
 
     @classmethod
     def get_fields(cls):
@@ -257,13 +263,20 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
     def cache_set(cls, key, value):
         cls._subset_cache[key] = value
 
-    @property
-    def qs(self):
-        available_filters = self.filters
-        requested_filters = self.expand_filters()
+    @contextmanager
+    def requested_filters(self):
+        if self.is_bound:
+            available_filters = self.filters
+            requested_filters = self.expanded_filters
 
-        self.filters = requested_filters
-        qs = super(FilterSet, self).qs
-        self.filters = available_filters
+            self.filters = requested_filters
+            yield
+            self.filters = available_filters
 
-        return qs
+    def filter_queryset(self, queryset):
+        with self.requested_filters():
+            return super(FilterSet, self).filter_queryset(queryset)
+
+    def get_form_class(self):
+        with self.requested_filters():
+            return super(FilterSet, self).get_form_class()
