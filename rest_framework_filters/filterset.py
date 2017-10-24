@@ -18,15 +18,15 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
 
+        # If no model is defined, skip auto filter processing
+        if new_class._meta.model is None:
+            return new_class
+
         opts = copy.deepcopy(new_class._meta)
         orig_meta = new_class._meta
 
         declared_filters = new_class.declared_filters.copy()
         orig_declared = new_class.declared_filters
-
-        # If no model is defined, skip auto filter processing
-        if not opts.model:
-            return new_class
 
         # Generate filters for auto filters
         auto_filters = OrderedDict([
