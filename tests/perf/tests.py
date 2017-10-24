@@ -122,7 +122,7 @@ class FilterBackendTests(PerfTestMixin, TestCase):
 
     def get_callable(self, view_class):
         view = view_class(action_map={'get': 'list'})
-        request = factory.get('/', data={'author__username': 'bob'})
+        request = factory.get('/', data={'author__username': 'bob', 'title__contains': 'Note'})
         request = view.initialize_request(request)
         backend = view.filter_backends[0]
 
@@ -157,7 +157,7 @@ class WSGIResponseTests(PerfTestMixin, TestCase):
     def get_callable(self, url):
         call = self.client.get
         args = [
-            url, {'author__username': 'bob'},
+            url, {'author__username': 'bob', 'title__contains': 'Note'},
         ]
 
         return call, args
