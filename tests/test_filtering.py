@@ -319,29 +319,20 @@ class RelatedFilterTests(TestCase):
         self.assertEqual(len(list(f.qs)), 4)
 
     def test_related_filters_caching(self):
-        filters = PostFilter.related_filters
+        class ChildFilter(PostFilter):
+            foo = filters.RelatedFilter(PostFilter)
 
-        self.assertEqual(len(filters), 1)
-        self.assertIn('note', filters)
+        self.assertEqual(len(PostFilter.related_filters), 1)
+        self.assertIn('note', PostFilter.related_filters)
         self.assertIn('_related_filters', PostFilter.__dict__)
 
-        # subset should not use parent's cached related filters.
-        PostSubset = PostFilter.get_subset(['title'])
-        self.assertNotIn('_related_filters', PostSubset.__dict__)
+        # child filterset should not use parent's cached related filters.
+        self.assertNotIn('_related_filters', ChildFilter.__dict__)
 
-        filters = PostSubset.related_filters
-        self.assertIn('_related_filters', PostFilter.__dict__)
-
-        self.assertEqual(len(filters), 0)
-
-        # ensure subsets don't interact
-        PostSubset = PostFilter.get_subset(['note'])
-        self.assertNotIn('_related_filters', PostSubset.__dict__)
-
-        filters = PostSubset.related_filters
-        self.assertIn('_related_filters', PostFilter.__dict__)
-
-        self.assertEqual(len(filters), 1)
+        self.assertEqual(len(ChildFilter.related_filters), 2)
+        self.assertIn('note', ChildFilter.related_filters)
+        self.assertIn('foo', ChildFilter.related_filters)
+        self.assertIn('_related_filters', ChildFilter.__dict__)
 
     def test_relatedfilter_queryset_required(self):
         # Use a secure default queryset. Previous behavior was to use the default model

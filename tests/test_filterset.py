@@ -288,27 +288,24 @@ class GetRelatedFilterParamTests(TestCase):
 class FilterSubsetTests(TestCase):
 
     def test_get_subset(self):
-        filterset_class = UserFilter.get_subset(['email'])
-
-        # ensure that the class name is useful when debugging
-        self.assertEqual(filterset_class.__name__, 'UserFilterSubset')
+        filter_subset = UserFilter.get_filter_subset(['email'])
 
         # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('email', filterset_class.base_filters)
-        self.assertEqual(len(filterset_class.base_filters), 1)
+        self.assertIn('email', filter_subset)
+        self.assertEqual(len(filter_subset), 1)
 
     def test_related_subset(self):
         # related filters should only return the local RelatedFilter
-        filterset_class = NoteFilterWithRelated.get_subset(['title', 'author__email'])
+        filter_subset = NoteFilterWithRelated.get_filter_subset(['title', 'author', 'author__email'])
 
-        self.assertIn('title', filterset_class.base_filters)
-        self.assertIn('author', filterset_class.base_filters)
-        self.assertEqual(len(filterset_class.base_filters), 2)
+        self.assertIn('title', filter_subset)
+        self.assertIn('author', filter_subset)
+        self.assertEqual(len(filter_subset), 2)
 
     def test_non_filter_subset(self):
         # non-filter params should be ignored
-        filterset_class = NoteFilterWithRelated.get_subset(['foobar'])
-        self.assertEqual(len(filterset_class.base_filters), 0)
+        filter_subset = NoteFilterWithRelated.get_filter_subset(['foobar'])
+        self.assertEqual(len(filter_subset), 0)
 
     def test_metaclass_inheritance(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/132
@@ -325,14 +322,12 @@ class FilterSubsetTests(TestCase):
                 model = Note
                 fields = ['title', 'content']
 
-        # ensure that the class name is useful when debugging
-        filterset_class = NoteFilter.get_subset(['author', 'content'])
-        self.assertEqual(filterset_class.__name__, 'NoteFilterSubset')
+        filter_subset = NoteFilter.get_filter_subset(['author', 'content'])
 
         # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('author', filterset_class.base_filters)
-        self.assertIn('content', filterset_class.base_filters)
-        self.assertEqual(len(filterset_class.base_filters), 2)
+        self.assertIn('author', filter_subset)
+        self.assertIn('content', filter_subset)
+        self.assertEqual(len(filter_subset), 2)
 
 
 class FilterOverrideTests(TestCase):
