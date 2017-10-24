@@ -2,6 +2,7 @@ import copy
 from collections import OrderedDict
 from contextlib import contextmanager
 
+from django.db.models import Subquery
 from django.db.models.constants import LOOKUP_SEP
 from django.http.request import QueryDict
 from django_filters import filterset, rest_framework
@@ -270,6 +271,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         """
         for field_name, related_filterset in self.related_filtersets.items():
             lookup_expr = LOOKUP_SEP.join([field_name, 'in'])
-            queryset = queryset.filter(**{lookup_expr: related_filterset.qs})
+            subquery = Subquery(related_filterset.qs.values('pk'))
+            queryset = queryset.filter(**{lookup_expr: subquery})
 
         return queryset
