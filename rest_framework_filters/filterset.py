@@ -18,6 +18,9 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
 
+        new_class.auto_filters = cls.get_auto_filters(new_class)
+        new_class.related_filters = cls.get_related_filters(new_class)
+
         # If no model is defined, skip auto filter processing
         if new_class._meta.model is None:
             return new_class
@@ -29,18 +32,14 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         orig_declared = new_class.declared_filters
 
         # Generate filters for auto filters
-        auto_filters = OrderedDict([
-            (param, f) for param, f in new_class.declared_filters.items()
-            if isinstance(f, filters.AutoFilter)
-        ])
 
         # Remove auto filters from declared_filters so that they *are* overwritten
         # RelatedFilter is an exception, and should *not* be overwritten
-        for param, f in auto_filters.items():
+        for param, f in new_class.auto_filters.items():
             if not isinstance(f, filters.RelatedFilter):
                 del declared_filters[param]
 
-        for param, f in auto_filters.items():
+        for param, f in new_class.auto_filters.items():
             opts.fields = {f.field_name: f.lookups or []}
 
             # patch, generate auto filters
@@ -54,15 +53,23 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 for gen_param, gen_f in generated_filters.items()
             ))
 
-        # Gather related filters
-        new_class.related_filters = OrderedDict([
-            (name, f) for name, f in new_class.base_filters.items()
-            if isinstance(f, filters.RelatedFilter)
-        ])
-
         new_class._meta, new_class.declared_filters = orig_meta, orig_declared
 
         return new_class
+
+    @classmethod
+    def get_auto_filters(cls, new_class):
+        return OrderedDict(
+            (name, f) for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.AutoFilter)
+        )
+
+    @classmethod
+    def get_related_filters(cls, new_class):
+        return OrderedDict(
+            (name, f) for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.RelatedFilter)
+        )
 
 
 class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
