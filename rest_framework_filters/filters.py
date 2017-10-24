@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from django.utils import six
-
 from django_filters.rest_framework.filters import *
 from rest_framework_filters.utils import import_class
 
@@ -26,7 +24,7 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
 
     def filterset():
         def fget(self):
-            if isinstance(self._filterset, six.string_types):
+            if isinstance(self._filterset, str):
                 self._filterset = import_class(self._filterset)
             return self._filterset
 
