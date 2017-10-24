@@ -250,7 +250,17 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     def get_form_class(self):
         with self.override_filters():
-            return super(FilterSet, self).get_form_class()
+            class Form(super(FilterSet, self).get_form_class()):
+                def clean(form):
+                    cleaned_data = super(Form, form).clean()
+
+                    for field_name, related_filterset in self.related_filtersets.items():
+                        for key, error in related_filterset.form.errors.items():
+                            self.form.errors[LOOKUP_SEP.join([field_name, key])] = error
+
+                    return cleaned_data
+
+            return Form
 
     def filter_related_filtersets(self, queryset):
         """
