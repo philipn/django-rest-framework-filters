@@ -25,37 +25,40 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         if new_class._meta.model is None:
             return new_class
 
-        opts = copy.deepcopy(new_class._meta)
-        orig_meta = new_class._meta
+        # get reference to opts/declared filters
+        orig_meta, orig_declared = new_class._meta, new_class.declared_filters
 
-        declared_filters = new_class.declared_filters.copy()
-        orig_declared = new_class.declared_filters
+        # override opts/declared filters w/ copies
+        new_class._meta = copy.deepcopy(new_class._meta)
+        new_class.declared_filters = new_class.declared_filters.copy()
 
         # Generate filters for auto filters
+        auto_filters = cls.expand_auto_filters(new_class)
+        new_class.base_filters.update(auto_filters)
 
-        # Remove auto filters from declared_filters so that they *are* overwritten
-        # RelatedFilter is an exception, and should *not* be overwritten
-        for param, f in new_class.auto_filters.items():
-            if not isinstance(f, filters.RelatedFilter):
-                del declared_filters[param]
-
-        for param, f in new_class.auto_filters.items():
-            opts.fields = {f.field_name: f.lookups or []}
-
-            # patch, generate auto filters
-            new_class._meta, new_class.declared_filters = opts, declared_filters
-            generated_filters = new_class.get_filters()
-
-            # get_filters() generates param names from the model field name
-            # Replace the field name with the parameter name from the filerset
-            new_class.base_filters.update(OrderedDict(
-                (gen_param.replace(f.field_name, param, 1), gen_f)
-                for gen_param, gen_f in generated_filters.items()
-            ))
-
+        # restore reference to opts/declared filters
         new_class._meta, new_class.declared_filters = orig_meta, orig_declared
 
         return new_class
+
+    @classmethod
+    def expand_auto_filters(cls, new_class):
+        auto_filters = OrderedDict()
+
+        for name, f in new_class.auto_filters.items():
+            # Remove auto filters from declared_filters so that they *are* overwritten
+            # RelatedFilter is an exception, and should *not* be overwritten
+            if not isinstance(f, filters.RelatedFilter):
+                del new_class.declared_filters[name]
+
+            # Use meta.fields to generate auto filters
+            new_class._meta.fields = {f.field_name: f.lookups or []}
+            for gen_param, gen_f in new_class.get_filters().items():
+                # get_filters() generates param names from the model field name
+                # Replace the field name with the parameter name from the filerset
+                auto_filters[gen_param.replace(f.field_name, name, 1)] = gen_f
+
+        return auto_filters
 
     @classmethod
     def get_auto_filters(cls, new_class):
