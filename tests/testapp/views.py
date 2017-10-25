@@ -25,6 +25,15 @@ class FilterFieldsUserViewSet(viewsets.ModelViewSet):
     }
 
 
+class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
+    queryset = User.objects.order_by('pk')
+    filter_backends = (backends.ComplexFilterBackend, )
+    filter_fields = {
+        'username': '__all__',
+        'email': '__all__',
+    }
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

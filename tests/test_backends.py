@@ -1,3 +1,6 @@
+from urllib.parse import quote
+
+from rest_framework import status
 from rest_framework.test import APITestCase, APIRequestFactory
 from rest_framework_filters import FilterSet
 
@@ -99,3 +102,31 @@ class BackendTest(APITestCase):
         request = view.initialize_request(factory.get('/?username!=user1'))
         qs = backend().filter_queryset(request, view.get_queryset(), view)
         self.assertEqual([u.pk for u in qs], [2])
+
+
+class ComplexFilterBackendTests(APITestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        models.User.objects.create(username="user1", email="user1@example.com")
+        models.User.objects.create(username="user2", email="user2@example.com")
+        models.User.objects.create(username="user3", email="user3@example.org")
+
+    def test_valid(self):
+        readable = '(username%3Duser1)|(email__contains%3Dexample.org)'
+        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [r['username'] for r in response.data],
+            ['user1', 'user3']
+        )
+
+    def test_invalid(self):
+        readable = '(username%3Duser1)asdf(email__contains%3Dexample.org)'
+        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertDictEqual(response.data, {
+            'filters': ["Invalid querystring operator. Matched: 'asdf'."],
+        })
