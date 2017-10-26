@@ -79,13 +79,12 @@ class SubsetDisabledMixin:
 
 class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
-    def __init__(self, data=None, queryset=None, *, request=None, prefix=None, **kwargs):
-        # Filter the `base_filters` by the desired filter subset. This reduces the cost
-        # of initialization by reducing the number of filters that are deepcopied.
-        self.base_filters = self.get_filter_subset(data or {})
+    def __init__(self, data=None, queryset=None, *, relationship=None, **kwargs):
+        self.base_filters = self.get_filter_subset(data or {}, relationship)
 
-        super(FilterSet, self).__init__(data, queryset, request=request, prefix=prefix, **kwargs)
+        super().__init__(data, queryset, **kwargs)
 
+        self.relationship = relationship
         self.request_filters = self.get_request_filters()
 
     @classmethod
@@ -100,18 +99,20 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         return fields
 
     @classmethod
-    def get_filter_subset(cls, params):
+    def get_filter_subset(cls, params, rel=None):
         """
         Returns the subset of filters that should be initialized by the
-        FilterSet, dependent on the requested `params`. This is useful when
-        traversing FilterSet relationships, as it helps to minimize deepcopy
-        overhead incurred when instantiating related FilterSets.
+        FilterSet, dependent on the requested `params`. This helps minimize
+        the cost of initialization by reducing the number of deepcopy ops.
+
+        The `rel` argument is used for related filtersets to strip the param
+        of its relationship prefix. See `.get_param_filter_name()` for info.
         """
         # Determine names of filters from query params and remove empty values.
         # param names that traverse relations are translated to just the local
         # filter names. eg, `author__username` => `author`. Empty values are
         # removed, as they indicate an unknown field eg, author__foobar__isnull
-        filter_names = {cls.get_param_filter_name(param) for param in params}
+        filter_names = {cls.get_param_filter_name(param, rel) for param in params}
         filter_names = {f for f in filter_names if f is not None}
         return OrderedDict(
             (k, v) for k, v in cls.base_filters.items() if k in filter_names
@@ -130,7 +131,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         return cls
 
     @classmethod
-    def get_param_filter_name(cls, param):
+    def get_param_filter_name(cls, param, rel=None):
         """
         Get the filter name for the request data parameter.
 
@@ -148,7 +149,16 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             >>> FilterSet.get_param_filter_name('author__email')
             'author'
 
+            # attribute filters based on relationship
+            >>> FilterSet.get_param_filter_name('author__email', rel='author')
+            'email'
+
         """
+        # strip the rel prefix from the param name.
+        prefix = '%s%s' % (rel or '', LOOKUP_SEP)
+        if rel and param.startswith(prefix):
+            param = param[len(prefix):]
+
         # Attempt to match against filters with lookups first. (username__endswith)
         if param in cls.base_filters:
             return param

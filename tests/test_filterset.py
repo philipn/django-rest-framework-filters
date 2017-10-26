@@ -213,6 +213,10 @@ class GetParamFilterNameTests(TestCase):
         name = NoteFilter.get_param_filter_name('author__foobar')
         self.assertEqual('author', name)
 
+    def test_relationship_regular_filter(self):
+        name = UserFilter.get_param_filter_name('author__email', rel='author')
+        self.assertEqual('email', name)
+
     def test_twice_removed_related_filter(self):
         class PostFilterWithDirectAuthor(PostFilter):
             note__author = filters.RelatedFilter(UserFilter)
