@@ -21,29 +21,20 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         new_class.auto_filters = cls.get_auto_filters(new_class)
         new_class.related_filters = cls.get_related_filters(new_class)
 
-        # If no model is defined, skip auto filter processing
-        if new_class._meta.model is None:
-            return new_class
+        # If model is defined, process auto filters
+        if new_class._meta.model is not None:
+            cls.expand_auto_filters(new_class)
 
+        return new_class
+
+    @classmethod
+    def expand_auto_filters(cls, new_class):
         # get reference to opts/declared filters
         orig_meta, orig_declared = new_class._meta, new_class.declared_filters
 
         # override opts/declared filters w/ copies
         new_class._meta = copy.deepcopy(new_class._meta)
         new_class.declared_filters = new_class.declared_filters.copy()
-
-        # Generate filters for auto filters
-        auto_filters = cls.expand_auto_filters(new_class)
-        new_class.base_filters.update(auto_filters)
-
-        # restore reference to opts/declared filters
-        new_class._meta, new_class.declared_filters = orig_meta, orig_declared
-
-        return new_class
-
-    @classmethod
-    def expand_auto_filters(cls, new_class):
-        auto_filters = OrderedDict()
 
         for name, f in new_class.auto_filters.items():
             # Remove auto filters from declared_filters so that they *are* overwritten
@@ -53,12 +44,14 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
             # Use meta.fields to generate auto filters
             new_class._meta.fields = {f.field_name: f.lookups or []}
-            for gen_param, gen_f in new_class.get_filters().items():
+            for gen_name, gen_f in new_class.get_filters().items():
                 # get_filters() generates param names from the model field name
                 # Replace the field name with the parameter name from the filerset
-                auto_filters[gen_param.replace(f.field_name, name, 1)] = gen_f
+                gen_name = gen_name.replace(f.field_name, name, 1)
+                new_class.base_filters[gen_name] = gen_f
 
-        return auto_filters
+        # restore reference to opts/declared filters
+        new_class._meta, new_class.declared_filters = orig_meta, orig_declared
 
     @classmethod
     def get_auto_filters(cls, new_class):
