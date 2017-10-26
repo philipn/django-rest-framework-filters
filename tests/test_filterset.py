@@ -1,7 +1,3 @@
-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import sys
 
 from django.test import TestCase
@@ -26,6 +22,7 @@ from .testapp.filters import (
 
 from rest_framework.views import APIView
 from rest_framework.test import APIRequestFactory
+
 factory = APIRequestFactory()
 
 
