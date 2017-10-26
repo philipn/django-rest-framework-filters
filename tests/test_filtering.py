@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
-from rest_framework_filters.compat import set_many
 from rest_framework_filters import FilterSet, filters
 from django_filters import FilterSet as DFFilterSet
 
@@ -127,10 +126,10 @@ class RelatedFilterTests(TestCase):
         t3 = Tag.objects.create(name="house")
 
         blogpost = BlogPost.objects.create(title="First post", content="First")
-        set_many(blogpost, 'tags', [t1, t3])
+        blogpost.tags.set([t1, t3])
 
         blogpost = BlogPost.objects.create(title="Second post", content="Secon")
-        set_many(blogpost, 'tags', [t3])
+        blogpost.tags.set([t3])
 
         ################################
         # Recursive relations
