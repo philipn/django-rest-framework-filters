@@ -47,25 +47,3 @@ class LookupsForTransformTests(TestCase):
 
         self.assertIn('unaccent__exact', lookups)
         self.assertNotIn('unaccent__unaccent__exact', lookups)
-
-
-class ClassLookupsTests(TestCase):
-    def test_standard_field(self):
-        model_field = Person._meta.get_field('name')
-        class_lookups = utils.class_lookups(model_field)
-
-        self.assertIn('exact', class_lookups)
-        if django.VERSION >= (1, 9):
-            self.assertNotIn('year', class_lookups)
-            self.assertNotIn('date', class_lookups)
-        else:
-            self.assertIn('year', class_lookups)
-
-    @unittest.skipIf(django.VERSION < (1, 9), "version does not support transformed lookup expressions")
-    def test_transformed_field(self):
-        model_field = Person._meta.get_field('datetime_joined')
-        class_lookups = utils.class_lookups(model_field)
-
-        self.assertIn('exact', class_lookups)
-        self.assertIn('year', class_lookups)
-        self.assertIn('date', class_lookups)

@@ -1,6 +1,3 @@
-
-from collections import OrderedDict
-
 import django
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import Expression
@@ -26,7 +23,7 @@ def lookups_for_field(model_field):
 
     lookups = []
 
-    for expr, lookup in class_lookups(model_field).items():
+    for expr, lookup in model_field.get_lookups().items():
         if issubclass(lookup, Transform) and django.VERSION >= (1, 9):
             transform = lookup(Expression(model_field))
             lookups += [
@@ -55,7 +52,7 @@ def lookups_for_transform(transform):
     """
     lookups = []
 
-    for expr, lookup in class_lookups(transform.output_field).items():
+    for expr, lookup in transform.output_field.get_lookups().items():
         if issubclass(lookup, Transform):
 
             # type match indicates recursion.
@@ -72,19 +69,3 @@ def lookups_for_transform(transform):
             lookups.append(expr)
 
     return lookups
-
-
-def class_lookups(model_field):
-    """
-    Get a compiled set of class_lookups for a model field.
-    """
-    field_class = type(model_field)
-    class_lookups = OrderedDict()
-
-    # traverse MRO in reverse, as this puts standard
-    # lookups before subclass transforms/lookups
-    for cls in reversed(field_class.mro()):
-        if hasattr(cls, 'class_lookups'):
-            class_lookups.update(getattr(cls, 'class_lookups'))
-
-    return class_lookups
