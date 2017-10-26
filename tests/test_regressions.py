@@ -1,4 +1,3 @@
-
 """
 Regression tests for old `rest_framework_filters.FilterSet` functionality.
 
@@ -6,9 +5,6 @@ Code in this repository is occasionally made obsolete with improvements to the
 underlying django-filter library. This module contains old tests that verify
 that the FilterSet continue to behave as expected.
 """
-
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 import datetime
 

@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from django_filters.rest_framework.filters import *
 from rest_framework_filters.utils import import_class
 

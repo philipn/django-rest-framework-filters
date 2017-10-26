@@ -1,12 +1,7 @@
-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import sys
 
 from django.test import TestCase
 
-from rest_framework_filters.compat import set_many
 from rest_framework_filters.filterset import FilterSetMetaclass
 from rest_framework_filters import filters, FilterSet
 from django_filters.filters import BaseInFilter
@@ -27,6 +22,7 @@ from .testapp.filters import (
 
 from rest_framework.views import APIView
 from rest_framework.test import APIRequestFactory
+
 factory = APIRequestFactory()
 
 
@@ -383,8 +379,8 @@ class FilterExclusionTests(TestCase):
         p1 = BlogPost.objects.create(title='Post 1', content='content 1')
         p2 = BlogPost.objects.create(title='Post 2', content='content 2')
 
-        set_many(p1, 'tags', [t1, t2])
-        set_many(p2, 'tags', [t3])
+        p1.tags.set([t1, t2])
+        p2.tags.set([t3])
 
     def test_exclude_property(self):
         """

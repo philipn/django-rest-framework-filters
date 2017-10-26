@@ -1,10 +1,5 @@
-
-from collections import OrderedDict
-
-import django
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import Expression
-from django.db.models.fields.related import ForeignObject
 from django.db.models.lookups import Transform
 
 
@@ -19,15 +14,10 @@ def lookups_for_field(model_field):
     """
     Generates a list of all possible lookup expressions for a model field.
     """
-    # This is a hack to work around:
-    # https://github.com/django/django/pull/6906
-    if isinstance(model_field, ForeignObject):
-        return ['exact', 'gt', 'gte', 'lt', 'lte', 'in', 'isnull']
-
     lookups = []
 
-    for expr, lookup in class_lookups(model_field).items():
-        if issubclass(lookup, Transform) and django.VERSION >= (1, 9):
+    for expr, lookup in model_field.get_lookups().items():
+        if issubclass(lookup, Transform):
             transform = lookup(Expression(model_field))
             lookups += [
                 LOOKUP_SEP.join([expr, sub_expr]) for sub_expr
@@ -55,7 +45,7 @@ def lookups_for_transform(transform):
     """
     lookups = []
 
-    for expr, lookup in class_lookups(transform.output_field).items():
+    for expr, lookup in transform.output_field.get_lookups().items():
         if issubclass(lookup, Transform):
 
             # type match indicates recursion.
@@ -72,19 +62,3 @@ def lookups_for_transform(transform):
             lookups.append(expr)
 
     return lookups
-
-
-def class_lookups(model_field):
-    """
-    Get a compiled set of class_lookups for a model field.
-    """
-    field_class = type(model_field)
-    class_lookups = OrderedDict()
-
-    # traverse MRO in reverse, as this puts standard
-    # lookups before subclass transforms/lookups
-    for cls in reversed(field_class.mro()):
-        if hasattr(cls, 'class_lookups'):
-            class_lookups.update(getattr(cls, 'class_lookups'))
-
-    return class_lookups
