@@ -41,6 +41,21 @@ class limit_recursion:
         sys.setrecursionlimit(self.original_limit)
 
 
+class MetaclassTests(TestCase):
+
+    def test_metamethods(self):
+        functions = [
+            'expand_auto_filters',
+            'get_auto_filters',
+            'get_related_filters',
+        ]
+
+        for func in functions:
+            with self.subTest(func=func):
+                self.assertTrue(hasattr(UserFilter, func))
+                self.assertFalse(hasattr(UserFilter(), func))
+
+
 class LookupsFilterTests(TestCase):
     """
     Test basic filter construction for `AllLookupsFilter`, '__all__', and `RelatedFilter.lookups`.

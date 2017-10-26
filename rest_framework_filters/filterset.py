@@ -18,51 +18,54 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
 
-        opts = copy.deepcopy(new_class._meta)
-        orig_meta = new_class._meta
+        new_class.auto_filters = cls.get_auto_filters(new_class)
+        new_class.related_filters = cls.get_related_filters(new_class)
 
-        declared_filters = new_class.declared_filters.copy()
-        orig_declared = new_class.declared_filters
-
-        # If no model is defined, skip auto filter processing
-        if not opts.model:
-            return new_class
-
-        # Generate filters for auto filters
-        auto_filters = OrderedDict([
-            (param, f) for param, f in new_class.declared_filters.items()
-            if isinstance(f, filters.AutoFilter)
-        ])
-
-        # Remove auto filters from declared_filters so that they *are* overwritten
-        # RelatedFilter is an exception, and should *not* be overwritten
-        for param, f in auto_filters.items():
-            if not isinstance(f, filters.RelatedFilter):
-                del declared_filters[param]
-
-        for param, f in auto_filters.items():
-            opts.fields = {f.field_name: f.lookups or []}
-
-            # patch, generate auto filters
-            new_class._meta, new_class.declared_filters = opts, declared_filters
-            generated_filters = new_class.get_filters()
-
-            # get_filters() generates param names from the model field name
-            # Replace the field name with the parameter name from the filerset
-            new_class.base_filters.update(OrderedDict(
-                (gen_param.replace(f.field_name, param, 1), gen_f)
-                for gen_param, gen_f in generated_filters.items()
-            ))
-
-        # Gather related filters
-        new_class.related_filters = OrderedDict([
-            (name, f) for name, f in new_class.base_filters.items()
-            if isinstance(f, filters.RelatedFilter)
-        ])
-
-        new_class._meta, new_class.declared_filters = orig_meta, orig_declared
+        # If model is defined, process auto filters
+        if new_class._meta.model is not None:
+            cls.expand_auto_filters(new_class)
 
         return new_class
+
+    @classmethod
+    def expand_auto_filters(cls, new_class):
+        # get reference to opts/declared filters
+        orig_meta, orig_declared = new_class._meta, new_class.declared_filters
+
+        # override opts/declared filters w/ copies
+        new_class._meta = copy.deepcopy(new_class._meta)
+        new_class.declared_filters = new_class.declared_filters.copy()
+
+        for name, f in new_class.auto_filters.items():
+            # Remove auto filters from declared_filters so that they *are* overwritten
+            # RelatedFilter is an exception, and should *not* be overwritten
+            if not isinstance(f, filters.RelatedFilter):
+                del new_class.declared_filters[name]
+
+            # Use meta.fields to generate auto filters
+            new_class._meta.fields = {f.field_name: f.lookups or []}
+            for gen_name, gen_f in new_class.get_filters().items():
+                # get_filters() generates param names from the model field name
+                # Replace the field name with the parameter name from the filerset
+                gen_name = gen_name.replace(f.field_name, name, 1)
+                new_class.base_filters[gen_name] = gen_f
+
+        # restore reference to opts/declared filters
+        new_class._meta, new_class.declared_filters = orig_meta, orig_declared
+
+    @classmethod
+    def get_auto_filters(cls, new_class):
+        return OrderedDict(
+            (name, f) for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.AutoFilter)
+        )
+
+    @classmethod
+    def get_related_filters(cls, new_class):
+        return OrderedDict(
+            (name, f) for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.RelatedFilter)
+        )
 
 
 class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
