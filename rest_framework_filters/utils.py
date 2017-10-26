@@ -1,7 +1,5 @@
-import django
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import Expression
-from django.db.models.fields.related import ForeignObject
 from django.db.models.lookups import Transform
 
 
@@ -16,15 +14,10 @@ def lookups_for_field(model_field):
     """
     Generates a list of all possible lookup expressions for a model field.
     """
-    # This is a hack to work around:
-    # https://github.com/django/django/pull/6906
-    if isinstance(model_field, ForeignObject):
-        return ['exact', 'gt', 'gte', 'lt', 'lte', 'in', 'isnull']
-
     lookups = []
 
     for expr, lookup in model_field.get_lookups().items():
-        if issubclass(lookup, Transform) and django.VERSION >= (1, 9):
+        if issubclass(lookup, Transform):
             transform = lookup(Expression(model_field))
             lookups += [
                 LOOKUP_SEP.join([expr, sub_expr]) for sub_expr

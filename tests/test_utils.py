@@ -1,6 +1,3 @@
-
-import unittest
-import django
 from django.test import TestCase
 
 from rest_framework_filters import utils
@@ -14,13 +11,9 @@ class LookupsForFieldTests(TestCase):
         lookups = utils.lookups_for_field(model_field)
 
         self.assertIn('exact', lookups)
-        if django.VERSION >= (1, 9):
-            self.assertNotIn('year', lookups)
-            self.assertNotIn('date', lookups)
-        else:
-            self.assertIn('year', lookups)
+        self.assertNotIn('year', lookups)
+        self.assertNotIn('date', lookups)
 
-    @unittest.skipIf(django.VERSION < (1, 9), "version does not support transformed lookup expressions")
     def test_transformed_field(self):
         model_field = Person._meta.get_field('datetime_joined')
         lookups = utils.lookups_for_field(model_field)
@@ -39,7 +32,6 @@ class LookupsForFieldTests(TestCase):
         self.assertNotIn('regex', lookups)
 
 
-@unittest.skipIf(django.VERSION < (1, 9), "version does not support transformed lookup expressions")
 class LookupsForTransformTests(TestCase):
     def test_recursion_prevention(self):
         model_field = Person._meta.get_field('name')
