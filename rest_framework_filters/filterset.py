@@ -270,4 +270,19 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     def get_form_class(self):
         with self.override_filters():
-            return super(FilterSet, self).get_form_class()
+            class Form(super(FilterSet, self).get_form_class()):
+                def add_prefix(form, field_name):
+                    field_name = related(self, field_name)
+                    return super(Form, form).add_prefix(field_name)
+
+                def clean(form):
+                    cleaned_data = super(Form, form).clean()
+
+                    # when prefixing the errors, use the related filter name,
+                    # which is relative to the parent filterset, not the root.
+                    for related_filterset in self.related_filtersets.values():
+                        for key, error in related_filterset.form.errors.items():
+                            self.form.errors[related(related_filterset, key)] = error
+
+                    return cleaned_data
+            return Form

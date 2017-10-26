@@ -309,8 +309,8 @@ class RelatedFilterTests(TestCase):
         class ChildFilter(PostFilter):
             foo = filters.RelatedFilter(PostFilter)
 
-        self.assertEqual(['note', 'tags'], list(PostFilter.related_filters))
-        self.assertEqual(['note', 'tags', 'foo'], list(ChildFilter.related_filters))
+        self.assertEqual(['author', 'note', 'tags'], list(PostFilter.related_filters))
+        self.assertEqual(['author', 'note', 'tags', 'foo'], list(ChildFilter.related_filters))
 
     def test_relatedfilter_queryset_required(self):
         # Use a secure default queryset. Previous behavior was to use the default model
