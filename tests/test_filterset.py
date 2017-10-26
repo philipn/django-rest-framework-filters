@@ -9,7 +9,9 @@ from rest_framework.views import APIView
 from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
-from .testapp.filters import NoteFilter, PostFilter, TagFilter, UserFilter
+from .testapp.filters import (
+    NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
+)
 from .testapp.models import Note, Person, Post, Tag
 
 factory = APIRequestFactory()
@@ -185,6 +187,67 @@ class AutoFilterTests(TestCase):
         self.assertIs(w[0].category, DeprecationWarning)
 
 
+class GetRelatedFiltersetsTests(TestCase):
+
+    def test_not_bound(self):
+        filtersets = UserFilter().get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 0)
+
+    def test_not_related_filter(self):
+        filtersets = NoteFilter({
+            'title': 'foo',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 0)
+
+    def test_exact(self):
+        filtersets = NoteFilter({
+            'author': 'bob',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['author'], UserFilter)
+
+    def test_filterset(self):
+        filtersets = NoteFilter({
+            'author__username': 'bob',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['author'], UserFilter)
+
+    def test_filterset_alias(self):
+        filtersets = NoteFilterWithAlias({
+            'writer__username': 'bob'
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['writer'], UserFilter)
+
+    def test_filterset_twice_removed(self):
+        filtersets = PostFilter({
+            'note__author__username': 'bob'
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['note'], NoteFilter)
+
+        filtersets = filtersets['note'].get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['author'], UserFilter)
+
+    def test_filterset_multiple_filters(self):
+        filtersets = PostFilter({
+            'note__foo': 'bob', 'tags__bar': 'joe',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 2)
+        self.assertIsInstance(filtersets['note'], NoteFilter)
+        self.assertIsInstance(filtersets['tags'], TagFilter)
+
+
 class GetParamFilterNameTests(TestCase):
 
     def test_regular_filter(self):
@@ -267,50 +330,6 @@ class GetParamFilterNameTests(TestCase):
 
         name = PostFilterNameHiding.get_param_filter_name('note2__author')
         self.assertEqual('note2', name)
-
-
-class GetRelatedFilterParamTests(TestCase):
-
-    def test_regular_filter(self):
-        name, param = NoteFilter.get_related_filter_param('title')
-        self.assertIsNone(name)
-        self.assertIsNone(param)
-
-    def test_related_filter_exact(self):
-        name, param = NoteFilter.get_related_filter_param('author')
-        self.assertIsNone(name)
-        self.assertIsNone(param)
-
-    def test_related_filter_param(self):
-        name, param = NoteFilter.get_related_filter_param('author__email')
-        self.assertEqual('author', name)
-        self.assertEqual('email', param)
-
-    def test_name_hiding(self):
-        class PostFilterNameHiding(PostFilter):
-            note__author = filters.RelatedFilter(UserFilter)
-            note = filters.RelatedFilter(NoteFilter)
-            note2 = filters.RelatedFilter(NoteFilter)
-
-            class Meta:
-                model = Post
-                fields = []
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note__author__email')
-        self.assertEqual('note__author', name)
-        self.assertEqual('email', param)
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note__title')
-        self.assertEqual('note', name)
-        self.assertEqual('title', param)
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note2__title')
-        self.assertEqual('note2', name)
-        self.assertEqual('title', param)
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note2__author')
-        self.assertEqual('note2', name)
-        self.assertEqual('author', param)
 
 
 class GetFilterSubsetTests(TestCase):
