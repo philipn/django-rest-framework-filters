@@ -3,6 +3,17 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+class Application(models.Model):
+    package_name = models.CharField(max_length=144, unique=True)
+    description = models.TextField()
+
+
+class Release(models.Model):
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='releases')
+    price = models.FloatField(default=0.0)
+    version_code = models.IntegerField()
+
+
 class Note(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
