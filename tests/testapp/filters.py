@@ -6,8 +6,30 @@ from rest_framework_filters.filterset import FilterSet, LOOKUP_SEP
 
 
 from .models import (
-    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
+    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost, Application, Release
 )
+
+
+class ReleaseFilter(FilterSet):
+    class Meta:
+        model = Release
+        fields = {
+            'price': '__all__',
+            'version_code': '__all__',
+        }
+
+
+class ApplicationFilter(FilterSet):
+    releases = filters.RelatedFilter(
+        ReleaseFilter,
+        queryset=Release.objects.all()
+    )
+
+    class Meta:
+        model = Application
+        fields = {
+            'package_name': '__all__',
+        }
 
 
 class DFUserFilter(django_filters.FilterSet):

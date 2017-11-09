@@ -2,9 +2,9 @@
 from rest_framework import viewsets
 from rest_framework_filters import backends
 
-from .models import User, Note
-from .serializers import UserSerializer, NoteSerializer
-from .filters import DFUserFilter, UserFilterWithAll, NoteFilterWithRelatedAll
+from .models import User, Note, Application, Release
+from .serializers import UserSerializer, NoteSerializer, ApplicationSerializer, ReleaseSerializer
+from .filters import DFUserFilter, UserFilterWithAll, NoteFilterWithRelatedAll, ApplicationFilter, ReleaseFilter
 
 
 class DFUserViewSet(viewsets.ModelViewSet):
@@ -37,3 +37,15 @@ class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
     filter_backends = (backends.DjangoFilterBackend, )
     filter_class = NoteFilterWithRelatedAll
+
+
+class ApplicationViewSet(viewsets.ModelViewSet):
+    queryset = Application.objects.all()
+    serializer_class = ApplicationSerializer
+    filter_class = ApplicationFilter
+
+
+class ReleaseViewSet(viewsets.ModelViewSet):
+    queryset = Release.objects.all()
+    serializer_class = ReleaseSerializer
+    filter_class = ReleaseFilter
