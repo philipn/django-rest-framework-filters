@@ -8,7 +8,7 @@ python:
   - "3.6"
 
 install:
-  - travis_retry pip install detox tox-travis coverage
+  - travis_retry pip install detox tox-travis tox-venv coverage
 script:
   - detox -- -v 2
 after_success:
