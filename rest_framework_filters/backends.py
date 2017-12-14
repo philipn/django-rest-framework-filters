@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from django.http import QueryDict
 from django_filters.rest_framework import backends
 from rest_framework.exceptions import ValidationError
-from rest_framework.request import clone_request
 
 from .complex_ops import decode_querystring_ops, OPERATORS
 from .filterset import FilterSet
@@ -47,6 +46,7 @@ class ComplexFilterBackend(DjangoFilterBackend):
 
     def filter_queryset(self, request, original, view):
         parent = super(ComplexFilterBackend, self)
+        original_GET = request._request.GET
 
         if self.complex_filter_param not in request.query_params:
             return parent.filter_queryset(request, original, view)
@@ -61,10 +61,10 @@ class ComplexFilterBackend(DjangoFilterBackend):
         queryset_op = OPERATORS['&']  # effectively a noop
 
         for querystring, op in querystring_ops:
-            cloned = clone_request(request, request.method)
-            cloned._request.GET = QueryDict(querystring)
+            request._request.GET = QueryDict(querystring)
 
-            queryset = queryset_op(queryset, parent.filter_queryset(cloned, original, view))
+            queryset = queryset_op(queryset, parent.filter_queryset(request, original, view))
             queryset_op = OPERATORS.get(op)
 
+        request._request.GET = original_GET
         return queryset
