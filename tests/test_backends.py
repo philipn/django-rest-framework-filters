@@ -111,6 +111,7 @@ class ComplexFilterBackendTests(APITestCase):
         models.User.objects.create(username="user1", email="user1@example.com")
         models.User.objects.create(username="user2", email="user2@example.com")
         models.User.objects.create(username="user3", email="user3@example.org")
+        models.User.objects.create(username="user4", email="user4@example.org")
 
     def test_valid(self):
         readable = '(username%3Duser1)|(email__contains%3Dexample.org)'
@@ -119,7 +120,7 @@ class ComplexFilterBackendTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             [r['username'] for r in response.data],
-            ['user1', 'user3']
+            ['user1', 'user3', 'user4']
         )
 
     def test_invalid(self):
@@ -130,3 +131,38 @@ class ComplexFilterBackendTests(APITestCase):
         self.assertDictEqual(response.data, {
             'filters': ["Invalid querystring operator. Matched: 'asdf'."],
         })
+
+    def test_pagination_compatibility(self):
+        """
+        Ensure that complex-filtering does not interfere with additional query param processing.
+        """
+        readable = '(email__contains%3Dexample.org)'
+
+        # sanity check w/o pagination
+        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [r['username'] for r in response.data],
+            ['user3', 'user4']
+        )
+
+        # sanity check w/o complex-filtering
+        response = self.client.get('/ffcomplex-users/?page_size=1', content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertListEqual(
+            [r['username'] for r in response.data['results']],
+            ['user1']
+        )
+
+        # pagination + complex-filtering
+        response = self.client.get('/ffcomplex-users/?page_size=1&filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertListEqual(
+            [r['username'] for r in response.data['results']],
+            ['user3']
+        )
