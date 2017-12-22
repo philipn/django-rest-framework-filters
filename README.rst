@@ -24,6 +24,14 @@ Using ``django-rest-framework-filters``, we can easily do stuff like::
     /api/article?author__first_name__icontains=john
     /api/article?is_published!=true
 
+----
+
+**!** These docs pertain to the upcoming 1.0 release. Current docs can be found `here`_.
+
+.. _`here`: https://github.com/philipn/django-rest-framework-filters/blob/v0.10.2/README.rst
+
+----
+
 .. contents::
     **Table of Contents**
     :local:
@@ -33,18 +41,18 @@ Using ``django-rest-framework-filters``, we can easily do stuff like::
 Features
 --------
 
-* Easy filtering across relationships
-* Support for method filtering across relationships
-* Automatic filter negation with a simple ``param!=value`` syntax
-* Backend caching to increase performance
+* Easy filtering across relationships.
+* Support for method filtering across relationships.
+* Automatic filter negation with a simple ``param!=value`` syntax.
 
 
 Requirements
 ------------
 
-* **Python**: 2.7 or 3.3+
-* **Django**: 1.8, 1.9, 1.10, 1.11
-* **DRF**: 3.5, 3.6
+* **Python**: 3.4, 3.5, 3.6
+* **Django**: 1.11, 2.0
+* **DRF**: 3.6, 3.7
+* **django-filter**: 2.0.0.dev1
 
 
 Installation
