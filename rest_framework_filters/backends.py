@@ -4,7 +4,7 @@ from django.http import QueryDict
 from django_filters.rest_framework import backends
 from rest_framework.exceptions import ValidationError
 
-from .complex_ops import decode_querystring_ops, OPERATORS
+from .complex_ops import combine_complex_queryset, decode_complex_ops
 from .filterset import FilterSet
 
 
@@ -43,28 +43,44 @@ class DjangoFilterBackend(backends.DjangoFilterBackend):
 
 class ComplexFilterBackend(DjangoFilterBackend):
     complex_filter_param = 'filters'
+    operators = None
+    negation = True
 
-    def filter_queryset(self, request, original, view):
-        parent = super(ComplexFilterBackend, self)
-        original_GET = request._request.GET
-
+    def filter_queryset(self, request, queryset, view):
         if self.complex_filter_param not in request.query_params:
-            return parent.filter_queryset(request, original, view)
+            return super(ComplexFilterBackend, self).filter_queryset(request, queryset, view)
 
+        # Decode the set of complex operations
         encoded_querystring = request.query_params[self.complex_filter_param]
         try:
-            querystring_ops = decode_querystring_ops(encoded_querystring)
+            complex_ops = decode_complex_ops(encoded_querystring, self.operators, self.negation)
         except ValidationError as exc:
             raise ValidationError({self.complex_filter_param: exc.detail})
 
-        queryset = original
-        queryset_op = OPERATORS['&']  # effectively a noop
+        # Collect the individual filtered querysets
+        querystrings = [op.querystring for op in complex_ops]
+        try:
+            querysets = self.get_filtered_querysets(querystrings, request, queryset, view)
+        except ValidationError as exc:
+            raise ValidationError({self.complex_filter_param: exc.detail})
 
-        for querystring, op in querystring_ops:
-            request._request.GET = QueryDict(querystring)
+        return combine_complex_queryset(querysets, complex_ops)
 
-            queryset = queryset_op(queryset, parent.filter_queryset(request, original, view))
-            queryset_op = OPERATORS.get(op)
+    def get_filtered_querysets(self, querystrings, request, queryset, view):
+        parent = super(ComplexFilterBackend, self)
+        original_GET = request._request.GET
 
-        request._request.GET = original_GET
-        return queryset
+        querysets, errors = [], {}
+        for qs in querystrings:
+            request._request.GET = QueryDict(qs)
+            try:
+                result = parent.filter_queryset(request, queryset, view)
+                querysets.append(result)
+            except ValidationError as exc:
+                errors[qs] = exc.detail
+            finally:
+                request._request.GET = original_GET
+
+        if errors:
+            raise ValidationError(errors)
+        return querysets

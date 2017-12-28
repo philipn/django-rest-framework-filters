@@ -29,6 +29,7 @@ class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
     queryset = User.objects.order_by('pk')
     filter_backends = (backends.ComplexFilterBackend, )
     filter_fields = {
+        'id': '__all__',
         'username': '__all__',
         'email': '__all__',
     }

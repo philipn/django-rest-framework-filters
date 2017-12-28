@@ -132,6 +132,22 @@ class ComplexFilterBackendTests(APITestCase):
             'filters': ["Invalid querystring operator. Matched: 'asdf'."],
         })
 
+    def test_invalid_filterset_errors(self):
+        readable = '(id%3Dfoo) | (id%3Dbar)'
+        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertDictEqual(response.data, {
+            'filters': {
+                'id=foo': {
+                    'id': ['Enter a number.'],
+                },
+                'id=bar': {
+                    'id': ['Enter a number.'],
+                },
+            },
+        })
+
     def test_pagination_compatibility(self):
         """
         Ensure that complex-filtering does not interfere with additional query param processing.
