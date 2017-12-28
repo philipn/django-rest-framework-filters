@@ -1,10 +1,12 @@
-
+from operator import attrgetter
 from urllib.parse import quote
 
 from django.db.models import QuerySet
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
-from rest_framework_filters.complex_ops import decode_complex_ops
+from rest_framework_filters.complex_ops import ComplexOp, combine_complex_queryset, decode_complex_ops
+
+from tests.testapp import models
 
 
 def encode(querysting):
@@ -124,3 +126,67 @@ class DecodeComplexOpsTests(TestCase):
         self.assertEqual(exc.exception.detail, [
             "Invalid querystring operator. Matched: ' & ~'."
         ])
+
+
+class CombineComplexQuerysetTests(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        models.User.objects.create(username='u1', first_name='Bob', last_name='Jones')
+        models.User.objects.create(username='u2', first_name='Joe', last_name='Jones')
+        models.User.objects.create(username='u3', first_name='Bob', last_name='Smith')
+        models.User.objects.create(username='u4', first_name='Joe', last_name='Smith')
+
+    def test_single(self):
+        querysets = [models.User.objects.filter(first_name='Bob')]
+        complex_ops = [ComplexOp(None, False, None)]
+
+        self.assertQuerysetEqual(
+            combine_complex_queryset(querysets, complex_ops),
+            ['u1', 'u3'], attrgetter('username'), False,
+        )
+
+    def test_AND(self):
+        querysets = [
+            models.User.objects.filter(first_name='Bob'),
+            models.User.objects.filter(last_name='Jones'),
+        ]
+        complex_ops = [
+            ComplexOp(None, False, QuerySet.__and__),
+            ComplexOp(None, False, None),
+        ]
+
+        self.assertQuerysetEqual(
+            combine_complex_queryset(querysets, complex_ops),
+            ['u1'], attrgetter('username'), False,
+        )
+
+    def test_OR(self):
+        querysets = [
+            models.User.objects.filter(first_name='Bob'),
+            models.User.objects.filter(last_name='Smith'),
+        ]
+        complex_ops = [
+            ComplexOp(None, False, QuerySet.__or__),
+            ComplexOp(None, False, None),
+        ]
+
+        self.assertQuerysetEqual(
+            combine_complex_queryset(querysets, complex_ops),
+            ['u1', 'u3', 'u4'], attrgetter('username'), False,
+        )
+
+    def test_negation(self):
+        querysets = [
+            models.User.objects.filter(first_name='Bob'),
+            models.User.objects.filter(last_name='Smith'),
+        ]
+        complex_ops = [
+            ComplexOp(None, False, QuerySet.__and__),
+            ComplexOp(None, True, None),
+        ]
+
+        self.assertQuerysetEqual(
+            combine_complex_queryset(querysets, complex_ops),
+            ['u1'], attrgetter('username'), False,
+        )

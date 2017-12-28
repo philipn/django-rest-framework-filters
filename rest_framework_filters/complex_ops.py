@@ -78,3 +78,17 @@ def decode_complex_ops(encoded_querystring, operators=None, negation=True):
         raise ValidationError(errors)
 
     return results
+
+
+def combine_complex_queryset(querysets, complex_ops, negation=True):
+    # Negate querysets
+    for queryset, op in zip(querysets, complex_ops):
+        if negation and op.negate:
+            queryset.query.where.negate()
+
+    # Combine querysets
+    combined = querysets[0]
+    for queryset, op in zip(querysets[1:], complex_ops[:-1]):
+        combined = op.op(combined, queryset)
+
+    return combined
