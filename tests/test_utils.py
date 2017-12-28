@@ -39,3 +39,21 @@ class LookupsForTransformTests(TestCase):
 
         self.assertIn('unaccent__exact', lookups)
         self.assertNotIn('unaccent__unaccent__exact', lookups)
+
+
+class LookaheadTests(TestCase):
+    def test_empty(self):
+        result = list(utils.lookahead([]))
+        self.assertListEqual(result, [])
+
+    def test_single(self):
+        result = list(utils.lookahead([1]))
+        self.assertListEqual(result, [(1, False)])
+
+    def test_multiple(self):
+        result = list(utils.lookahead([1, 2, 3]))
+        self.assertListEqual(result, [
+            (1, True),
+            (2, True),
+            (3, False),
+        ])
