@@ -1,5 +1,5 @@
 
-from rest_framework import viewsets
+from rest_framework import pagination, viewsets
 from rest_framework_filters import backends
 
 from .models import User, Note
@@ -23,6 +23,19 @@ class FilterFieldsUserViewSet(viewsets.ModelViewSet):
     filter_fields = {
         'username': '__all__',
     }
+
+
+class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
+    queryset = User.objects.order_by('pk')
+    filter_backends = (backends.ComplexFilterBackend, )
+    filter_fields = {
+        'id': '__all__',
+        'username': '__all__',
+        'email': '__all__',
+    }
+
+    class pagination_class(pagination.PageNumberPagination):
+        page_size_query_param = 'page_size'
 
 
 class UserViewSet(viewsets.ModelViewSet):

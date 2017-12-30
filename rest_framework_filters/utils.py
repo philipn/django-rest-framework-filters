@@ -62,3 +62,13 @@ def lookups_for_transform(transform):
             lookups.append(expr)
 
     return lookups
+
+
+def lookahead(iterable):
+    it = iter(iterable)
+    current = next(it)
+
+    for value in it:
+        yield current, True
+        current = value
+    yield current, False

@@ -44,6 +44,7 @@ Features
 * Easy filtering across relationships.
 * Support for method filtering across relationships.
 * Automatic filter negation with a simple ``param!=value`` syntax.
+* Backend for complex operations on multiple filtered querysets. eg, ``q1 | q2``.
 
 
 Requirements
@@ -63,8 +64,8 @@ Installation
     $ pip install djangorestframework-filters
 
 
-Usage
------
+``FilterSet`` usage
+-------------------
 
 Upgrading from ``django-filter`` to ``django-rest-framework-filters`` is straightforward:
 
@@ -405,6 +406,149 @@ The recommended solutions are to either:
 .. code-block::
 
     ?publish_date__range=2016-01-01,2016-02-01
+
+
+Complex Operations
+------------------
+
+The ``ComplexFilterBackend`` defines a custom querystring syntax and encoding process that enables the expression of
+`complex queries`_. This syntax extends standard querystrings with the ability to define multiple sets of parameters
+and operators for how the queries should be combined.
+
+.. _`complex queries`: https://docs.djangoproject.com/en/2.0/topics/db/queries/#complex-lookups-with-q-objects
+
+----
+
+**!** Note that this feature is experimental. Bugs may be encountered, and the backend is subject to change.
+
+----
+
+To understand the backend more fully, consider a query to find all articles that contain titles starting with either
+"Who" or "What". The underlying query could be represented with the following:
+
+.. code-block:: python
+
+    q1 = Article.objects.filter(title__startswith='Who')
+    q2 = Article.objects.filter(title__startswith='What')
+    return q1 | q2
+
+Now consider the query, but modified with upper and lower date bounds:
+
+.. code-block:: python
+
+    q1 = Article.objects.filter(title__startswith='Who').filter(publish_date__lte='2005-01-01')
+    q2 = Article.objects.filter(title__startswith='What').filter(publish_date__gte='2010-01-01')
+    return q1 | q2
+
+Using just a ``FilterSet``, it is certainly feasible to represent the former query by writing a custom filter class.
+However, it is less feasible with the latter query, where multiple sets of varying data types and lookups need to be
+validated. In contrast, the ``ComplexFilterBackend`` can create this complex query through the arbitrary combination
+of a simple filter. To support the above, the querystring needs to be created with minimal changes. Unencoded example:
+
+.. code-block::
+
+    (title__startswith=Who&publish_date__lte=2005-01-01) | (title__startswith=What&publish_date__gte=2010-01-01)
+
+By default, the backend combines queries with both ``&`` (AND) and ``|`` (OR), and supports unary negation ``~``. E.g.,
+
+.. code-block::
+
+    (param1=value1) & (param2=value2) | ~(param3=value3)
+
+The backend supports both standard and complex queries. To perform complex queries, the query must be encoded and set
+as the value of the ``complex_filter_param`` (defaults to ``filters``). To perform standard queries, use the backend
+in the same manner as the ``DjangoFilterBackend``.
+
+
+Configuring ``ComplexFilterBackend``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Similar to other backends, ``ComplexFilterBackend`` must be added to a view's ``filter_backends`` atribute. Either add
+it to the ``DEFAULT_FILTER_BACKENDS`` setting, or set it as a backend on the view class.
+
+.. code-block:: python
+
+    REST_FRAMEWORK = {
+        'DEFAULT_FILTER_BACKENDS': (
+            'rest_framework_filters.backends.ComplexFilterBackend',
+        ),
+    }
+
+    # or
+
+    class MyViewSet(generics.ListAPIView):
+        filter_backends = (rest_framework_filters.backends.ComplexFilterBackend, )
+        ...
+
+You may customize how queries are combined by subclassing ``ComplexFilterBackend`` and overriding the ``operators``
+attribute. ``operators`` is a map of operator symbols to functions that combine two querysets. For example, the map
+can be overridden to use the ``QuerySet.intersection()`` and ``QuerySet.union()`` instead of ``&`` and ``|``.
+
+.. code-block:: python
+
+    class CustomizedBackend(ComplexFilterBackend):
+        operators = {
+            '&': QuerySet.intersection,
+            '|': QuerySet.union,
+            '-': QuerySet.difference,
+        }
+
+Unary ``negation`` relies on ORM internals and may be buggy in certain circumstances. If there are issues with this
+feature, it can be disabled by setting the ``negation`` attribute to ``False`` on the backend class. If you do
+experience bugs, please open an issue on the `bug tracker`_.
+
+.. _`bug tracker`: https://github.com/philipn/django-rest-framework-filters/issues/
+
+
+Complex querystring encoding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Below is the procedure for encoding a complex query:
+
+* Convert the query paramaters into individual querystrings.
+* URL-encode the individual querystrings.
+* Wrap the encoded strings in parentheses, and join with operators.
+* URL-encode the entire querystring.
+* Set as the value to the complex filter param (default: ``filters``).
+
+Using the first example, these steps can be visualized as so:
+
+* ``title__startswith=Who``, ``title__startswith=What``
+* ``title__startswith%3DWho``, ``title__startswith%3DWhat``
+* ``(title__startswith%3DWho) | (title__startswith%3DWhat)``
+* ``%28title__startswith%253DWho%29%20%7C%20%28title__startswith%253DWhat%29``
+* ``filters=%28title__startswith%253DWho%29%20%7C%20%28title__startswith%253DWhat%29``
+
+
+Error handling
+~~~~~~~~~~~~~~
+
+``ComplexFilterBackend`` will raise any decoding errors under the complex filtering parameter name. For example,
+
+.. code-block:: json
+
+    {
+        "filters": [
+            "Invalid querystring operator. Matched: 'foo'."
+        ]
+    }
+
+When filtering the querysets, filterset validation errors will be collected and raised under the complex filtering
+parameter name, then under the filterset's decoded querystring. For a complex query like ``(a=1&b=2) | (c=3&d=4)``,
+errors would be raised like so:
+
+.. code-block:: json
+
+    {
+        "filters": {
+            "a=1&b=2": {
+                "a": ["..."]
+            },
+            "c=3&d=4": {
+                "c": ["..."]
+            }
+        }
+    {
 
 
 Migrating to 1.0
