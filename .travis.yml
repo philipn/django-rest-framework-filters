@@ -8,6 +8,7 @@ python:
   - "3.6"
 
 install:
+  - travis_retry pip install -U six setuptools pip wheel
   - travis_retry pip install detox tox-travis tox-venv coverage
 script:
   - detox
@@ -19,10 +20,18 @@ matrix:
   include:
     - python: "3.6"
       env: TOXENV="performance"
+      script: tox -- -v 2
     - python: "3.6"
       env: TOXENV="warnings"
     - python: "3.6"
       env: TOXENV="isort,lint"
+
+    - python: "3.6"
+      env: TOXENV="dist"
+      script:
+        - python setup.py bdist_wheel
+        - tox --installpkg ./dist/djangorestframework_filters-*.whl
+        - tox  # test sdist
 
   allow_failures:
     - env: TOXENV="warnings"
