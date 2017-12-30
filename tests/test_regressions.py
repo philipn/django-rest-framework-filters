@@ -9,23 +9,18 @@ that the FilterSet continue to behave as expected.
 import datetime
 
 from django.test import TestCase, override_settings
-from django.utils.dateparse import parse_time, parse_datetime
-
+from django.utils.dateparse import parse_datetime, parse_time
 from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 
-from .testapp.models import (
-    User, Person, Note, Post, Cover,
-)
-
 from .testapp.filters import (
+    AllLookupsPersonDateFilter, CoverFilterWithRelatedMethodFilter,
+    InSetLookupPersonIDFilter, InSetLookupPersonNameFilter, PostFilter,
     UserFilter,
-    AllLookupsPersonDateFilter,
-    InSetLookupPersonIDFilter,
-    InSetLookupPersonNameFilter,
-    PostFilter,
-    CoverFilterWithRelatedMethodFilter,
 )
+from .testapp.models import Cover, Note, Person, Post, User
+
+today = datetime.date.today()
 
 
 def add_timedelta(time, timedelta):
@@ -64,10 +59,11 @@ class IsoDatetimeTests(TestCase):
         date_str = JSONRenderer().render(data['date_joined']).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6))
+        datetime_str = datetime_str.decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        dt = datetime.datetime.combine(datetime.date.today(), parse_time(data['time_joined'])) + datetime.timedelta(seconds=0.6)
+        dt = datetime.datetime.combine(today, parse_time(data['time_joined'])) + datetime.timedelta(seconds=0.6)
         time_str = JSONRenderer().render(dt.time()).decode('utf-8').strip('"')
 
         # DateField
@@ -105,7 +101,8 @@ class IsoDatetimeTests(TestCase):
         # serializer output.
         john = Person.objects.get(name="John")
         data = PersonSerializer(john).data
-        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)).decode('utf-8').strip('"')
+        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6))
+        datetime_str = datetime_str.decode('utf-8').strip('"')
 
         # This is more for documentation - DRF appends a 'Z' to timezone aware UTC datetimes when rendering:
         # https://github.com/tomchristie/django-rest-framework/blob/3.2.0/rest_framework/fields.py#L1002-L1006
@@ -124,7 +121,7 @@ class BooleanFilterTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=datetime.date.today())
+        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=today)
         User.objects.create(username="user2", email="user2@example.org", is_active=False)
 
     def test_boolean_filter(self):
@@ -178,7 +175,7 @@ class InLookupTests(TestCase):
         john = Person.objects.create(name="John")
         Person.objects.create(name="Mark", best_friend=john)
 
-        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=datetime.date.today())
+        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=today)
         User.objects.create(username="user2", email="user2@example.org", is_active=False)
 
     def test_inset_number_filter(self):
@@ -202,7 +199,7 @@ class InLookupTests(TestCase):
         self.assertEqual(f.qs.count(), 2)
 
         EXTRA_GET = {
-            'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1*p2)
+            'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1 * p2)
         }
         f = InSetLookupPersonIDFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.pk for x in f.qs]
@@ -211,7 +208,7 @@ class InLookupTests(TestCase):
         self.assertIn(p2, f)
 
         DISORDERED_GET = {
-            'pk__in': '{:d},{:d},{:d}'.format(p2, p2*p1, p1)
+            'pk__in': '{:d},{:d},{:d}'.format(p2, p2 * p1, p1)
         }
         f = InSetLookupPersonIDFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.pk for x in f.qs]
@@ -239,7 +236,7 @@ class InLookupTests(TestCase):
         self.assertEqual(len(list(f.qs)), 1)
 
         EXTRA_GET = {
-            'name__in': '{},{},{}'.format(p1, p2, p1+p2)
+            'name__in': '{},{},{}'.format(p1, p2, p1 + p2)
         }
         f = InSetLookupPersonNameFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.name for x in f.qs]
@@ -248,7 +245,7 @@ class InLookupTests(TestCase):
         self.assertIn(p2, f)
 
         DISORDERED_GET = {
-            'name__in': '{},{},{}'.format(p2, p2+p1, p1)
+            'name__in': '{},{},{}'.format(p2, p2 + p1, p1)
         }
         f = InSetLookupPersonNameFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.name for x in f.qs]
@@ -261,7 +258,7 @@ class IsNullLookupTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=datetime.date.today())
+        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=today)
         User.objects.create(username="user2", email="user2@example.org", is_active=False)
 
     def test_isnull_override(self):
@@ -298,7 +295,7 @@ class FilterMethodTests(TestCase):
         note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user)
 
         post1 = Post.objects.create(note=note1, content="Test content in post 1")
-        post2 = Post.objects.create(note=note2, content="Test content in post 2", date_published=datetime.date.today())
+        post2 = Post.objects.create(note=note2, content="Test content in post 2", date_published=today)
 
         Cover.objects.create(post=post1, comment="Cover 1")
         Cover.objects.create(post=post2, comment="Cover 2")

@@ -1,2 +1,2 @@
-from .filterset import FilterSet
-from .filters import *
+from .filterset import FilterSet  # noqa
+from .filters import *  # noqa

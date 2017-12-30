@@ -1,12 +1,12 @@
 
 import django_filters
-from rest_framework_filters import filters
-from rest_framework_filters.filters import RelatedFilter, AllLookupsFilter
-from rest_framework_filters.filterset import FilterSet, LOOKUP_SEP
 
+from rest_framework_filters import filters
+from rest_framework_filters.filters import AllLookupsFilter, RelatedFilter
+from rest_framework_filters.filterset import LOOKUP_SEP, FilterSet
 
 from .models import (
-    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
+    A, B, BlogPost, C, Cover, Note, Page, Person, Post, Tag, User,
 )
 
 
@@ -195,7 +195,11 @@ class BFilter(FilterSet):
 
 class PersonFilter(FilterSet):
     name = AllLookupsFilter(field_name='name')
-    best_friend = RelatedFilter('tests.testapp.filters.PersonFilter', field_name='best_friend', queryset=Person.objects.all())
+    best_friend = RelatedFilter(
+        'tests.testapp.filters.PersonFilter',
+        field_name='best_friend',
+        queryset=Person.objects.all(),
+    )
 
     class Meta:
         model = Person

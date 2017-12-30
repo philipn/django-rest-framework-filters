@@ -1,25 +1,17 @@
 from django.test import TestCase
-
-from rest_framework_filters import FilterSet, filters
 from django_filters import FilterSet as DFFilterSet
 
-from .testapp.models import (
-    User, Note, Post, Cover, Page, A, B, C, Person, Tag, BlogPost,
-)
+from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
-    UserFilter,
-    PersonFilter,
-    PostFilter,
-    BlogPostFilter,
-    CoverFilterWithRelated,
-    PageFilterWithAliasedNestedRelated,
-    NoteFilterWithAll,
-    NoteFilterWithRelated,
-    NoteFilterWithRelatedDifferentName,
-    NoteFilterWithRelatedAll,
+    BlogPostFilter, CFilter, CoverFilterWithRelated, NoteFilterWithAll,
+    NoteFilterWithRelated, NoteFilterWithRelatedAll,
     NoteFilterWithRelatedAllDifferentFilterName,
-    CFilter,
+    NoteFilterWithRelatedDifferentName, PageFilterWithAliasedNestedRelated,
+    PersonFilter, PostFilter, UserFilter,
+)
+from .testapp.models import (
+    A, B, BlogPost, C, Cover, Note, Page, Person, Post, Tag, User,
 )
 
 
@@ -336,11 +328,10 @@ class RelatedFilterTests(TestCase):
         GET = {'author': User.objects.get(username='user2').pk}
         f = NoteFilter(GET, queryset=Note.objects.all())
 
-        with self.assertRaises(AssertionError) as excinfo:
+        msg = "Expected `.get_queryset()` for related filter 'NoteFilter.author' " \
+              "to return a `QuerySet`, but got `None`."
+        with self.assertRaisesMessage(AssertionError, msg):
             f.qs
-
-        msg = str(excinfo.exception)
-        self.assertEqual("Expected `.get_queryset()` for related filter 'NoteFilter.author' to return a `QuerySet`, but got `None`.", msg)
 
     def test_relatedfilter_request_is_passed(self):
         class RequestCheck(FilterSet):

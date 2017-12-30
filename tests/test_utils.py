@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from rest_framework_filters import utils
 
-from .testapp.models import Person, Note
+from .testapp.models import Note, Person
 
 
 class LookupsForFieldTests(TestCase):

@@ -1,9 +1,10 @@
 
 from django_filters import FilterSet as DFFilterSet
+
 from rest_framework_filters import filters
 from rest_framework_filters.filterset import FilterSet as DRFFilterSet
 
-from ..testapp.models import User, Note
+from ..testapp.models import Note, User
 
 
 # df-filters

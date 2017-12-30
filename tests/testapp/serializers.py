@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from .models import User, Note
+from .models import Note, User
 
 
 class UserSerializer(serializers.ModelSerializer):

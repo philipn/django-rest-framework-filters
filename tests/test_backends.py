@@ -1,7 +1,8 @@
 from urllib.parse import quote
 
 from rest_framework import status
-from rest_framework.test import APITestCase, APIRequestFactory
+from rest_framework.test import APIRequestFactory, APITestCase
+
 from rest_framework_filters import FilterSet
 
 from .testapp import models, views
