@@ -10,7 +10,7 @@ python:
 install:
   - travis_retry pip install detox tox-travis tox-venv coverage
 script:
-  - detox -- -v 2
+  - detox
 after_success:
   - coverage report
   - bash <(curl -s https://codecov.io/bash)
@@ -21,6 +21,9 @@ matrix:
       env: TOXENV="performance"
     - python: "3.6"
       env: TOXENV="warnings"
+    - python: "3.6"
+      env: TOXENV="isort,lint"
+
   allow_failures:
     - env: TOXENV="warnings"
   fast_finish: true
