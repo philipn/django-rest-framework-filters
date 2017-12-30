@@ -78,7 +78,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         super(FilterSet, self).__init__(data, queryset, request=request, prefix=prefix, **kwargs)
 
-        self.expanded_filters = self.expand_filters()
+        self.request_filters = self.get_request_filters()
 
     @classmethod
     def get_fields(cls):
@@ -91,9 +91,9 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         return fields
 
-    def expand_filters(self):
+    def get_request_filters(self):
         """
-        Build a set of filters based on the requested data. The resulting set
+        Build a set of filters based on the request data. The resulting set
         will walk `RelatedFilter`s to recursively build the set of filters.
         """
         # build param data for related filters: {rel: {param: value}}
@@ -135,7 +135,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
                 filterset = f.filterset(data=subset_data, request=self.request)
 
                 # modify filter names to account for relationship
-                for related_name, related_f in filterset.expand_filters().items():
+                for related_name, related_f in filterset.get_request_filters().items():
                     related_name = LOOKUP_SEP.join([filter_name, related_name])
                     related_f.field_name = LOOKUP_SEP.join([f.field_name, related_f.field_name])
                     requested_filters[related_name] = related_f
@@ -225,19 +225,17 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         return filter_names
 
     @contextmanager
-    def requested_filters(self):
+    def override_filters(self):
         if self.is_bound:
-            available_filters = self.filters
-            requested_filters = self.expanded_filters
-
-            self.filters = requested_filters
+            orig_filters = self.filters
+            self.filters = self.request_filters
             yield
-            self.filters = available_filters
+            self.filters = orig_filters
 
     def filter_queryset(self, queryset):
-        with self.requested_filters():
+        with self.override_filters():
             return super(FilterSet, self).filter_queryset(queryset)
 
     def get_form_class(self):
-        with self.requested_filters():
+        with self.override_filters():
             return super(FilterSet, self).get_form_class()
