@@ -52,9 +52,9 @@ class MetaclassTests(TestCase):
                 self.assertFalse(hasattr(UserFilter(), func))
 
 
-class LookupsFilterTests(TestCase):
+class AutoFilterTests(TestCase):
     """
-    Test basic filter construction for `AllLookupsFilter`, '__all__', and `RelatedFilter.lookups`.
+    Test auto filter generation (`AllLookupsFilter`, `RelatedFilter`, '__all__').
     """
 
     def test_alllookupsfilter_meta_fields_unmodified(self):
@@ -131,8 +131,18 @@ class LookupsFilterTests(TestCase):
         self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
         self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
 
+    def test_relatedfilter_lookups_default(self):
+        class F(FilterSet):
+            author = filters.RelatedFilter(UserFilter)
+
+            class Meta:
+                model = Note
+                fields = []
+
+        self.assertEqual(len([f for f in F.base_filters if f.startswith('author')]), 1)
+        self.assertIsInstance(F.base_filters['author'], filters.RelatedFilter)
+
     def test_relatedfilter_lookups_list(self):
-        # ensure that related filter is compatible with __all__ lookups.
         class F(FilterSet):
             author = filters.RelatedFilter(UserFilter, lookups=['in'])
 
@@ -296,7 +306,7 @@ class GetRelatedFilterParamTests(TestCase):
         self.assertEqual('author', param)
 
 
-class FilterSubsetTests(TestCase):
+class GetFilterSubsetTests(TestCase):
 
     def test_get_subset(self):
         filter_subset = UserFilter.get_filter_subset(['email'])
@@ -391,7 +401,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.expand_filters()
+        requested_filters = filterset.request_filters
 
         self.assertTrue(requested_filters['name__contains!'].exclude)
 
@@ -405,7 +415,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.expand_filters()
+        requested_filters = filterset.request_filters
 
         self.assertFalse(requested_filters['name__contains'].exclude)
         self.assertTrue(requested_filters['name__contains!'].exclude)
@@ -416,7 +426,7 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
-        requested_filters = filterset.expand_filters()
+        requested_filters = filterset.request_filters
 
         self.assertTrue(requested_filters['tags__name__contains!'].exclude)
 

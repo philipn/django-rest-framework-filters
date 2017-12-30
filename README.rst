@@ -562,8 +562,8 @@ change reduces the chance of unintentionally exposing data in the rendered filte
 provide the ``queryset`` argument, or override the ``get_queryset()`` method (see `queryset callables`_).
 
 
-``get_filters()`` renamed to ``expand_filters()``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``get_filters()`` renamed to ``get_request_filters()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 django-filter has add a ``get_filters()`` classmethod to it's API, so this method has been renamed.
 

@@ -26,7 +26,7 @@ class DjangoFilterBackend(backends.DjangoFilterBackend):
 
         def get_filter_class(view, queryset=None):
             filter_class = original(view, queryset)
-            filter_class.requested_filters = noop
+            filter_class.override_filters = noop
 
             return filter_class
 
