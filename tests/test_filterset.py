@@ -1,27 +1,18 @@
 import sys
 
 from django.test import TestCase
-
-from rest_framework_filters.filterset import FilterSetMetaclass
-from rest_framework_filters import filters, FilterSet
 from django_filters.filters import BaseInFilter
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
 
-from .testapp.models import (
-    Note, Post, Person, Tag, BlogPost,
-)
+from rest_framework_filters import FilterSet, filters
+from rest_framework_filters.filterset import FilterSetMetaclass
 
 from .testapp.filters import (
-    UserFilter,
-    NoteFilterWithAll,
-    NoteFilterWithRelated,
-    PostFilter,
-    TagFilter,
-    BlogPostFilter,
-    BlogPostOverrideFilter,
+    BlogPostFilter, BlogPostOverrideFilter, NoteFilterWithAll,
+    NoteFilterWithRelated, PostFilter, TagFilter, UserFilter,
 )
-
-from rest_framework.views import APIView
-from rest_framework.test import APIRequestFactory
+from .testapp.models import BlogPost, Note, Person, Post, Tag
 
 factory = APIRequestFactory()
 

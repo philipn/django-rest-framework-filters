@@ -1,6 +1,7 @@
-from django_filters.rest_framework.filters import *
-from rest_framework_filters.utils import import_class
+from django_filters.rest_framework.filters import *  # noqa
+from django_filters.rest_framework.filters import Filter, ModelChoiceFilter
 
+from rest_framework_filters.utils import import_class
 
 ALL_LOOKUPS = '__all__'
 

@@ -1,12 +1,12 @@
 import argparse
 from timeit import repeat
 
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, override_settings
 from rest_framework.test import APIRequestFactory
+
 from tests.perf import views
 from tests.testapp import models
 
-client = Client()
 factory = APIRequestFactory()
 
 

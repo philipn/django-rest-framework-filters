@@ -1,10 +1,11 @@
 
 from rest_framework import pagination, viewsets
+
 from rest_framework_filters import backends
 
-from .models import User, Note
-from .serializers import UserSerializer, NoteSerializer
-from .filters import DFUserFilter, UserFilterWithAll, NoteFilterWithRelatedAll
+from .filters import DFUserFilter, NoteFilterWithRelatedAll, UserFilterWithAll
+from .models import Note, User
+from .serializers import NoteSerializer, UserSerializer
 
 
 class DFUserViewSet(viewsets.ModelViewSet):

@@ -1,14 +1,12 @@
+import copy
 from collections import OrderedDict
 from contextlib import contextmanager
-import copy
 
 from django.db.models.constants import LOOKUP_SEP
-
 from django_filters import filterset, rest_framework
 from django_filters.utils import get_model_field
 
-from . import filters
-from . import utils
+from . import filters, utils
 
 
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
