@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 
 from django.http import QueryDict
+from django_filters import compat
 from django_filters.rest_framework import backends
 from rest_framework.exceptions import ValidationError
 
@@ -15,6 +16,12 @@ def noop(self):
 
 class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
     default_filter_set = FilterSet
+
+    @property
+    def template(self):
+        if compat.is_crispy():
+            return 'rest_framework_filters/crispy_form.html'
+        return 'rest_framework_filters/form.html'
 
     @contextmanager
     def patch_for_rendering(self, request):
