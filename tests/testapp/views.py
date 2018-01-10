@@ -13,14 +13,14 @@ class DFUserViewSet(viewsets.ModelViewSet):
     # with standard django-filter FilterSets.
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.DjangoFilterBackend, )
+    filter_backends = (backends.RestFrameworkFilterBackend, )
     filter_class = DFUserFilter
 
 
 class FilterFieldsUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.DjangoFilterBackend, )
+    filter_backends = (backends.RestFrameworkFilterBackend, )
     filter_fields = {
         'username': '__all__',
     }
@@ -42,12 +42,12 @@ class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.DjangoFilterBackend, )
+    filter_backends = (backends.RestFrameworkFilterBackend, )
     filter_class = UserFilterWithAll
 
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    filter_backends = (backends.DjangoFilterBackend, )
+    filter_backends = (backends.RestFrameworkFilterBackend, )
     filter_class = NoteFilterWithRelatedAll

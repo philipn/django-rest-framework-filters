@@ -13,7 +13,7 @@ def noop(self):
     yield
 
 
-class DjangoFilterBackend(backends.DjangoFilterBackend):
+class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
     default_filter_set = FilterSet
 
     @contextmanager
@@ -38,10 +38,10 @@ class DjangoFilterBackend(backends.DjangoFilterBackend):
         # patching the behavior of `get_filter_class()` in this method allows
         # us to avoid maintenance issues with code duplication.
         with self.patch_for_rendering(request):
-            return super(DjangoFilterBackend, self).to_html(request, queryset, view)
+            return super(RestFrameworkFilterBackend, self).to_html(request, queryset, view)
 
 
-class ComplexFilterBackend(DjangoFilterBackend):
+class ComplexFilterBackend(RestFrameworkFilterBackend):
     complex_filter_param = 'filters'
     operators = None
     negation = True
