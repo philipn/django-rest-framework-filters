@@ -18,5 +18,5 @@ class DFNoteViewSet(viewsets.ModelViewSet):
 class DRFFNoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    filter_backends = (drf_backends.DjangoFilterBackend, )
+    filter_backends = (drf_backends.RestFrameworkFilterBackend, )
     filter_class = NoteFilterWithRelatedAll
