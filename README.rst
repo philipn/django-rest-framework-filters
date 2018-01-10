@@ -59,9 +59,21 @@ Requirements
 Installation
 ------------
 
+Install with pip, or your preferred package manager:
+
 .. code-block:: bash
 
     $ pip install djangorestframework-filters
+
+
+Add to your ``INSTALLED_APPS`` setting:
+
+.. code-block:: python
+
+    INSTALLED_APPS = [
+        'rest_framework_filters',
+        ...
+    ]
 
 
 ``FilterSet`` usage
@@ -96,7 +108,7 @@ To use the django-rest-framework-filters backend, add the following to your sett
 
     REST_FRAMEWORK = {
         'DEFAULT_FILTER_BACKENDS': (
-            'rest_framework_filters.backends.DjangoFilterBackend', ...
+            'rest_framework_filters.backends.RestFrameworkFilterBackend', ...
         ),
         ...
 
@@ -457,7 +469,7 @@ By default, the backend combines queries with both ``&`` (AND) and ``|`` (OR), a
 
 The backend supports both standard and complex queries. To perform complex queries, the query must be encoded and set
 as the value of the ``complex_filter_param`` (defaults to ``filters``). To perform standard queries, use the backend
-in the same manner as the ``DjangoFilterBackend``.
+in the same manner as the ``RestFrameworkFilterBackend``.
 
 
 Configuring ``ComplexFilterBackend``
@@ -553,6 +565,14 @@ errors would be raised like so:
 
 Migrating to 1.0
 ----------------
+
+Backend renamed, provides new templates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The backend has been renamed from ``DjangoFilterBackend`` to ``RestFrameworkFilterBackend`` and now uses its own
+template paths, located under ``rest_framework_filters`` instead of ``django_filters/rest_framework``.
+
+To load the included templates, it is necessary to add ``rest_framework_filters`` to the ``INSTALLED_APPS`` setting.
 
 ``RelatedFilter.queryset`` now required
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
