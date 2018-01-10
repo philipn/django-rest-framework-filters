@@ -1,5 +1,6 @@
 import sys
 
+from django.http.request import QueryDict
 from django.test import TestCase
 from django_filters.filters import BaseInFilter
 from rest_framework.test import APIRequestFactory
@@ -253,22 +254,31 @@ class GetParamFilterNameTests(TestCase):
         self.assertEqual('note2', name)
 
 
-class GetRelatedFilterParamTests(TestCase):
+class GetRelatedDataTests(TestCase):
 
     def test_regular_filter(self):
-        name, param = NoteFilterWithRelated.get_related_filter_param('title')
-        self.assertIsNone(name)
-        self.assertIsNone(param)
+        params = NoteFilterWithRelated.get_related_data({'title': ''})
+        self.assertEqual(params, {})
 
     def test_related_filter_exact(self):
-        name, param = NoteFilterWithRelated.get_related_filter_param('author')
-        self.assertIsNone(name)
-        self.assertIsNone(param)
+        params = NoteFilterWithRelated.get_related_data({'author': ''})
+        self.assertEqual(params, {})
 
-    def test_related_filter_param(self):
-        name, param = NoteFilterWithRelated.get_related_filter_param('author__email')
-        self.assertEqual('author', name)
-        self.assertEqual('email', param)
+    def test_related_filters(self):
+        params = NoteFilterWithRelated.get_related_data({'author__email': ''})
+        self.assertEqual(params, {'author': {'email': ['']}})
+
+    def test_multiple_related_filters(self):
+        params = NoteFilterWithRelated.get_related_data({
+            'author__username': '',
+            'author__is_active': '',
+            'author__email': '',
+        })
+        self.assertEqual(params, {'author': {
+            'email': [''],
+            'is_active': [''],
+            'username': [''],
+        }})
 
     def test_name_hiding(self):
         class PostFilterNameHiding(PostFilter):
@@ -280,21 +290,52 @@ class GetRelatedFilterParamTests(TestCase):
                 model = Post
                 fields = []
 
-        name, param = PostFilterNameHiding.get_related_filter_param('note__author__email')
-        self.assertEqual('note__author', name)
-        self.assertEqual('email', param)
+        params = PostFilterNameHiding.get_related_data({'note__author__email': ''})
+        self.assertEqual(params, {'note__author': {'email': ['']}})
 
-        name, param = PostFilterNameHiding.get_related_filter_param('note__title')
-        self.assertEqual('note', name)
-        self.assertEqual('title', param)
+        params = PostFilterNameHiding.get_related_data({'note__title': ''})
+        self.assertEqual(params, {'note': {'title': ['']}})
 
-        name, param = PostFilterNameHiding.get_related_filter_param('note2__title')
-        self.assertEqual('note2', name)
-        self.assertEqual('title', param)
+        params = PostFilterNameHiding.get_related_data({'note2__title': ''})
+        self.assertEqual(params, {'note2': {'title': ['']}})
 
-        name, param = PostFilterNameHiding.get_related_filter_param('note2__author')
-        self.assertEqual('note2', name)
-        self.assertEqual('author', param)
+        params = PostFilterNameHiding.get_related_data({'note2__author': ''})
+        self.assertEqual(params, {'note2': {'author': ['']}})
+
+        # combined
+        params = PostFilterNameHiding.get_related_data({
+            'note__author__email': '',
+            'note__title': '',
+            'note2__title': '',
+            'note2__author': '',
+        })
+
+        self.assertEqual(params, {
+            'note__author': {'email': ['']},
+            'note': {'title': ['']},
+            'note2': {
+                'title': [''],
+                'author': [''],
+            },
+        })
+
+    def test_querydict(self):
+        self.assertEqual(
+            QueryDict('a=1&a=2&b=3'),
+            {'a': ['1', '2'], 'b': ['3']}
+        )
+
+        result = {'note': {
+            'author__email': ['a'],
+            'title': ['b', 'c'],
+        }}
+
+        query = QueryDict('note__author__email=a&note__title=b&note__title=c')
+        self.assertEqual(PostFilter.get_related_data(query), result)
+
+        # QueryDict-like dictionary w/ multiple values for a param (a la m2m)
+        query = {'note__author__email': 'a', 'note__title': ['b', 'c']}
+        self.assertEqual(PostFilter.get_related_data(query), result)
 
 
 class GetFilterSubsetTests(TestCase):
@@ -417,9 +458,9 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
-        requested_filters = filterset.request_filters
+        requested_filters = filterset.related_filtersets['tags'].request_filters
 
-        self.assertTrue(requested_filters['tags__name__contains!'].exclude)
+        self.assertTrue(requested_filters['name__contains!'].exclude)
 
     def test_exclusion_results(self):
         GET = {

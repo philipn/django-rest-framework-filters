@@ -2,7 +2,9 @@ import copy
 from collections import OrderedDict
 from contextlib import contextmanager
 
+from django.db.models import Subquery
 from django.db.models.constants import LOOKUP_SEP
+from django.http.request import QueryDict
 from django_filters import filterset, rest_framework
 from django_filters.utils import get_model_field
 
@@ -76,6 +78,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         super(FilterSet, self).__init__(data, queryset, request=request, prefix=prefix, **kwargs)
 
+        self.related_filtersets = self.get_related_filtersets()
         self.request_filters = self.get_request_filters()
 
     @classmethod
@@ -91,23 +94,9 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     def get_request_filters(self):
         """
-        Build a set of filters based on the request data. The resulting set
-        will walk `RelatedFilter`s to recursively build the set of filters.
+        Build a set of filters based on the request data. This currently
+        includes only filter exclusion/negation.
         """
-        # build param data for related filters: {rel: {param: value}}
-        related_data = OrderedDict(
-            [(name, OrderedDict()) for name in self.__class__.related_filters]
-        )
-        for param, value in self.data.items():
-            filter_name, related_param = self.get_related_filter_param(param)
-
-            # skip non lookup/related keys
-            if filter_name is None:
-                continue
-
-            if filter_name in related_data:
-                related_data[filter_name][related_param] = value
-
         # build the compiled set of all filters
         requested_filters = OrderedDict()
         for filter_name, f in self.filters.items():
@@ -126,19 +115,22 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
                 f_copy.exclude = not f.exclude
 
                 requested_filters[exclude_name] = f_copy
-
-            # include filters from related subsets
-            if isinstance(f, filters.RelatedFilter) and filter_name in related_data:
-                subset_data = related_data[filter_name]
-                filterset = f.filterset(data=subset_data, request=self.request)
-
-                # modify filter names to account for relationship
-                for related_name, related_f in filterset.get_request_filters().items():
-                    related_name = LOOKUP_SEP.join([filter_name, related_name])
-                    related_f.field_name = LOOKUP_SEP.join([f.field_name, related_f.field_name])
-                    requested_filters[related_name] = related_f
-
         return requested_filters
+
+    def get_related_filtersets(self):
+        related_filtersets = OrderedDict()
+        related_data = self.get_related_data(self.data)
+
+        for related_name, subset_data in related_data.items():
+            f = self.filters[related_name]
+            related_filtersets[f.field_name] = f.filterset(
+                data=subset_data,
+                queryset=f.get_queryset(self.request),
+                request=self.request,
+                prefix=self.form_prefix,
+            )
+
+        return related_filtersets
 
     @classmethod
     def get_param_filter_name(cls, param):
@@ -179,32 +171,53 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
                 return name
 
     @classmethod
-    def get_related_filter_param(cls, param):
+    def get_related_data(cls, data):
         """
-        Get a tuple of (filter name, related param).
+        Given the query data, return a map of {related filter: {related: data}}.
+        The related data is used as the `data` argument for related FilterSet
+        initialization.
+
+        Note that the related data dictionaries will be a QueryDict, regardless
+        of the type of the original data dict.
 
         ex::
 
-            >>> FilterSet.get_related_filter_param('author__email__foobar')
-            ('author', 'email__foobar')
-
-            >>> FilterSet.get_related_filter_param('author')
-            (None, None)
+            >>> NoteFilter.get_related_data({
+            >>>     'author__email': 'foo',
+            >>>     'author__name': 'bar',
+            >>>     'name': 'baz',
+            >>> })
+            OrderedDict([
+                ('author', <QueryDict: {'email': ['foo'], 'name': ['bar']}>)
+            ])
 
         """
         related_filters = cls.related_filters.keys()
+        related_data = OrderedDict()
+        data = data.copy()  # get a copy of the original data
 
         # preference more specific filters. eg, `note__author` over `note`.
         for name in reversed(sorted(related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
-            if param.startswith("%s%s" % (name, LOOKUP_SEP)):
-                # strip param + LOOKUP_SET from param
-                related_param = param[len(name) + len(LOOKUP_SEP):]
-                return name, related_param
+            related_prefix = "%s%s" % (name, LOOKUP_SEP)
 
-        # not a related param
-        return None, None
+            related = QueryDict('', mutable=True)
+            for param in list(data):
+                if param.startswith(related_prefix):
+                    value = data.pop(param)
+                    param = param[len(related_prefix):]
+
+                    # handle QueryDict & dict values
+                    if not isinstance(value, (list, tuple)):
+                        related[param] = value
+                    else:
+                        related.setlist(param, value)
+
+            if related:
+                related_data[name] = related
+
+        return related_data
 
     @classmethod
     def get_filter_subset(cls, params):
@@ -232,8 +245,33 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     def filter_queryset(self, queryset):
         with self.override_filters():
-            return super(FilterSet, self).filter_queryset(queryset)
+            queryset = super(FilterSet, self).filter_queryset(queryset)
+            queryset = self.filter_related_filtersets(queryset)
+            return queryset
 
     def get_form_class(self):
         with self.override_filters():
-            return super(FilterSet, self).get_form_class()
+            class Form(super(FilterSet, self).get_form_class()):
+                def clean(form):
+                    cleaned_data = super(Form, form).clean()
+
+                    for field_name, related_filterset in self.related_filtersets.items():
+                        for key, error in related_filterset.form.errors.items():
+                            self.form.errors[LOOKUP_SEP.join([field_name, key])] = error
+
+                    return cleaned_data
+
+            return Form
+
+    def filter_related_filtersets(self, queryset):
+        """
+        Filter the provided `qs` by the `related_filtersets`. It is recommended
+        that you override this method to change the filtering behavior across
+        relationships.
+        """
+        for field_name, related_filterset in self.related_filtersets.items():
+            lookup_expr = LOOKUP_SEP.join([field_name, 'in'])
+            subquery = Subquery(related_filterset.qs.values('pk'))
+            queryset = queryset.filter(**{lookup_expr: subquery})
+
+        return queryset
