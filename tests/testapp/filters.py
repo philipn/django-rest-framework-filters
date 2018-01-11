@@ -154,11 +154,6 @@ class PersonFilter(FilterSet):
         queryset=Person.objects.all(),
     )
 
-    # date/datetime lookups
-    date_joined = AllLookupsFilter(field_name='date_joined')
-    time_joined = AllLookupsFilter(field_name='time_joined')
-    datetime_joined = AllLookupsFilter(field_name='datetime_joined')
-
     class Meta:
         model = Person
         fields = []
@@ -167,15 +162,6 @@ class PersonFilter(FilterSet):
 #############################################################
 # Extensions to django_filter fields for DRF.
 #############################################################
-class InLookupPersonFilter(FilterSet):
-    pk = AllLookupsFilter('id')
-    name = AllLookupsFilter('name')
-
-    class Meta:
-        model = Person
-        fields = []
-
-
 class PostOverrideFilter(FilterSet):
     declared_publish_date__isnull = filters.NumberFilter(field_name='publish_date', lookup_expr='isnull')
     all_declared_publish_date = filters.AllLookupsFilter(field_name='publish_date')

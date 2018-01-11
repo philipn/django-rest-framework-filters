@@ -13,9 +13,9 @@ from django.utils.dateparse import parse_datetime, parse_time
 from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 
-from .testapp.filters import (
-    PersonFilter, CoverFilter, InLookupPersonFilter, PostFilter, UserFilter,
-)
+from rest_framework_filters import AllLookupsFilter, FilterSet
+
+from .testapp.filters import CoverFilter, PostFilter, UserFilter
 from .testapp.models import Cover, Note, Person, Post, User
 
 today = datetime.date.today()
@@ -31,6 +31,25 @@ class PersonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Person
         fields = ['date_joined', 'time_joined', 'datetime_joined']
+
+
+class PersonFilter(FilterSet):
+    date_joined = AllLookupsFilter(field_name='date_joined')
+    time_joined = AllLookupsFilter(field_name='time_joined')
+    datetime_joined = AllLookupsFilter(field_name='datetime_joined')
+
+    class Meta:
+        model = Person
+        fields = []
+
+
+class InLookupPersonFilter(FilterSet):
+    pk = AllLookupsFilter('id')
+    name = AllLookupsFilter('name')
+
+    class Meta:
+        model = Person
+        fields = []
 
 
 class IsoDatetimeTests(TestCase):
