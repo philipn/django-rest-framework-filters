@@ -185,15 +185,7 @@ class PersonFilter(FilterSet):
         queryset=Person.objects.all(),
     )
 
-    class Meta:
-        model = Person
-        fields = []
-
-
-#############################################################
-# Extensions to django_filter fields for DRF.
-#############################################################
-class AllLookupsPersonDateFilter(FilterSet):
+    # date/datetime lookups
     date_joined = AllLookupsFilter(field_name='date_joined')
     time_joined = AllLookupsFilter(field_name='time_joined')
     datetime_joined = AllLookupsFilter(field_name='datetime_joined')
@@ -203,6 +195,9 @@ class AllLookupsPersonDateFilter(FilterSet):
         fields = []
 
 
+#############################################################
+# Extensions to django_filter fields for DRF.
+#############################################################
 class InLookupPersonFilter(FilterSet):
     pk = AllLookupsFilter('id')
     name = AllLookupsFilter('name')

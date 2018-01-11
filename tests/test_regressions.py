@@ -14,8 +14,7 @@ from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 
 from .testapp.filters import (
-    AllLookupsPersonDateFilter, CoverFilter, InLookupPersonFilter, PostFilter,
-    UserFilter,
+    PersonFilter, CoverFilter, InLookupPersonFilter, PostFilter, UserFilter,
 )
 from .testapp.models import Cover, Note, Person, Post, User
 
@@ -69,7 +68,7 @@ class IsoDatetimeTests(TestCase):
         GET = {
             'date_joined__lte': date_str,
         }
-        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 2)
         p = list(f.qs)[0]
 
@@ -77,7 +76,7 @@ class IsoDatetimeTests(TestCase):
         GET = {
             'datetime_joined__lte': datetime_str,
         }
-        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         p = list(f.qs)[0]
         self.assertEqual(p.name, "John")
@@ -86,7 +85,7 @@ class IsoDatetimeTests(TestCase):
         GET = {
             'time_joined__lte': time_str,
         }
-        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         p = list(f.qs)[0]
         self.assertEqual(p.name, "John")
@@ -110,7 +109,7 @@ class IsoDatetimeTests(TestCase):
         GET = {
             'datetime_joined__lte': datetime_str,
         }
-        f = AllLookupsPersonDateFilter(GET, queryset=Person.objects.all())
+        f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         p = list(f.qs)[0]
         self.assertEqual(p.name, "John")
