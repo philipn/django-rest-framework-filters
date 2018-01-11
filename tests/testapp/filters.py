@@ -53,15 +53,6 @@ class NoteFilterWithRelatedAll(FilterSet):
         fields = []
 
 
-class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
-    title = filters.CharFilter(field_name='title')
-    writer = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
-
-    class Meta:
-        model = Note
-        fields = []
-
-
 class TagFilter(FilterSet):
     name = AllLookupsFilter(field_name='name')
 
@@ -114,7 +105,10 @@ class PageFilter(FilterSet):
         fields = []
 
 
-class UserFilterWithDifferentName(FilterSet):
+#############################################################
+# Aliased parameter names
+#############################################################
+class UserFilterWithAlias(FilterSet):
     name = filters.CharFilter(field_name='username')
 
     class Meta:
@@ -122,8 +116,17 @@ class UserFilterWithDifferentName(FilterSet):
         fields = []
 
 
-class NoteFilterWithRelatedDifferentName(FilterSet):
-    author = RelatedFilter(UserFilterWithDifferentName, field_name='author', queryset=User.objects.all())
+class NoteFilterWithAlias(FilterSet):
+    title = filters.CharFilter(field_name='title')
+    writer = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
+
+    class Meta:
+        model = Note
+        fields = []
+
+
+class NoteFilterWithRelatedAlias(FilterSet):
+    author = RelatedFilter(UserFilterWithAlias, field_name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note

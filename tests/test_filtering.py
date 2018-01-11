@@ -5,9 +5,8 @@ from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
     CFilter, CoverFilter, NoteFilterWithAll, NoteFilterWithRelated,
-    NoteFilterWithRelatedAll, NoteFilterWithRelatedAllDifferentFilterName,
-    NoteFilterWithRelatedDifferentName, PageFilter, PersonFilter, PostFilter,
-    UserFilter,
+    NoteFilterWithRelatedAll, NoteFilterWithAlias, NoteFilterWithRelatedAlias,
+    PageFilter, PersonFilter, PostFilter, UserFilter,
 )
 from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
 
@@ -180,28 +179,28 @@ class RelatedFilterTests(TestCase):
         GET = {
             'writer': User.objects.get(username='user2').pk,
         }
-        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        f = NoteFilterWithAlias(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
 
         # Test the username filter on the related UserFilter set.
         GET = {'writer__username': 'user2'}
-        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        f = NoteFilterWithAlias(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         self.assertEqual(list(f.qs)[0].title, "Hello Test 4")
 
         GET = {'writer__username__endswith': '2'}
-        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        f = NoteFilterWithAlias(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         self.assertEqual(list(f.qs)[0].title, "Hello Test 4")
 
         GET = {'writer__username__endswith': '1'}
-        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        f = NoteFilterWithAlias(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 3)
 
         GET = {'writer__username__contains': 'user'}
-        f = NoteFilterWithRelatedAllDifferentFilterName(GET, queryset=Note.objects.all())
+        f = NoteFilterWithAlias(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 4)
 
     def test_relatedfilter_for_aliased_nested_relationships(self):
@@ -222,7 +221,7 @@ class RelatedFilterTests(TestCase):
         GET = {
             'author__name': 'user2',
         }
-        f = NoteFilterWithRelatedDifferentName(GET, queryset=Note.objects.all())
+        f = NoteFilterWithRelatedAlias(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         note = list(f.qs)[0]
         self.assertEqual(note.title, "Hello Test 4")
