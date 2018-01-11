@@ -5,6 +5,15 @@ from rest_framework_filters import utils
 from .testapp.models import Note, Person
 
 
+class ImportClassTests(TestCase):
+    def test_simple(self):
+        cls = utils.import_class('tests.testapp.models.Note')
+
+        self.assertEqual(cls.__module__, 'tests.testapp.models')
+        self.assertEqual(cls.__name__, 'Note')
+        self.assertIs(cls, Note)
+
+
 class LookupsForFieldTests(TestCase):
     def test_standard_field(self):
         model_field = Person._meta.get_field('name')
