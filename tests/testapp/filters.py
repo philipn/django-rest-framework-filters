@@ -212,15 +212,8 @@ class AllLookupsPersonDateFilter(FilterSet):
         fields = []
 
 
-class InSetLookupPersonIDFilter(FilterSet):
+class InLookupPersonFilter(FilterSet):
     pk = AllLookupsFilter('id')
-
-    class Meta:
-        model = Person
-        fields = []
-
-
-class InSetLookupPersonNameFilter(FilterSet):
     name = AllLookupsFilter('name')
 
     class Meta:

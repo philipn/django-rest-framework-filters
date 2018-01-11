@@ -15,8 +15,7 @@ from rest_framework.renderers import JSONRenderer
 
 from .testapp.filters import (
     AllLookupsPersonDateFilter, CoverFilterWithRelatedMethodFilter,
-    InSetLookupPersonIDFilter, InSetLookupPersonNameFilter, PostFilter,
-    UserFilter,
+    InLookupPersonFilter, PostFilter, UserFilter,
 )
 from .testapp.models import Cover, Note, Person, Post, User
 
@@ -185,7 +184,7 @@ class InLookupTests(TestCase):
         ALL_GET = {
             'pk__in': '{:d},{:d}'.format(p1, p2),
         }
-        f = InSetLookupPersonIDFilter(ALL_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(ALL_GET, queryset=Person.objects.all())
         f = [x.pk for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -194,14 +193,14 @@ class InLookupTests(TestCase):
         INVALID_GET = {
             'pk__in': '{:d},c{:d}'.format(p1, p2)
         }
-        f = InSetLookupPersonIDFilter(INVALID_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(INVALID_GET, queryset=Person.objects.all())
         self.assertFalse(f.is_valid())
         self.assertEqual(f.qs.count(), 2)
 
         EXTRA_GET = {
             'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1 * p2)
         }
-        f = InSetLookupPersonIDFilter(EXTRA_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.pk for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -210,7 +209,7 @@ class InLookupTests(TestCase):
         DISORDERED_GET = {
             'pk__in': '{:d},{:d},{:d}'.format(p2, p2 * p1, p1)
         }
-        f = InSetLookupPersonIDFilter(DISORDERED_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.pk for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -223,7 +222,7 @@ class InLookupTests(TestCase):
         ALL_GET = {
             'name__in': '{},{}'.format(p1, p2),
         }
-        f = InSetLookupPersonNameFilter(ALL_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(ALL_GET, queryset=Person.objects.all())
         f = [x.name for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -232,13 +231,13 @@ class InLookupTests(TestCase):
         NONEXISTENT_GET = {
             'name__in': '{},Foo{}'.format(p1, p2)
         }
-        f = InSetLookupPersonNameFilter(NONEXISTENT_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(NONEXISTENT_GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
 
         EXTRA_GET = {
             'name__in': '{},{},{}'.format(p1, p2, p1 + p2)
         }
-        f = InSetLookupPersonNameFilter(EXTRA_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.name for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
@@ -247,7 +246,7 @@ class InLookupTests(TestCase):
         DISORDERED_GET = {
             'name__in': '{},{},{}'.format(p2, p2 + p1, p1)
         }
-        f = InSetLookupPersonNameFilter(DISORDERED_GET, queryset=Person.objects.all())
+        f = InLookupPersonFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.name for x in f.qs]
         self.assertEqual(len(f), 2)
         self.assertIn(p1, f)
