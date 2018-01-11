@@ -4,7 +4,7 @@ from django_filters import FilterSet as DFFilterSet
 from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
-    CFilter, CoverFilterWithRelated, NoteFilterWithAll, NoteFilterWithRelated,
+    CFilter, CoverFilter, NoteFilterWithAll, NoteFilterWithRelated,
     NoteFilterWithRelatedAll, NoteFilterWithRelatedAllDifferentFilterName,
     NoteFilterWithRelatedDifferentName, PageFilterWithAliasedNestedRelated,
     PersonFilter, PostFilter, UserFilter,
@@ -240,7 +240,7 @@ class RelatedFilterTests(TestCase):
         GET = {
             'post__note__author__username__endswith': 'user2'
         }
-        f = CoverFilterWithRelated(GET, queryset=Cover.objects.all())
+        f = CoverFilter(GET, queryset=Cover.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         cover = list(f.qs)[0]
         self.assertEqual(cover.comment, "Cover 2")

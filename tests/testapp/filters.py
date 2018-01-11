@@ -104,16 +104,7 @@ class PostFilter(FilterSet):
         return qs.filter(**{lookup_expr: isnull})
 
 
-class CoverFilterWithRelatedMethodFilter(FilterSet):
-    comment = filters.CharFilter(field_name='comment')
-    post = RelatedFilter(PostFilter, field_name='post', queryset=Post.objects.all())
-
-    class Meta:
-        model = Cover
-        fields = []
-
-
-class CoverFilterWithRelated(FilterSet):
+class CoverFilter(FilterSet):
     comment = filters.CharFilter(field_name='comment')
     post = RelatedFilter(PostFilter, field_name='post', queryset=Post.objects.all())
 

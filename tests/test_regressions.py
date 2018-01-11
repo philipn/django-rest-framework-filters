@@ -14,8 +14,8 @@ from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 
 from .testapp.filters import (
-    AllLookupsPersonDateFilter, CoverFilterWithRelatedMethodFilter,
-    InLookupPersonFilter, PostFilter, UserFilter,
+    AllLookupsPersonDateFilter, CoverFilter, InLookupPersonFilter, PostFilter,
+    UserFilter,
 )
 from .testapp.models import Cover, Note, Person, Post, User
 
@@ -316,7 +316,7 @@ class FilterMethodTests(TestCase):
         GET = {
             'post__is_published': 'true'
         }
-        filterset = CoverFilterWithRelatedMethodFilter(GET, queryset=Cover.objects.all())
+        filterset = CoverFilter(GET, queryset=Cover.objects.all())
         results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].comment, "Cover 2")
