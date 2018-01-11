@@ -212,16 +212,6 @@ class AllLookupsPersonDateFilter(FilterSet):
         fields = []
 
 
-class ExplicitLookupsPersonDateFilter(FilterSet):
-    date_joined = AllLookupsFilter(field_name='date_joined')
-    time_joined = AllLookupsFilter(field_name='time_joined')
-    datetime_joined = AllLookupsFilter(field_name='datetime_joined')
-
-    class Meta:
-        model = Person
-        fields = []
-
-
 class InSetLookupPersonIDFilter(FilterSet):
     pk = AllLookupsFilter('id')
 
