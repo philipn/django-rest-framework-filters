@@ -30,14 +30,14 @@ class A(models.Model):
     b = models.ForeignKey('B', null=True, on_delete=models.CASCADE)
 
 
-class C(models.Model):
-    title = models.CharField(max_length=100)
-    a = models.ForeignKey(A, null=True, on_delete=models.CASCADE)
-
-
 class B(models.Model):
     name = models.CharField(max_length=100)
-    c = models.ForeignKey(C, null=True, on_delete=models.CASCADE)
+    c = models.ForeignKey('C', null=True, on_delete=models.CASCADE)
+
+
+class C(models.Model):
+    title = models.CharField(max_length=100)
+    a = models.ForeignKey('A', null=True, on_delete=models.CASCADE)
 
 
 class Person(models.Model):
