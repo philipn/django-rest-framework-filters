@@ -14,6 +14,23 @@ class ImportClassTests(TestCase):
         self.assertIs(cls, Note)
 
 
+class RelativeClassPathTests(TestCase):
+    def test_is_full_path(self):
+        path = utils.relative_class_path(None, 'a.b.c')
+
+        self.assertEqual(path, 'a.b.c')
+
+    def test_prepend_relative_class(self):
+        path = utils.relative_class_path(Note, 'Test')
+
+        self.assertEqual(path, 'tests.testapp.models.Test')
+
+    def test_prepend_relative_instance(self):
+        path = utils.relative_class_path(Note(), 'Test')
+
+        self.assertEqual(path, 'tests.testapp.models.Test')
+
+
 class LookupsForFieldTests(TestCase):
     def test_standard_field(self):
         model_field = Person._meta.get_field('name')
