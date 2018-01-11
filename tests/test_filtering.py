@@ -6,8 +6,8 @@ from rest_framework_filters import FilterSet, filters
 from .testapp.filters import (
     CFilter, CoverFilter, NoteFilterWithAll, NoteFilterWithRelated,
     NoteFilterWithRelatedAll, NoteFilterWithRelatedAllDifferentFilterName,
-    NoteFilterWithRelatedDifferentName, PageFilterWithAliasedNestedRelated,
-    PersonFilter, PostFilter, UserFilter,
+    NoteFilterWithRelatedDifferentName, PageFilter, PersonFilter, PostFilter,
+    UserFilter,
 )
 from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
 
@@ -207,10 +207,10 @@ class RelatedFilterTests(TestCase):
     def test_relatedfilter_for_aliased_nested_relationships(self):
         qs = Page.objects.order_by('pk')
 
-        f1 = PageFilterWithAliasedNestedRelated({'two_pages_back': '1'}, queryset=qs)
-        f2 = PageFilterWithAliasedNestedRelated({'two_pages_back': '2'}, queryset=qs)
-        f3 = PageFilterWithAliasedNestedRelated({'two_pages_back': '3'}, queryset=qs)
-        f4 = PageFilterWithAliasedNestedRelated({'two_pages_back': '4'}, queryset=qs)
+        f1 = PageFilter({'two_pages_back': '1'}, queryset=qs)
+        f2 = PageFilter({'two_pages_back': '2'}, queryset=qs)
+        f3 = PageFilter({'two_pages_back': '3'}, queryset=qs)
+        f4 = PageFilter({'two_pages_back': '4'}, queryset=qs)
 
         self.assertQuerysetEqual(f1.qs, [3], lambda p: p.pk)
         self.assertQuerysetEqual(f2.qs, [4], lambda p: p.pk)

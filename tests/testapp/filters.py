@@ -113,17 +113,9 @@ class CoverFilter(FilterSet):
         fields = []
 
 
-class PageFilterWithRelated(FilterSet):
+class PageFilter(FilterSet):
     title = filters.CharFilter(field_name='title')
     previous_page = RelatedFilter(PostFilter, field_name='previous_page', queryset=Post.objects.all())
-
-    class Meta:
-        model = Page
-        fields = []
-
-
-class PageFilterWithAliasedNestedRelated(FilterSet):
-    title = filters.CharFilter(field_name='title')
     two_pages_back = RelatedFilter(PostFilter, field_name='previous_page__previous_page', queryset=Page.objects.all())
 
     class Meta:
