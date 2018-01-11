@@ -11,6 +11,12 @@ from .testapp.filters import (
 from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
 
 
+class LocalTagFilter(FilterSet):
+    class Meta:
+        model = Tag
+        fields = []
+
+
 class AllLookupsFilterTests(TestCase):
 
     @classmethod
@@ -364,6 +370,17 @@ class RelatedFilterTests(TestCase):
         self.assertEqual(len(f.form.errors.keys()), 2)
         self.assertIn('note__author', f.form.errors)
         self.assertIn('pk', f.form.errors)
+
+    def test_relative_filterset_path(self):
+        # Test that RelatedFilter can import FilterSets by name from its parent's module
+        class PostFilter(FilterSet):
+            tags = filters.RelatedFilter('LocalTagFilter', queryset=Tag.objects.all())
+
+        f = PostFilter(queryset=Post.objects.all())
+        f = f.filters['tags'].filterset
+
+        self.assertEqual(f.__module__, 'tests.test_filtering')
+        self.assertEqual(f.__name__, 'LocalTagFilter')
 
 
 class MiscTests(TestCase):
