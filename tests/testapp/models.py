@@ -8,10 +8,18 @@ class Note(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100)
+
+
 class Post(models.Model):
-    note = models.ForeignKey(Note, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
     content = models.TextField()
-    date_published = models.DateField(null=True)
+    publish_date = models.DateField(null=True)
+
+    author = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    note = models.ForeignKey(Note, null=True, on_delete=models.CASCADE)
+    tags = models.ManyToManyField(Tag)
 
 
 class Cover(models.Model):
@@ -47,14 +55,3 @@ class Person(models.Model):
     date_joined = models.DateField(auto_now_add=True)
     time_joined = models.TimeField(auto_now_add=True)
     datetime_joined = models.DateTimeField(auto_now_add=True)
-
-
-class Tag(models.Model):
-    name = models.CharField(max_length=100)
-
-
-class BlogPost(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    tags = models.ManyToManyField(Tag)
-    publish_date = models.DateField(null=True)

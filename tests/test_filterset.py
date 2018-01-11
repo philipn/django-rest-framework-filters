@@ -9,10 +9,10 @@ from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass
 
 from .testapp.filters import (
-    BlogPostFilter, BlogPostOverrideFilter, NoteFilterWithAll,
-    NoteFilterWithRelated, PostFilter, TagFilter, UserFilter,
+    NoteFilterWithAll, NoteFilterWithRelated, PostFilter, PostOverrideFilter,
+    TagFilter, UserFilter,
 )
-from .testapp.models import BlogPost, Note, Person, Post, Tag
+from .testapp.models import Note, Person, Post, Tag
 
 factory = APIRequestFactory()
 
@@ -345,7 +345,7 @@ class GetFilterSubsetTests(TestCase):
 class FilterOverrideTests(TestCase):
 
     def test_declared_filters(self):
-        F = BlogPostOverrideFilter
+        F = PostOverrideFilter
 
         # explicitly declared filters SHOULD NOT be overridden
         self.assertIsInstance(
@@ -360,7 +360,7 @@ class FilterOverrideTests(TestCase):
         )
 
     def test_dict_declaration(self):
-        F = BlogPostOverrideFilter
+        F = PostOverrideFilter
 
         # dictionary style declared filters SHOULD be overridden
         self.assertIsInstance(
@@ -377,8 +377,8 @@ class FilterExclusionTests(TestCase):
         t2 = Tag.objects.create(name='Tag 2')
         t3 = Tag.objects.create(name='Something else entirely')
 
-        p1 = BlogPost.objects.create(title='Post 1', content='content 1')
-        p2 = BlogPost.objects.create(title='Post 2', content='content 2')
+        p1 = Post.objects.create(title='Post 1', content='content 1')
+        p2 = Post.objects.create(title='Post 2', content='content 2')
 
         p1.tags.set([t1, t2])
         p2.tags.set([t3])
@@ -416,7 +416,7 @@ class FilterExclusionTests(TestCase):
             'tags__name__contains!': 'Tag',
         }
 
-        filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        filterset = PostFilter(GET, queryset=Post.objects.all())
         requested_filters = filterset.request_filters
 
         self.assertTrue(requested_filters['tags__name__contains!'].exclude)
@@ -447,7 +447,7 @@ class FilterExclusionTests(TestCase):
             'tags__name__contains!': 'Tag',
         }
 
-        filterset = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        filterset = PostFilter(GET, queryset=Post.objects.all())
         results = [r.title for r in filterset.qs]
 
         self.assertEqual(len(results), 1)
@@ -456,7 +456,7 @@ class FilterExclusionTests(TestCase):
     def test_exclude_and_request_interaction(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/171
         request = APIView().initialize_request(factory.get('/?tags__name__contains!=Tag'))
-        filterset = BlogPostFilter(request.query_params, request=request, queryset=BlogPost.objects.all())
+        filterset = PostFilter(request.query_params, request=request, queryset=Post.objects.all())
 
         try:
             with limit_recursion():

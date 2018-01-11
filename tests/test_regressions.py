@@ -295,7 +295,7 @@ class FilterMethodTests(TestCase):
         note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user)
 
         post1 = Post.objects.create(note=note1, content="Test content in post 1")
-        post2 = Post.objects.create(note=note2, content="Test content in post 2", date_published=today)
+        post2 = Post.objects.create(note=note2, content="Test content in post 2", publish_date=today)
 
         Cover.objects.create(post=post1, comment="Cover 1")
         Cover.objects.create(post=post2, comment="Cover 2")

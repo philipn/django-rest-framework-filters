@@ -4,15 +4,12 @@ from django_filters import FilterSet as DFFilterSet
 from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
-    BlogPostFilter, CFilter, CoverFilterWithRelated, NoteFilterWithAll,
-    NoteFilterWithRelated, NoteFilterWithRelatedAll,
-    NoteFilterWithRelatedAllDifferentFilterName,
+    CFilter, CoverFilterWithRelated, NoteFilterWithAll, NoteFilterWithRelated,
+    NoteFilterWithRelatedAll, NoteFilterWithRelatedAllDifferentFilterName,
     NoteFilterWithRelatedDifferentName, PageFilterWithAliasedNestedRelated,
     PersonFilter, PostFilter, UserFilter,
 )
-from .testapp.models import (
-    A, B, BlogPost, C, Cover, Note, Page, Person, Post, Tag, User,
-)
+from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
 
 
 class AllLookupsFilterTests(TestCase):
@@ -113,11 +110,8 @@ class RelatedFilterTests(TestCase):
         Tag.objects.create(name="lake")
         t3 = Tag.objects.create(name="house")
 
-        blogpost = BlogPost.objects.create(title="First post", content="First")
-        blogpost.tags.set([t1, t3])
-
-        blogpost = BlogPost.objects.create(title="Second post", content="Secon")
-        blogpost.tags.set([t3])
+        post1.tags.set([t1, t3])
+        post3.tags.set([t3])
 
         ################################
         # Recursive relations
@@ -273,18 +267,18 @@ class RelatedFilterTests(TestCase):
         GET = {
             'tags__name__endswith': 'ark',
         }
-        f = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        f = PostFilter(GET, queryset=Post.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
         p = list(f.qs)[0]
-        self.assertEqual(p.title, "First post")
+        self.assertEqual(p.content, "Test content in post 1")
 
         GET = {
             'tags__name__endswith': 'ouse',
         }
-        f = BlogPostFilter(GET, queryset=BlogPost.objects.all())
+        f = PostFilter(GET, queryset=Post.objects.all())
         self.assertEqual(len(list(f.qs)), 2)
-        titles = set([person.title for person in f.qs])
-        self.assertEqual(titles, set(["First post", "Second post"]))
+        contents = set([post.content for post in f.qs])
+        self.assertEqual(contents, {'Test content in post 1', 'Test content in post 3'})
 
     def test_nonexistent_related_field(self):
         """
@@ -309,8 +303,8 @@ class RelatedFilterTests(TestCase):
         class ChildFilter(PostFilter):
             foo = filters.RelatedFilter(PostFilter)
 
-        self.assertEqual(['note'], list(PostFilter.related_filters))
-        self.assertEqual(['note', 'foo'], list(ChildFilter.related_filters))
+        self.assertEqual(['note', 'tags'], list(PostFilter.related_filters))
+        self.assertEqual(['note', 'tags', 'foo'], list(ChildFilter.related_filters))
 
     def test_relatedfilter_queryset_required(self):
         # Use a secure default queryset. Previous behavior was to use the default model

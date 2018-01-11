@@ -5,9 +5,7 @@ from rest_framework_filters import filters
 from rest_framework_filters.filters import AllLookupsFilter, RelatedFilter
 from rest_framework_filters.filterset import LOOKUP_SEP, FilterSet
 
-from .models import (
-    A, B, BlogPost, C, Cover, Note, Page, Person, Post, Tag, User,
-)
+from .models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
 
 
 class DFUserFilter(django_filters.FilterSet):
@@ -73,11 +71,23 @@ class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
         fields = []
 
 
+class TagFilter(FilterSet):
+    name = AllLookupsFilter(field_name='name')
+
+    class Meta:
+        model = Tag
+        fields = []
+
+
 class PostFilter(FilterSet):
     # Used for Related filter and Filter.method regression tests
+    title = filters.CharFilter(field_name='title')
+
+    publish_date = filters.AllLookupsFilter()
+    is_published = filters.BooleanFilter(field_name='publish_date', method='filter_is_published')
+
     note = RelatedFilter(NoteFilterWithRelatedAll, field_name='note', queryset=Note.objects.all())
-    date_published = filters.AllLookupsFilter()
-    is_published = filters.BooleanFilter(field_name='date_published', method='filter_is_published')
+    tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
 
     class Meta:
         model = Post
@@ -127,23 +137,6 @@ class PageFilterWithAliasedNestedRelated(FilterSet):
 
     class Meta:
         model = Page
-        fields = []
-
-
-class TagFilter(FilterSet):
-    name = AllLookupsFilter(field_name='name')
-
-    class Meta:
-        model = Tag
-        fields = []
-
-
-class BlogPostFilter(FilterSet):
-    title = filters.CharFilter(field_name='title')
-    tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
-
-    class Meta:
-        model = BlogPost
         fields = []
 
 
@@ -245,10 +238,10 @@ class InSetLookupPersonNameFilter(FilterSet):
         fields = []
 
 
-class BlogPostOverrideFilter(FilterSet):
+class PostOverrideFilter(FilterSet):
     declared_publish_date__isnull = filters.NumberFilter(field_name='publish_date', lookup_expr='isnull')
     all_declared_publish_date = filters.AllLookupsFilter(field_name='publish_date')
 
     class Meta:
-        model = BlogPost
+        model = Post
         fields = {'publish_date': '__all__', }
