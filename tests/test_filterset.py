@@ -8,9 +8,7 @@ from rest_framework.views import APIView
 from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass
 
-from .testapp.filters import (
-    NoteFilter, PostFilter, PostOverrideFilter, TagFilter, UserFilter,
-)
+from .testapp.filters import NoteFilter, PostFilter, TagFilter, UserFilter
 from .testapp.models import Note, Person, Post, Tag
 
 factory = APIRequestFactory()
@@ -339,33 +337,6 @@ class GetFilterSubsetTests(TestCase):
         self.assertIn('author', filter_subset)
         self.assertIn('content', filter_subset)
         self.assertEqual(len(filter_subset), 2)
-
-
-class FilterOverrideTests(TestCase):
-
-    def test_declared_filters(self):
-        F = PostOverrideFilter
-
-        # explicitly declared filters SHOULD NOT be overridden
-        self.assertIsInstance(
-            F.base_filters['declared_publish_date__isnull'],
-            filters.NumberFilter
-        )
-
-        # declared `AllLookupsFilter`s SHOULD generate filters that ARE overridden
-        self.assertIsInstance(
-            F.base_filters['all_declared_publish_date__isnull'],
-            filters.BooleanFilter
-        )
-
-    def test_dict_declaration(self):
-        F = PostOverrideFilter
-
-        # dictionary style declared filters SHOULD be overridden
-        self.assertIsInstance(
-            F.base_filters['publish_date__isnull'],
-            filters.BooleanFilter
-        )
 
 
 class FilterExclusionTests(TestCase):

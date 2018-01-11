@@ -157,15 +157,3 @@ class PersonFilter(FilterSet):
     class Meta:
         model = Person
         fields = []
-
-
-#############################################################
-# Extensions to django_filter fields for DRF.
-#############################################################
-class PostOverrideFilter(FilterSet):
-    declared_publish_date__isnull = filters.NumberFilter(field_name='publish_date', lookup_expr='isnull')
-    all_declared_publish_date = filters.AllLookupsFilter(field_name='publish_date')
-
-    class Meta:
-        model = Post
-        fields = {'publish_date': '__all__', }
