@@ -9,8 +9,7 @@ from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass
 
 from .testapp.filters import (
-    NoteFilterWithAll, NoteFilterWithRelated, PostFilter, PostOverrideFilter,
-    TagFilter, UserFilter,
+    NoteFilter, PostFilter, PostOverrideFilter, TagFilter, UserFilter,
 )
 from .testapp.models import Note, Person, Post, Tag
 
@@ -189,22 +188,22 @@ class GetParamFilterNameTests(TestCase):
 
     def test_related_filter(self):
         # 'exact' matches
-        name = NoteFilterWithRelated.get_param_filter_name('author')
+        name = NoteFilter.get_param_filter_name('author')
         self.assertEqual('author', name)
 
         # related attribute filters
-        name = NoteFilterWithRelated.get_param_filter_name('author__email')
+        name = NoteFilter.get_param_filter_name('author__email')
         self.assertEqual('author', name)
 
         # non-existent related filters should match, as it's the responsibility
         # of the related filterset to handle non-existent filters
-        name = NoteFilterWithRelated.get_param_filter_name('author__foobar')
+        name = NoteFilter.get_param_filter_name('author__foobar')
         self.assertEqual('author', name)
 
     def test_twice_removed_related_filter(self):
         class PostFilterWithDirectAuthor(PostFilter):
             note__author = filters.RelatedFilter(UserFilter)
-            note = filters.RelatedFilter(NoteFilterWithAll)
+            note = filters.RelatedFilter(NoteFilter)
 
             class Meta:
                 model = Post
@@ -230,8 +229,8 @@ class GetParamFilterNameTests(TestCase):
     def test_name_hiding(self):
         class PostFilterNameHiding(PostFilter):
             note__author = filters.RelatedFilter(UserFilter)
-            note = filters.RelatedFilter(NoteFilterWithAll)
-            note2 = filters.RelatedFilter(NoteFilterWithAll)
+            note = filters.RelatedFilter(NoteFilter)
+            note2 = filters.RelatedFilter(NoteFilter)
 
             class Meta:
                 model = Post
@@ -256,25 +255,25 @@ class GetParamFilterNameTests(TestCase):
 class GetRelatedFilterParamTests(TestCase):
 
     def test_regular_filter(self):
-        name, param = NoteFilterWithRelated.get_related_filter_param('title')
+        name, param = NoteFilter.get_related_filter_param('title')
         self.assertIsNone(name)
         self.assertIsNone(param)
 
     def test_related_filter_exact(self):
-        name, param = NoteFilterWithRelated.get_related_filter_param('author')
+        name, param = NoteFilter.get_related_filter_param('author')
         self.assertIsNone(name)
         self.assertIsNone(param)
 
     def test_related_filter_param(self):
-        name, param = NoteFilterWithRelated.get_related_filter_param('author__email')
+        name, param = NoteFilter.get_related_filter_param('author__email')
         self.assertEqual('author', name)
         self.assertEqual('email', param)
 
     def test_name_hiding(self):
         class PostFilterNameHiding(PostFilter):
             note__author = filters.RelatedFilter(UserFilter)
-            note = filters.RelatedFilter(NoteFilterWithAll)
-            note2 = filters.RelatedFilter(NoteFilterWithAll)
+            note = filters.RelatedFilter(NoteFilter)
+            note2 = filters.RelatedFilter(NoteFilter)
 
             class Meta:
                 model = Post
@@ -308,7 +307,7 @@ class GetFilterSubsetTests(TestCase):
 
     def test_related_subset(self):
         # related filters should only return the local RelatedFilter
-        filter_subset = NoteFilterWithRelated.get_filter_subset(['title', 'author', 'author__email'])
+        filter_subset = NoteFilter.get_filter_subset(['title', 'author', 'author__email'])
 
         self.assertIn('title', filter_subset)
         self.assertIn('author', filter_subset)
@@ -316,7 +315,7 @@ class GetFilterSubsetTests(TestCase):
 
     def test_non_filter_subset(self):
         # non-filter params should be ignored
-        filter_subset = NoteFilterWithRelated.get_filter_subset(['foobar'])
+        filter_subset = NoteFilter.get_filter_subset(['foobar'])
         self.assertEqual(len(filter_subset), 0)
 
     def test_metaclass_inheritance(self):

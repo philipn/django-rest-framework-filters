@@ -16,14 +16,6 @@ class DFUserFilter(django_filters.FilterSet):
         fields = '__all__'
 
 
-class NoteFilterWithAll(FilterSet):
-    title = AllLookupsFilter(field_name='title')
-
-    class Meta:
-        model = Note
-        fields = []
-
-
 class UserFilter(FilterSet):
     username = AllLookupsFilter(field_name='username')
     email = filters.CharFilter(field_name='email')
@@ -35,17 +27,8 @@ class UserFilter(FilterSet):
         fields = []
 
 
-class NoteFilterWithRelated(FilterSet):
-    title = filters.CharFilter(field_name='title')
-    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
-
-    class Meta:
-        model = Note
-        fields = []
-
-
-class NoteFilterWithRelatedAll(FilterSet):
-    title = filters.CharFilter(field_name='title')
+class NoteFilter(FilterSet):
+    title = AllLookupsFilter(field_name='title')
     author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
 
     class Meta:
@@ -68,7 +51,7 @@ class PostFilter(FilterSet):
     publish_date = filters.AllLookupsFilter()
     is_published = filters.BooleanFilter(field_name='publish_date', method='filter_is_published')
 
-    note = RelatedFilter(NoteFilterWithRelatedAll, field_name='note', queryset=Note.objects.all())
+    note = RelatedFilter(NoteFilter, field_name='note', queryset=Note.objects.all())
     tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
 
     class Meta:
