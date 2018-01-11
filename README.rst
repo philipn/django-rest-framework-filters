@@ -177,10 +177,10 @@ In the following example, the set of departments is restricted to those in the u
         department = filters.RelatedFilter(filterset=DepartmentFilter, queryset=departments)
         ...
 
-Recursive relationships
-"""""""""""""""""""""""
+Recursive & Circular relationships
+""""""""""""""""""""""""""""""""""
 
-Recursive relations are also supported. It may be necessary to specify the full module path.
+Recursive relations are also supported. Provide the module path as a string in place of the filterset class.
 
 .. code-block:: python
 
@@ -190,6 +190,19 @@ Recursive relations are also supported. It may be necessary to specify the full 
 
         class Meta:
             model = Person
+
+
+This feature is also useful for circular relationships, where a related filterset may not yet be created. Note that
+you can pass the related filterset by name if it's located in the same module as the parent filterset.
+
+.. code-block:: python
+
+    class BlogFilter(filters.FilterSet):
+        post = filters.RelatedFilter('PostFilter', queryset=Post.objects.all())
+
+    class PostFilter(filters.FilterSet):
+        blog = filters.RelatedFilter('BlogFilter', queryset=Blog.objects.all())
+
 
 Supporting ``Filter.method``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

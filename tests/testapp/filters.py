@@ -121,28 +121,28 @@ class NoteFilterWithRelatedAlias(FilterSet):
 #############################################################
 class AFilter(FilterSet):
     title = filters.CharFilter(field_name='title')
-    b = RelatedFilter('tests.testapp.filters.BFilter', field_name='b', queryset=B.objects.all())
+    b = RelatedFilter('BFilter', field_name='b', queryset=B.objects.all())
 
     class Meta:
         model = A
         fields = []
 
 
-class CFilter(FilterSet):
-    title = filters.CharFilter(field_name='title')
-    a = RelatedFilter(AFilter, field_name='a', queryset=A.objects.all())
-
-    class Meta:
-        model = C
-        fields = []
-
-
 class BFilter(FilterSet):
     name = AllLookupsFilter(field_name='name')
-    c = RelatedFilter(CFilter, field_name='c', queryset=C.objects.all())
+    c = RelatedFilter('CFilter', field_name='c', queryset=C.objects.all())
 
     class Meta:
         model = B
+        fields = []
+
+
+class CFilter(FilterSet):
+    title = filters.CharFilter(field_name='title')
+    a = RelatedFilter('AFilter', field_name='a', queryset=A.objects.all())
+
+    class Meta:
+        model = C
         fields = []
 
 
