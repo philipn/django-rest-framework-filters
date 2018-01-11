@@ -25,19 +25,10 @@ class NoteFilterWithAll(FilterSet):
 
 
 class UserFilter(FilterSet):
-    username = filters.CharFilter(field_name='username')
+    username = AllLookupsFilter(field_name='username')
     email = filters.CharFilter(field_name='email')
     last_login = filters.AllLookupsFilter()
     is_active = filters.BooleanFilter(field_name='is_active')
-
-    class Meta:
-        model = User
-        fields = []
-
-
-class UserFilterWithAll(FilterSet):
-    username = AllLookupsFilter(field_name='username')
-    email = filters.CharFilter(field_name='email')
 
     class Meta:
         model = User
@@ -55,7 +46,7 @@ class NoteFilterWithRelated(FilterSet):
 
 class NoteFilterWithRelatedAll(FilterSet):
     title = filters.CharFilter(field_name='title')
-    author = RelatedFilter(UserFilterWithAll, field_name='author', queryset=User.objects.all())
+    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -64,7 +55,7 @@ class NoteFilterWithRelatedAll(FilterSet):
 
 class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
     title = filters.CharFilter(field_name='title')
-    writer = RelatedFilter(UserFilterWithAll, field_name='author', queryset=User.objects.all())
+    writer = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note

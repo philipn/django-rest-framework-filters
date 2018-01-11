@@ -3,7 +3,7 @@ from rest_framework import pagination, viewsets
 
 from rest_framework_filters import backends
 
-from .filters import DFUserFilter, NoteFilterWithRelatedAll, UserFilterWithAll
+from .filters import DFUserFilter, NoteFilterWithRelatedAll, UserFilter
 from .models import Note, User
 from .serializers import NoteSerializer, UserSerializer
 
@@ -43,7 +43,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filter_backends = (backends.RestFrameworkFilterBackend, )
-    filter_class = UserFilterWithAll
+    filter_class = UserFilter
 
 
 class NoteViewSet(viewsets.ModelViewSet):
