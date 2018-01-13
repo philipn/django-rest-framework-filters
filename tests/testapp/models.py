@@ -12,11 +12,16 @@ class Tag(models.Model):
     name = models.CharField(max_length=100)
 
 
+class Blog(models.Model):
+    name = models.CharField(max_length=100)
+
+
 class Post(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
     publish_date = models.DateField(null=True)
 
+    blog = models.ForeignKey(Blog, null=True, on_delete=models.CASCADE)
     author = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     note = models.ForeignKey(Note, null=True, on_delete=models.CASCADE)
     tags = models.ManyToManyField(Tag)

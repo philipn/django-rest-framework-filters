@@ -5,7 +5,7 @@ from rest_framework_filters import filters
 from rest_framework_filters.filters import AllLookupsFilter, RelatedFilter
 from rest_framework_filters.filterset import LOOKUP_SEP, FilterSet
 
-from .models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
+from .models import A, B, Blog, C, Cover, Note, Page, Person, Post, Tag, User
 
 
 class DFUserFilter(django_filters.FilterSet):
@@ -44,9 +44,18 @@ class TagFilter(FilterSet):
         fields = []
 
 
+class BlogFilter(FilterSet):
+    name = AllLookupsFilter(field_name='name')
+    post = RelatedFilter('PostFilter', field_name='post', queryset=Post.objects.all())
+
+    class Meta:
+        model = Blog
+        fields = []
+
+
 class PostFilter(FilterSet):
     # Used for Related filter and Filter.method regression tests
-    title = filters.CharFilter(field_name='title')
+    title = filters.AllLookupsFilter(field_name='title')
 
     publish_date = filters.AllLookupsFilter()
     is_published = filters.BooleanFilter(field_name='publish_date', method='filter_is_published')
