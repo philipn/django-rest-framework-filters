@@ -224,7 +224,9 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     @contextmanager
     def override_filters(self):
-        if self.is_bound:
+        if not self.is_bound:
+            yield
+        else:
             orig_filters = self.filters
             self.filters = self.request_filters
             yield

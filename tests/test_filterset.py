@@ -339,6 +339,22 @@ class GetFilterSubsetTests(TestCase):
         self.assertEqual(len(filter_subset), 2)
 
 
+class OverrideFiltersTests(TestCase):
+
+    def test_bound(self):
+        f = PostFilter({})
+
+        with f.override_filters():
+            self.assertEqual(len(f.filters), 0)
+
+    def test_not_bound(self):
+        f = PostFilter(None)
+
+        with f.override_filters():
+            self.assertGreater(len(f.filters), 1)
+            self.assertIn('title', f.filters)
+
+
 class FilterExclusionTests(TestCase):
 
     @classmethod
