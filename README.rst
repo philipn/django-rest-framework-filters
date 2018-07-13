@@ -51,9 +51,9 @@ Requirements
 ------------
 
 * **Python**: 3.4, 3.5, 3.6
-* **Django**: 1.11, 2.0
-* **DRF**: 3.6, 3.7
-* **django-filter**: 2.0.0.dev1
+* **Django**: 1.11, 2.0, 2.1b1
+* **DRF**: 3.8
+* **django-filter**: 2.0
 
 
 Installation
