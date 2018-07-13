@@ -22,7 +22,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'djangorestframework',
-        'django-filter>=2.0.0.dev1',
+        'django-filter>=2.0',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',

@@ -12,11 +12,11 @@ class DFNoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
     filter_backends = (df_backends.DjangoFilterBackend, )
-    filter_class = NoteFilterWithExplicitRelated
+    filterset_class = NoteFilterWithExplicitRelated
 
 
 class DRFFNoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
     filter_backends = (drf_backends.RestFrameworkFilterBackend, )
-    filter_class = NoteFilterWithRelatedAll
+    filterset_class = NoteFilterWithRelatedAll
