@@ -15,7 +15,7 @@ def noop(self):
 
 
 class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
-    default_filter_set = FilterSet
+    filterset_base = FilterSet
 
     @property
     def template(self):
@@ -26,23 +26,23 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
     @contextmanager
     def patch_for_rendering(self, request):
         """
-        Patch `get_filter_class()` so the resulting filterset does not perform
+        Patch `get_filterset_class()` so the resulting filterset does not perform
         filter expansion during form rendering.
         """
-        original = self.get_filter_class
+        original = self.get_filterset_class
 
-        def get_filter_class(view, queryset=None):
-            filter_class = original(view, queryset)
-            filter_class.override_filters = noop
+        def get_filterset_class(view, queryset=None):
+            filterset_class = original(view, queryset)
+            filterset_class.override_filters = noop
 
-            return filter_class
+            return filterset_class
 
-        self.get_filter_class = get_filter_class
+        self.get_filterset_class = get_filterset_class
         yield
-        self.get_filter_class = original
+        self.get_filterset_class = original
 
     def to_html(self, request, queryset, view):
-        # patching the behavior of `get_filter_class()` in this method allows
+        # patching the behavior of `get_filterset_class()` in this method allows
         # us to avoid maintenance issues with code duplication.
         with self.patch_for_rendering(request):
             return super(RestFrameworkFilterBackend, self).to_html(request, queryset, view)
