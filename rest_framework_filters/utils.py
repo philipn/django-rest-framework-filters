@@ -78,7 +78,10 @@ def lookups_for_transform(transform):
 
 def lookahead(iterable):
     it = iter(iterable)
-    current = next(it)
+    try:
+        current = next(it)
+    except StopIteration:
+        return
 
     for value in it:
         yield current, True
