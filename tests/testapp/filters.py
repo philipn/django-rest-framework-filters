@@ -2,7 +2,7 @@
 import django_filters
 
 from rest_framework_filters import filters
-from rest_framework_filters.filters import AllLookupsFilter, RelatedFilter
+from rest_framework_filters.filters import AutoFilter, RelatedFilter
 from rest_framework_filters.filterset import LOOKUP_SEP, FilterSet
 
 from .models import A, B, Blog, C, Cover, Note, Page, Person, Post, Tag, User
@@ -17,9 +17,9 @@ class DFUserFilter(django_filters.FilterSet):
 
 
 class UserFilter(FilterSet):
-    username = AllLookupsFilter(field_name='username')
+    username = AutoFilter(field_name='username', lookups='__all__')
     email = filters.CharFilter(field_name='email')
-    last_login = filters.AllLookupsFilter()
+    last_login = AutoFilter(lookups='__all__')
     is_active = filters.BooleanFilter(field_name='is_active')
 
     class Meta:
@@ -28,7 +28,7 @@ class UserFilter(FilterSet):
 
 
 class NoteFilter(FilterSet):
-    title = AllLookupsFilter(field_name='title')
+    title = AutoFilter(field_name='title', lookups='__all__')
     author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
 
     class Meta:
@@ -37,7 +37,7 @@ class NoteFilter(FilterSet):
 
 
 class TagFilter(FilterSet):
-    name = AllLookupsFilter(field_name='name')
+    name = AutoFilter(field_name='name', lookups='__all__')
 
     class Meta:
         model = Tag
@@ -45,7 +45,7 @@ class TagFilter(FilterSet):
 
 
 class BlogFilter(FilterSet):
-    name = AllLookupsFilter(field_name='name')
+    name = AutoFilter(field_name='name', lookups='__all__')
     post = RelatedFilter('PostFilter', field_name='post', queryset=Post.objects.all())
 
     class Meta:
@@ -55,9 +55,9 @@ class BlogFilter(FilterSet):
 
 class PostFilter(FilterSet):
     # Used for Related filter and Filter.method regression tests
-    title = filters.AllLookupsFilter(field_name='title')
+    title = filters.AutoFilter(field_name='title', lookups='__all__')
 
-    publish_date = filters.AllLookupsFilter()
+    publish_date = filters.AutoFilter(lookups='__all__')
     is_published = filters.BooleanFilter(field_name='publish_date', method='filter_is_published')
 
     note = RelatedFilter(NoteFilter, field_name='note', queryset=Note.objects.all())
@@ -138,7 +138,7 @@ class AFilter(FilterSet):
 
 
 class BFilter(FilterSet):
-    name = AllLookupsFilter(field_name='name')
+    name = AutoFilter(field_name='name', lookups='__all__')
     c = RelatedFilter('CFilter', field_name='c', queryset=C.objects.all())
 
     class Meta:
@@ -156,7 +156,7 @@ class CFilter(FilterSet):
 
 
 class PersonFilter(FilterSet):
-    name = AllLookupsFilter(field_name='name')
+    name = AutoFilter(field_name='name', lookups='__all__')
     best_friend = RelatedFilter(
         'tests.testapp.filters.PersonFilter',
         field_name='best_friend',
