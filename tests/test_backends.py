@@ -45,10 +45,15 @@ class BackendTests(APITestCase):
         Ensure that the request object is passed from the backend to the filterset.
         See: https://github.com/philipn/django-rest-framework-filters/issues/149
         """
+        called = False
+
         class RequestCheck(FilterSet):
             def __init__(self, *args, **kwargs):
                 super(RequestCheck, self).__init__(*args, **kwargs)
                 test.assertIsNotNone(self.request)
+
+                nonlocal called
+                called = True
 
             class Meta:
                 model = models.User
@@ -61,6 +66,7 @@ class BackendTests(APITestCase):
         backend = view.filter_backends[0]
         request = view.initialize_request(factory.get('/'))
         backend().filter_queryset(request, view.get_queryset(), view)
+        test.assertTrue(called)
 
     def test_exclusion(self):
         class RequestCheck(FilterSet):
