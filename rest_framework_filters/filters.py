@@ -7,18 +7,29 @@ ALL_LOOKUPS = '__all__'
 
 
 class AutoFilter(Filter):
-    def __init__(self, *args, **kwargs):
-        self.lookups = kwargs.pop('lookups', [])
+    """
+    Declarative alternative to using the `Meta.fields` dictionary syntax. These
+    fields are processed by the metaclass and resolved into per-lookup filters.
 
-        super(AutoFilter, self).__init__(*args, **kwargs)
+    `AutoFilter`s benefit from their declarative nature in that it is possible
+    to change the parameter name of the generated filters. This is not possible
+    with the `Meta.fields` syntax.
+    """
+
+    def __init__(self, *args, lookups=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lookups = lookups or []
 
 
 class RelatedFilter(AutoFilter, ModelChoiceFilter):
-    def __init__(self, filterset, *args, **kwargs):
-        self.filterset = filterset
-        kwargs.setdefault('lookups', None)
+    """
+    A `ModelChoiceFilter` that defines a relationship to another `FilterSet`.
+    This related filterset is processed by the filter's `parent` instance, and
+    """
 
-        super(RelatedFilter, self).__init__(*args, **kwargs)
+    def __init__(self, filterset, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filterset = filterset
 
     def filterset():
         def fget(self):
@@ -43,6 +54,4 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
 
 class AllLookupsFilter(AutoFilter):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('lookups', ALL_LOOKUPS)
-
-        super(AllLookupsFilter, self).__init__(*args, **kwargs)
+        super().__init__(*args, lookups=ALL_LOOKUPS, **kwargs)

@@ -24,6 +24,11 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
     @classmethod
     def expand_auto_filters(cls, new_class):
+        """
+        Resolve `AutoFilter`s into their per-lookup filters. `AutoFilter`s are
+        a declarative alternative to the `Meta.fields` dictionary syntax, and
+        use the same machinery internally.
+        """
         # get reference to opts/declared filters
         orig_meta, orig_declared = new_class._meta, new_class.declared_filters
 
