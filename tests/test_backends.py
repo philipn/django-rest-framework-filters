@@ -107,6 +107,19 @@ class BackendRenderingTests(APITestCase):
         </form>
         """)
 
+    def test_rendering_doesnt_affect_filterset_class(self):
+        class SimpleFilterSet(FilterSet):
+            class Meta:
+                model = models.User
+                fields = ['username', 'email']
+
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filterset_class = SimpleFilterSet
+
+        self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
+        self.render(SimpleViewSet)
+        self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
+
 
 class ComplexFilterBackendTests(APITestCase):
 
