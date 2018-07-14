@@ -1,3 +1,5 @@
+import warnings
+
 from django_filters.rest_framework.filters import *  # noqa
 from django_filters.rest_framework.filters import Filter, ModelChoiceFilter
 
@@ -55,3 +57,6 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
 class AllLookupsFilter(AutoFilter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, lookups=ALL_LOOKUPS, **kwargs)
+        warnings.warn(
+            "`AllLookupsFilter()` has been deprecated in favor of `AutoFilter(lookups='__all__')`.",
+            DeprecationWarning, stacklevel=2)

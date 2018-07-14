@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 from django.test import TestCase
 from django_filters.filters import BaseInFilter
@@ -170,6 +171,20 @@ class AutoFilterTests(TestCase):
                 fields = []
 
         self.assertIs(F.base_filters['id__in'], f)
+
+    def test_alllookupsfilter_deprecation_warning(self):
+        message = ("`AllLookupsFilter()` has been deprecated in "
+                   "favor of `AutoFilter(lookups='__all__')`.")
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+
+            class F(FilterSet):
+                field = filters.AllLookupsFilter()
+
+        self.assertEqual(len(w), 1)
+        self.assertEqual(str(w[0].message), message)
+        self.assertIs(w[0].category, DeprecationWarning)
 
 
 class GetParamFilterNameTests(TestCase):

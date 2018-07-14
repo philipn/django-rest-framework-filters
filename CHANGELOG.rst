@@ -1,6 +1,7 @@
 Unreleased:
 -----------
 
+* #242 Deprecate ``AllLookupsFilter``
 * #191 Fix ``name`` => ``field_name`` warnings
 
 
