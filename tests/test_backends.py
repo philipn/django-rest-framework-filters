@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
 
 from rest_framework_filters import FilterSet
+from rest_framework_filters.filterset import SubsetDisabledMixin
 
 from .testapp import models, views
 
@@ -125,6 +126,32 @@ class BackendRenderingTests(APITestCase):
         self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
         self.render(SimpleViewSet)
         self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
+
+    def test_patch_for_rendering(self):
+        view = views.FilterClassUserViewSet(action_map={})
+        request = view.initialize_request(factory.get('/'))
+        backend = view.filter_backends[0]
+        backend = backend()
+
+        original = backend.get_filterset_class
+        with backend.patch_for_rendering(request):
+            filterset = backend.get_filterset(request, view.get_queryset(), view)
+
+        self.assertIsInstance(filterset, SubsetDisabledMixin)
+        self.assertEqual(backend.get_filterset_class, original)
+
+    def test_patch_for_rendering_handles_exception(self):
+        view = views.FilterClassUserViewSet(action_map={})
+        request = view.initialize_request(factory.get('/'))
+        backend = view.filter_backends[0]
+        backend = backend()
+
+        original = backend.get_filterset_class
+        with self.assertRaises(Exception):
+            with backend.patch_for_rendering(request):
+                raise Exception
+
+        self.assertEqual(backend.get_filterset_class, original)
 
 
 class ComplexFilterBackendTests(APITestCase):

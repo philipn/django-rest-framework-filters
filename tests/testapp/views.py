@@ -17,6 +17,13 @@ class DFUserViewSet(viewsets.ModelViewSet):
     filterset_class = DFUserFilter
 
 
+class FilterClassUserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    filter_backends = (backends.RestFrameworkFilterBackend, )
+    filterset_class = UserFilter
+
+
 class FilterFieldsUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

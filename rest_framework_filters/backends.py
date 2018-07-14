@@ -32,8 +32,10 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
             return filterset_class
 
         self.get_filterset_class = get_filterset_class
-        yield
-        self.get_filterset_class = original
+        try:
+            yield
+        finally:
+            self.get_filterset_class = original
 
     def to_html(self, request, queryset, view):
         # patching the behavior of `get_filterset_class()` in this method allows
