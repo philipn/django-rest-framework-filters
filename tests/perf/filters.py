@@ -22,7 +22,7 @@ class NoteFilterWithExplicitRelated(DFFilterSet):
 
 # drf-filters
 class UserFilterWithAll(DRFFilterSet):
-    username = filters.AllLookupsFilter()
+    username = filters.AutoFilter(lookups='__all__')
 
     class Meta:
         model = User
@@ -30,7 +30,7 @@ class UserFilterWithAll(DRFFilterSet):
 
 
 class NoteFilterWithRelatedAll(DRFFilterSet):
-    title = filters.AllLookupsFilter()
+    title = filters.AutoFilter(lookups='__all__')
     author = filters.RelatedFilter(UserFilterWithAll, queryset=User.objects.all())
 
     class Meta:
