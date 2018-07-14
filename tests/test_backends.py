@@ -1,16 +1,17 @@
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
 
 from rest_framework_filters import FilterSet
+from rest_framework_filters.filterset import SubsetDisabledMixin
 
 from .testapp import models, views
 
 factory = APIRequestFactory()
 
 
-class BackendTest(APITestCase):
+class BackendTests(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
@@ -40,38 +41,20 @@ class BackendTest(APITestCase):
         self.assertEqual(response.data[0]['username'], 'user1')
         self.assertDictEqual(views.FilterFieldsUserViewSet.filterset_fields, {'username': '__all__'})
 
-    def test_backend_output_sanity(self):
-        """
-        Sanity check to ensure backend can at least render something without crashing.
-        """
-        class SimpleViewSet(views.FilterFieldsUserViewSet):
-            filterset_fields = ['username']
-
-        view = SimpleViewSet(action_map={})
-        backend = view.filter_backends[0]
-        request = view.initialize_request(factory.get('/'))
-        html = backend().to_html(request, view.get_queryset(), view)
-
-        self.assertHTMLEqual(html, """
-        <h2>Field filters</h2>
-        <form class="form" action="" method="get">
-            <p>
-                <label for="id_username">Username:</label>
-                <input id="id_username" name="username" type="text" />
-            </p>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-        """)
-
     def test_request_obj_is_passed(test):
         """
         Ensure that the request object is passed from the backend to the filterset.
         See: https://github.com/philipn/django-rest-framework-filters/issues/149
         """
+        called = False
+
         class RequestCheck(FilterSet):
             def __init__(self, *args, **kwargs):
                 super(RequestCheck, self).__init__(*args, **kwargs)
                 test.assertIsNotNone(self.request)
+
+                nonlocal called
+                called = True
 
             class Meta:
                 model = models.User
@@ -84,6 +67,7 @@ class BackendTest(APITestCase):
         backend = view.filter_backends[0]
         request = view.initialize_request(factory.get('/'))
         backend().filter_queryset(request, view.get_queryset(), view)
+        test.assertTrue(called)
 
     def test_exclusion(self):
         class RequestCheck(FilterSet):
@@ -103,6 +87,71 @@ class BackendTest(APITestCase):
         request = view.initialize_request(factory.get('/?username!=user1'))
         qs = backend().filter_queryset(request, view.get_queryset(), view)
         self.assertEqual([u.pk for u in qs], [2])
+
+
+class BackendRenderingTests(APITestCase):
+
+    def render(self, viewset_class, data=None):
+        url = '/' if not data else '/?' + urlencode(data, True)
+        view = viewset_class(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get(url))
+        return backend().to_html(request, view.get_queryset(), view)
+
+    def test_sanity(self):
+        # Sanity check to ensure backend can render without crashing.
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filterset_fields = ['username', ]
+
+        self.assertHTMLEqual(self.render(SimpleViewSet), """
+        <h2>Field filters</h2>
+        <form class="form" action="" method="get">
+            <p>
+                <label for="id_username">Username:</label>
+                <input id="id_username" name="username" type="text" />
+            </p>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
+
+    def test_rendering_doesnt_affect_filterset_class(self):
+        class SimpleFilterSet(FilterSet):
+            class Meta:
+                model = models.User
+                fields = ['username', 'email']
+
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filterset_class = SimpleFilterSet
+
+        self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
+        self.render(SimpleViewSet)
+        self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
+
+    def test_patch_for_rendering(self):
+        view = views.FilterClassUserViewSet(action_map={})
+        request = view.initialize_request(factory.get('/'))
+        backend = view.filter_backends[0]
+        backend = backend()
+
+        original = backend.get_filterset_class
+        with backend.patch_for_rendering(request):
+            filterset = backend.get_filterset(request, view.get_queryset(), view)
+
+        self.assertIsInstance(filterset, SubsetDisabledMixin)
+        self.assertEqual(backend.get_filterset_class, original)
+
+    def test_patch_for_rendering_handles_exception(self):
+        view = views.FilterClassUserViewSet(action_map={})
+        request = view.initialize_request(factory.get('/'))
+        backend = view.filter_backends[0]
+        backend = backend()
+
+        original = backend.get_filterset_class
+        with self.assertRaises(Exception):
+            with backend.patch_for_rendering(request):
+                raise Exception
+
+        self.assertEqual(backend.get_filterset_class, original)
 
 
 class ComplexFilterBackendTests(APITestCase):

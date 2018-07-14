@@ -9,11 +9,6 @@ from .complex_ops import combine_complex_queryset, decode_complex_ops
 from .filterset import FilterSet
 
 
-@contextmanager
-def noop(self):
-    yield
-
-
 class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
     filterset_base = FilterSet
 
@@ -33,19 +28,20 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
 
         def get_filterset_class(view, queryset=None):
             filterset_class = original(view, queryset)
-            filterset_class.override_filters = noop
-
+            filterset_class = filterset_class.disable_subset()
             return filterset_class
 
         self.get_filterset_class = get_filterset_class
-        yield
-        self.get_filterset_class = original
+        try:
+            yield
+        finally:
+            self.get_filterset_class = original
 
     def to_html(self, request, queryset, view):
         # patching the behavior of `get_filterset_class()` in this method allows
         # us to avoid maintenance issues with code duplication.
         with self.patch_for_rendering(request):
-            return super(RestFrameworkFilterBackend, self).to_html(request, queryset, view)
+            return super().to_html(request, queryset, view)
 
 
 class ComplexFilterBackend(RestFrameworkFilterBackend):
@@ -55,7 +51,7 @@ class ComplexFilterBackend(RestFrameworkFilterBackend):
 
     def filter_queryset(self, request, queryset, view):
         if self.complex_filter_param not in request.query_params:
-            return super(ComplexFilterBackend, self).filter_queryset(request, queryset, view)
+            return super().filter_queryset(request, queryset, view)
 
         # Decode the set of complex operations
         encoded_querystring = request.query_params[self.complex_filter_param]
@@ -74,14 +70,13 @@ class ComplexFilterBackend(RestFrameworkFilterBackend):
         return combine_complex_queryset(querysets, complex_ops)
 
     def get_filtered_querysets(self, querystrings, request, queryset, view):
-        parent = super(ComplexFilterBackend, self)
         original_GET = request._request.GET
 
         querysets, errors = [], {}
         for qs in querystrings:
             request._request.GET = QueryDict(qs)
             try:
-                result = parent.filter_queryset(request, queryset, view)
+                result = super().filter_queryset(request, queryset, view)
                 querysets.append(result)
             except ValidationError as exc:
                 errors[qs] = exc.detail

@@ -68,6 +68,19 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         )
 
 
+class SubsetDisabledMixin:
+    """
+    Used to disable filter subsetting (see: :meth:`FilterSet.disable_subset`).
+    """
+    @classmethod
+    def get_filter_subset(cls, params, rel=None):
+        pass
+
+    @contextmanager
+    def override_filters(self):
+        yield
+
+
 class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     def __init__(self, data=None, queryset=None, *, request=None, prefix=None, **kwargs):
@@ -93,6 +106,18 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
                 fields[name] = utils.lookups_for_field(field)
 
         return fields
+
+    @classmethod
+    def disable_subset(cls):
+        """
+        Disable filter subsetting, allowing the form to render the filterset.
+        Note that this decreases performance and should only be used when
+        rendering a form, such as with DRF's browsable API.
+        """
+        if not issubclass(cls, SubsetDisabledMixin):
+            return type('SubsetDisabled%s' % cls.__name__,
+                        (SubsetDisabledMixin, cls), {})
+        return cls
 
     def get_request_filters(self):
         """
