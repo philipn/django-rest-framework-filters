@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 from django.test import TestCase
 from django_filters.filters import BaseInFilter
@@ -42,14 +43,16 @@ class MetaclassTests(TestCase):
 
 class AutoFilterTests(TestCase):
     """
-    Test auto filter generation (`AllLookupsFilter`, `RelatedFilter`, '__all__').
+    Test auto filter generation (`AutoFilter`, `RelatedFilter`, '__all__').
     """
 
-    def test_alllookupsfilter_meta_fields_unmodified(self):
+    def test_autofilter_meta_fields_unmodified(self):
+        # The FilterSetMetaclass temporarily modifies the `FilterSet._meta` when
+        # processing auto filters. Ensure the `_meta` isn't permanently altered.
         f = []
 
         class F(FilterSet):
-            id = filters.AllLookupsFilter()
+            id = filters.AutoFilter(lookups='__all__')
 
             class Meta:
                 model = Note
@@ -57,19 +60,19 @@ class AutoFilterTests(TestCase):
 
         self.assertIs(F._meta.fields, f)
 
-    def test_alllookupsfilter_replaced(self):
+    def test_autofilter_replaced(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/118
         class F(FilterSet):
-            id = filters.AllLookupsFilter()
+            id = filters.AutoFilter(lookups='__all__')
 
             class Meta:
                 model = Note
                 fields = []
 
-        self.assertIsInstance(F.declared_filters['id'], filters.AllLookupsFilter)
+        self.assertIsInstance(F.declared_filters['id'], filters.AutoFilter)
         self.assertIsInstance(F.base_filters['id'], filters.NumberFilter)
 
-    def test_alllookupsfilter_for_relation(self):
+    def test_all_lookups_for_relation(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/84
         class F(FilterSet):
             class Meta:
@@ -81,10 +84,10 @@ class AutoFilterTests(TestCase):
         self.assertIsInstance(F.base_filters['author'], filters.ModelChoiceFilter)
         self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
 
-    def test_alllookupsfilter_for_related_field(self):
+    def test_autofilter_for_related_field(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/127
         class F(FilterSet):
-            author = filters.AllLookupsFilter(field_name='author__last_name')
+            author = filters.AutoFilter(field_name='author__last_name', lookups='__all__')
 
             class Meta:
                 model = Note
@@ -108,7 +111,7 @@ class AutoFilterTests(TestCase):
         self.assertIsInstance(F.base_filters['author__in'], BaseInFilter)
 
     def test_relatedfilter_lookups(self):
-        # ensure that related filter is compatible with __all__ lookups.
+        # ensure that related filter is compatible with AutoFilter lookups.
         class F(FilterSet):
             author = filters.RelatedFilter(UserFilter, lookups='__all__')
 
@@ -155,12 +158,12 @@ class AutoFilterTests(TestCase):
 
         self.assertIs(F.base_filters['name'], f)
 
-    def test_declared_filter_persistence_with_alllookupsfilter(self):
-        # ensure that AllLookupsFilter does not overwrite declared filters.
+    def test_declared_filter_persistence_with_autofilter(self):
+        # ensure that AutoFilter does not overwrite declared filters.
         f = filters.Filter()
 
         class F(FilterSet):
-            id = filters.AllLookupsFilter()
+            id = filters.AutoFilter(lookups='__all__')
             id__in = f
 
             class Meta:
@@ -168,6 +171,20 @@ class AutoFilterTests(TestCase):
                 fields = []
 
         self.assertIs(F.base_filters['id__in'], f)
+
+    def test_alllookupsfilter_deprecation_warning(self):
+        message = ("`AllLookupsFilter()` has been deprecated in "
+                   "favor of `AutoFilter(lookups='__all__')`.")
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+
+            class F(FilterSet):
+                field = filters.AllLookupsFilter()
+
+        self.assertEqual(len(w), 1)
+        self.assertEqual(str(w[0].message), message)
+        self.assertIs(w[0].category, DeprecationWarning)
 
 
 class GetParamFilterNameTests(TestCase):

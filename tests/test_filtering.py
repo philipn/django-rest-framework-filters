@@ -17,7 +17,7 @@ class LocalTagFilter(FilterSet):
         fields = []
 
 
-class AllLookupsFilterTests(TestCase):
+class AutoFilterTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
@@ -35,7 +35,7 @@ class AllLookupsFilterTests(TestCase):
         Note.objects.create(title="Hello Test 3", content="Test content 3", author=user1)
         Note.objects.create(title="Hello Test 4", content="Test content 4", author=user2)
 
-    def test_alllookupsfilter(self):
+    def test_all_lookups(self):
         # Test __iendswith
         GET = {'title__iendswith': '2'}
         f = NoteFilter(GET, queryset=Note.objects.all())
@@ -53,20 +53,20 @@ class AllLookupsFilterTests(TestCase):
         self.assertEqual(len(list(f.qs)), 1)
         self.assertEqual(list(f.qs)[0].title, "Hello Test 3")
 
-    def test_alllookups_filter_with_mixin(self):
+    def test_autofilter_with_mixin(self):
         # Mixin FilterSets should not error when no model is provided. See:
         # https://github.com/philipn/django-rest-framework-filters/issues/82
         class Mixin(FilterSet):
-            title = filters.AllLookupsFilter()
+            title = filters.AutoFilter(lookups='__all__')
 
         class Actual(Mixin):
             class Meta:
                 model = Note
                 fields = []
 
-        GET = {'title__contains': 'Test'}
+        GET = {'title__contains': 'Hello'}
         f = Actual(GET, queryset=Note.objects.all())
-        self.assertEqual(len(list(f.qs)), 4)
+        self.assertEqual(len(list(f.qs)), 2)
 
 
 class RelatedFilterTests(TestCase):
@@ -151,8 +151,8 @@ class RelatedFilterTests(TestCase):
         self.assertEqual(len(list(f.qs)), 1)
         self.assertEqual(list(f.qs)[0].title, "Hello Test 4")
 
-    def test_relatedfilter_for_related_alllookups(self):
-        # ensure that filters work for AllLookupsFilter across a RelatedFilter.
+    def test_relatedfilter_for_related_all_lookups(self):
+        # ensure that filters work for AutoFilter across a RelatedFilter.
 
         # Test that the default exact filter works
         GET = {'author': User.objects.get(username='user2').pk}
@@ -180,7 +180,7 @@ class RelatedFilterTests(TestCase):
         f = NoteFilter(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 4)
 
-    def test_relatedfilter_for_related_alllookups_and_different_filter_name(self):
+    def test_relatedfilter_for_related_all_lookups_and_different_filter_name(self):
         # Test that the default exact filter works
         GET = {
             'writer': User.objects.get(username='user2').pk,

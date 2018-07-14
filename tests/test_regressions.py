@@ -13,7 +13,7 @@ from django.utils.dateparse import parse_datetime, parse_time
 from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 
-from rest_framework_filters import AllLookupsFilter, FilterSet
+from rest_framework_filters import AutoFilter, FilterSet
 
 from .testapp.filters import CoverFilter, PostFilter, UserFilter
 from .testapp.models import Cover, Note, Person, Post, User
@@ -34,9 +34,9 @@ class PersonSerializer(serializers.ModelSerializer):
 
 
 class PersonFilter(FilterSet):
-    date_joined = AllLookupsFilter(field_name='date_joined')
-    time_joined = AllLookupsFilter(field_name='time_joined')
-    datetime_joined = AllLookupsFilter(field_name='datetime_joined')
+    date_joined = AutoFilter(field_name='date_joined', lookups='__all__')
+    time_joined = AutoFilter(field_name='time_joined', lookups='__all__')
+    datetime_joined = AutoFilter(field_name='datetime_joined', lookups='__all__')
 
     class Meta:
         model = Person
@@ -44,8 +44,8 @@ class PersonFilter(FilterSet):
 
 
 class InLookupPersonFilter(FilterSet):
-    pk = AllLookupsFilter('id')
-    name = AllLookupsFilter('name')
+    pk = AutoFilter('id', lookups='__all__')
+    name = AutoFilter('name', lookups='__all__')
 
     class Meta:
         model = Person
