@@ -134,7 +134,7 @@ You can easily traverse multiple relationships when filtering by using ``Related
 
 
     class DepartmentFilter(filters.FilterSet):
-        manager = filters.RelatedFilter(ManagerFilter, name='manager', queryset=Manager.objects.all())
+        manager = filters.RelatedFilter(ManagerFilter, field_name='manager', queryset=Manager.objects.all())
 
         class Meta:
             model = Department
@@ -142,7 +142,7 @@ You can easily traverse multiple relationships when filtering by using ``Related
 
 
     class CompanyFilter(filters.FilterSet):
-        department = filters.RelatedFilter(DepartmentFilter, name='department', queryset=Department.objects.all())
+        department = filters.RelatedFilter(DepartmentFilter, field_name='department', queryset=Department.objects.all())
 
         class Meta:
             model = Company
@@ -185,8 +185,8 @@ Recursive relations are also supported. Provide the module path as a string in p
 .. code-block:: python
 
     class PersonFilter(filters.FilterSet):
-        name = filters.AllLookupsFilter(name='name')
-        best_friend = filters.RelatedFilter('people.views.PersonFilter', name='best_friend', queryset=Person.objects.all())
+        name = filters.AllLookupsFilter(field_name='name')
+        best_friend = filters.RelatedFilter('people.views.PersonFilter', field_name='best_friend', queryset=Person.objects.all())
 
         class Meta:
             model = Person
@@ -220,7 +220,7 @@ to all filter classes. It incorporates some of the implementation details of the
 
     class PostFilter(filters.FilterSet):
         # Note the use of BooleanFilter, the original model field's name, and the method argument.
-        is_published = filters.BooleanFilter(name='date_published', method='filter_is_published')
+        is_published = filters.BooleanFilter(field_name='date_published', method='filter_is_published')
 
         class Meta:
             model = Post
@@ -314,7 +314,7 @@ inadvertently leak data. Use this feature responsibly.
 
     class ProductFilter(filters.FilterSet):
         # Not overridden by `__all__`
-        price__gt = filters.NumberFilter(name='price', lookup_expr='gt', label='Minimum price')
+        price__gt = filters.NumberFilter(field_name='price', lookup_expr='gt', label='Minimum price')
 
         class Meta:
             model = Product
@@ -328,7 +328,7 @@ inadvertently leak data. Use this feature responsibly.
         price = filters.AllLookupsFilter()
 
         # Not overridden by `AllLookupsFilter`
-        price__gt = filters.NumberFilter(name='price', lookup_expr='gt', label='Minimum price')
+        price__gt = filters.NumberFilter(field_name='price', lookup_expr='gt', label='Minimum price')
 
         class Meta:
             model = Product
