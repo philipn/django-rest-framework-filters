@@ -333,17 +333,22 @@ class RelatedFilterTests(TestCase):
             f.qs
 
     def test_relatedfilter_request_is_passed(self):
+        called = False
+
         class RequestCheck(FilterSet):
             def __init__(self, *args, **kwargs):
                 super(RequestCheck, self).__init__(*args, **kwargs)
                 assert self.request is not None
+
+                nonlocal called
+                called = True
 
             class Meta:
                 model = User
                 fields = ['username']
 
         class NoteFilter(FilterSet):
-            author = filters.RelatedFilter(RequestCheck, name='author', queryset=User.objects.all())
+            author = filters.RelatedFilter(RequestCheck, field_name='author', queryset=User.objects.all())
 
             class Meta:
                 model = Note
@@ -353,6 +358,7 @@ class RelatedFilterTests(TestCase):
 
         # should pass
         NoteFilter(GET, queryset=Note.objects.all(), request=object()).qs
+        self.assertTrue(called)
 
     def test_validation(self):
         class F(PostFilter):
