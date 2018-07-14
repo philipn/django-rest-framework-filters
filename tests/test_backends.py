@@ -1,4 +1,4 @@
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
@@ -10,7 +10,7 @@ from .testapp import models, views
 factory = APIRequestFactory()
 
 
-class BackendTest(APITestCase):
+class BackendTests(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
@@ -39,29 +39,6 @@ class BackendTest(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'user1')
         self.assertDictEqual(views.FilterFieldsUserViewSet.filterset_fields, {'username': '__all__'})
-
-    def test_backend_output_sanity(self):
-        """
-        Sanity check to ensure backend can at least render something without crashing.
-        """
-        class SimpleViewSet(views.FilterFieldsUserViewSet):
-            filterset_fields = ['username']
-
-        view = SimpleViewSet(action_map={})
-        backend = view.filter_backends[0]
-        request = view.initialize_request(factory.get('/'))
-        html = backend().to_html(request, view.get_queryset(), view)
-
-        self.assertHTMLEqual(html, """
-        <h2>Field filters</h2>
-        <form class="form" action="" method="get">
-            <p>
-                <label for="id_username">Username:</label>
-                <input id="id_username" name="username" type="text" />
-            </p>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-        """)
 
     def test_request_obj_is_passed(test):
         """
@@ -103,6 +80,32 @@ class BackendTest(APITestCase):
         request = view.initialize_request(factory.get('/?username!=user1'))
         qs = backend().filter_queryset(request, view.get_queryset(), view)
         self.assertEqual([u.pk for u in qs], [2])
+
+
+class BackendRenderingTests(APITestCase):
+
+    def render(self, viewset_class, data=None):
+        url = '/' if not data else '/?' + urlencode(data, True)
+        view = viewset_class(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get(url))
+        return backend().to_html(request, view.get_queryset(), view)
+
+    def test_sanity(self):
+        # Sanity check to ensure backend can render without crashing.
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filterset_fields = ['username', ]
+
+        self.assertHTMLEqual(self.render(SimpleViewSet), """
+        <h2>Field filters</h2>
+        <form class="form" action="" method="get">
+            <p>
+                <label for="id_username">Username:</label>
+                <input id="id_username" name="username" type="text" />
+            </p>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
 
 
 class ComplexFilterBackendTests(APITestCase):
