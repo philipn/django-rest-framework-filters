@@ -1,9 +1,8 @@
 import warnings
 
+from django.utils.module_loading import import_string
 from django_filters.rest_framework.filters import *  # noqa
 from django_filters.rest_framework.filters import Filter, ModelChoiceFilter
-
-from rest_framework_filters.utils import import_class, relative_class_path
 
 ALL_LOOKUPS = '__all__'
 
@@ -33,11 +32,28 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
         super().__init__(*args, **kwargs)
         self.filterset = filterset
 
+    def bind(self, bind_cls):
+        """
+        Bind a filterset class to the filter instance. This class is used for
+        relative imports. Only the first bound class is used as filterset
+        inheritance might otherwise break these relative import paths.
+
+        This is also necessary to allow `.filterset` to be resolved during
+        FilterSet class creation time, instead of during initialization.
+        """
+        if not hasattr(self, 'bind_cls'):
+            self.bind_cls = bind_cls
+
     def filterset():
         def fget(self):
             if isinstance(self._filterset, str):
-                path = relative_class_path(self.parent, self._filterset)
-                self._filterset = import_class(path)
+                try:
+                    # Assume absolute import path
+                    self._filterset = import_string(self._filterset)
+                except ImportError:
+                    # Fallback to building import path relative to bind class
+                    path = '.'.join([self.bind_cls.__module__, self._filterset])
+                    self._filterset = import_string(path)
             return self._filterset
 
         def fset(self, value):

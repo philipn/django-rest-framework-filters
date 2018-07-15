@@ -1,25 +1,6 @@
-from importlib import import_module
-
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import Expression
 from django.db.models.lookups import Transform
-
-
-def import_class(path):
-    module_path, class_name = path.rsplit('.', 1)
-    module = import_module(module_path)
-
-    return getattr(module, class_name)
-
-
-def relative_class_path(cls, path):
-    if '.' in path:
-        return path
-
-    if not isinstance(cls, type):
-        cls = type(cls)
-
-    return '%s.%s' % (cls.__module__, path)
 
 
 def lookups_for_field(model_field):

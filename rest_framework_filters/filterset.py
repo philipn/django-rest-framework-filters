@@ -16,6 +16,10 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         new_class.auto_filters = cls.get_auto_filters(new_class)
         new_class.related_filters = cls.get_related_filters(new_class)
 
+        # see: :meth:`rest_framework_filters.filters.RelatedFilter.bind`
+        for f in new_class.related_filters.values():
+            f.bind(new_class)
+
         # If model is defined, process auto filters
         if new_class._meta.model is not None:
             cls.expand_auto_filters(new_class)
