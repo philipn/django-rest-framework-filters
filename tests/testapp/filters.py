@@ -142,7 +142,7 @@ class AFilter(FilterSet):
 
 
 class BFilter(FilterSet):
-    name = AutoFilter(field_name='name', lookups='__all__')
+    name = filters.CharFilter(field_name='name')
     c = RelatedFilter('CFilter', field_name='c', queryset=C.objects.all())
 
     class Meta:

@@ -130,15 +130,27 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         )
 
     @classmethod
-    def disable_subset(cls):
+    def disable_subset(cls, *, depth=0):
         """
         Disable filter subsetting, allowing the form to render the filterset.
         Note that this decreases performance and should only be used when
         rendering a form, such as with DRF's browsable API.
         """
         if not issubclass(cls, SubsetDisabledMixin):
-            return type('SubsetDisabled%s' % cls.__name__,
-                        (SubsetDisabledMixin, cls), {})
+            cls = type('SubsetDisabled%s' % cls.__name__,
+                       (SubsetDisabledMixin, cls), {})
+
+        # recursively disable subset for related filtersets
+        if depth > 0:
+            # shallow copy to prevent modifying original `base_filters`
+            cls.base_filters = cls.base_filters.copy()
+
+            # deepcopy RelateFilter to prevent modifying original `.filterset`
+            for name in cls.related_filters:
+                f = copy.deepcopy(cls.base_filters[name])
+                f.filterset = f.filterset.disable_subset(depth=depth - 1)
+                cls.base_filters[name] = f
+
         return cls
 
     @classmethod

@@ -10,7 +10,7 @@ from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
 from .testapp.filters import (
-    NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
+    AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
 )
 from .testapp.models import Note, Person, Post, Tag
 
@@ -412,6 +412,73 @@ class DisableSubsetTests(TestCase):
         self.assertTrue(issubclass(F, SubsetDisabledMixin))
         self.assertEqual(list(F({}).form.fields), ['author'])
         self.assertEqual(list(F({'author': ''}).form.fields), ['author'])
+
+
+class DisableSubsetRecursiveTests(TestCase):
+
+    def test_depth0(self):
+        F = AFilter.disable_subset(depth=0)
+        f = F()
+
+        # 0-depth disabled
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'b'])
+
+        # 1-depth not disabled
+        F = f.filters['b'].filterset
+        f = f.related_filtersets['b']
+        self.assertFalse(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), [])
+
+    def test_depth1(self):
+        F = AFilter.disable_subset(depth=1)
+        f = F()
+
+        # 0-depth disabled
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'b'])
+
+        # 1-depth disabled
+        F = f.filters['b'].filterset
+        f = f.related_filtersets['b']
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['name', 'c'])
+
+        # 2-depth not disabled
+        F = f.filters['c'].filterset
+        f = f.related_filtersets['c']
+        self.assertFalse(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), [])
+
+    def test_depth2(self):
+        F = original = AFilter.disable_subset(depth=2)
+        f = F()
+
+        # 0-depth disabled
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'b'])
+
+        # 1-depth disabled
+        F = f.filters['b'].filterset
+        f = f.related_filtersets['b']
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['name', 'c'])
+
+        # 2-depth disabled
+        F = f.filters['c'].filterset
+        f = f.related_filtersets['c']
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'a'])
+
+        # 3-depth not disabled
+        F = f.filters['a'].filterset
+        f = f.related_filtersets['a']
+        self.assertFalse(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), [])
+
+        # relationship has looped, nested A is *not* original/disabled A.
+        self.assertIsNot(original, F)
+        self.assertTrue(issubclass(original, F))
 
 
 class OverrideFiltersTests(TestCase):
