@@ -1,5 +1,6 @@
 from urllib.parse import quote, urlencode
 
+import django_filters
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
 
@@ -102,6 +103,26 @@ class BackendRenderingTests(APITestCase):
         # Sanity check to ensure backend can render without crashing.
         class SimpleViewSet(views.FilterFieldsUserViewSet):
             filterset_fields = ['username', ]
+
+        self.assertHTMLEqual(self.render(SimpleViewSet), """
+        <h2>Field filters</h2>
+        <form class="form" action="" method="get">
+            <p>
+                <label for="id_username">Username:</label>
+                <input id="id_username" name="username" type="text" />
+            </p>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
+
+    def test_django_filter_filterset_compatibility(self):
+        class SimpleFilterSet(django_filters.FilterSet):
+            class Meta:
+                model = models.User
+                fields = ['username']
+
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filterset_class = SimpleFilterSet
 
         self.assertHTMLEqual(self.render(SimpleViewSet), """
         <h2>Field filters</h2>
