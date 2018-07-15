@@ -33,6 +33,12 @@ class FilterFieldsUserViewSet(viewsets.ModelViewSet):
     }
 
 
+class UnfilteredUserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    filter_backends = (backends.RestFrameworkFilterBackend, )
+
+
 class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
     queryset = User.objects.order_by('pk')
     filter_backends = (backends.ComplexFilterBackend, )

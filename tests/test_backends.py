@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
 
 from rest_framework_filters import FilterSet, filters
+from rest_framework_filters.backends import RestFrameworkFilterBackend
 from rest_framework_filters.filterset import SubsetDisabledMixin
 
 from .testapp import models, views
@@ -88,6 +89,22 @@ class BackendTests(APITestCase):
         request = view.initialize_request(factory.get('/?username!=user1'))
         qs = backend().filter_queryset(request, view.get_queryset(), view)
         self.assertEqual([u.pk for u in qs], [2])
+
+    def test_disabled(self):
+        # Views with no `filterset_class` or `filterset_fields` should not
+        # error when used with the RestFrameworkFilterBackend.
+        # see: https://github.com/philipn/django-rest-framework-filters/issues/230
+        view = views.UnfilteredUserViewSet(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get('/'))
+
+        # ensure view has backend and is missing attributes
+        self.assertIs(backend, RestFrameworkFilterBackend)
+        self.assertFalse(hasattr(view, 'filterset_class'))
+        self.assertFalse(hasattr(view, 'filterset_fields'))
+
+        # filterset should be None, method should not error
+        self.assertIsNone(backend().get_filterset(request, view.queryset, view))
 
 
 class BackendRenderingTests(APITestCase):
