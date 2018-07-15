@@ -481,28 +481,6 @@ class DisableSubsetRecursiveTests(TestCase):
         self.assertTrue(issubclass(original, F))
 
 
-class OverrideFiltersTests(TestCase):
-
-    def test_bound(self):
-        f = PostFilter({})
-
-        with f.override_filters():
-            self.assertEqual(len(f.filters), 0)
-
-    def test_not_bound(self):
-        f = PostFilter(None)
-
-        with f.override_filters():
-            self.assertEqual(len(f.filters), 0)
-
-    def test_subset_disabled(self):
-        f = PostFilter.disable_subset()(None)
-
-        with f.override_filters():
-            # The number of filters varies by Django version
-            self.assertGreater(len(f.filters), 30)
-
-
 class FilterExclusionTests(TestCase):
 
     @classmethod

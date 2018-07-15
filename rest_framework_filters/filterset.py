@@ -1,6 +1,5 @@
 import copy
 from collections import OrderedDict
-from contextlib import contextmanager
 
 from django.db.models import Subquery
 from django.db.models.constants import LOOKUP_SEP
@@ -82,10 +81,6 @@ class SubsetDisabledMixin:
     def get_filter_subset(cls, params, rel=None):
         return cls.base_filters
 
-    @contextmanager
-    def override_filters(self):
-        yield
-
 
 class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
@@ -96,7 +91,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         self.relationship = relationship
         self.related_filtersets = self.get_related_filtersets()
-        self.request_filters = self.get_request_filters()
+        self.filters = self.get_request_filters()
 
     @classmethod
     def get_fields(cls):
@@ -206,13 +201,10 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         # build the compiled set of all filters
         requested_filters = OrderedDict()
         for filter_name, f in self.filters.items():
+            requested_filters[filter_name] = f
+
+            # exclusion params
             exclude_name = '%s!' % filter_name
-
-            # Add plain lookup filters if match. ie, `username__icontains`
-            if related(self, filter_name) in self.data:
-                requested_filters[filter_name] = f
-
-            # include exclusion keys
             if related(self, exclude_name) in self.data:
                 # deepcopy the *base* filter to prevent copying of model & parent
                 f_copy = copy.deepcopy(self.base_filters[filter_name])
@@ -245,21 +237,10 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         return related_filtersets
 
-    @contextmanager
-    def override_filters(self):
-        if not self.is_bound:
-            yield
-        else:
-            orig_filters = self.filters
-            self.filters = self.request_filters
-            yield
-            self.filters = orig_filters
-
     def filter_queryset(self, queryset):
-        with self.override_filters():
-            queryset = super(FilterSet, self).filter_queryset(queryset)
-            queryset = self.filter_related_filtersets(queryset)
-            return queryset
+        queryset = super(FilterSet, self).filter_queryset(queryset)
+        queryset = self.filter_related_filtersets(queryset)
+        return queryset
 
     def filter_related_filtersets(self, queryset):
         """
@@ -281,20 +262,19 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         return queryset
 
     def get_form_class(self):
-        with self.override_filters():
-            class Form(super(FilterSet, self).get_form_class()):
-                def add_prefix(form, field_name):
-                    field_name = related(self, field_name)
-                    return super(Form, form).add_prefix(field_name)
+        class Form(super(FilterSet, self).get_form_class()):
+            def add_prefix(form, field_name):
+                field_name = related(self, field_name)
+                return super(Form, form).add_prefix(field_name)
 
-                def clean(form):
-                    cleaned_data = super(Form, form).clean()
+            def clean(form):
+                cleaned_data = super(Form, form).clean()
 
-                    # when prefixing the errors, use the related filter name,
-                    # which is relative to the parent filterset, not the root.
-                    for related_filterset in self.related_filtersets.values():
-                        for key, error in related_filterset.form.errors.items():
-                            self.form.errors[related(related_filterset, key)] = error
+                # when prefixing the errors, use the related filter name,
+                # which is relative to the parent filterset, not the root.
+                for related_filterset in self.related_filtersets.values():
+                    for key, error in related_filterset.form.errors.items():
+                        self.form.errors[related(related_filterset, key)] = error
 
-                    return cleaned_data
-            return Form
+                return cleaned_data
+        return Form
