@@ -4,9 +4,8 @@ from django_filters import FilterSet as DFFilterSet
 from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
-    CFilter, CoverFilter, NoteFilter, NoteFilterWithAlias,
-    NoteFilterWithRelatedAlias, PageFilter, PersonFilter, PostFilter,
-    UserFilter,
+    CFilter, CoverFilter, NoteFilter, NoteFilterWithAlias, NoteFilterWithRelatedAlias,
+    PageFilter, PersonFilter, PostFilter, UserFilter,
 )
 from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
 

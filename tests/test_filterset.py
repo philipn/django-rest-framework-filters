@@ -7,7 +7,7 @@ from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 
 from rest_framework_filters import FilterSet, filters
-from rest_framework_filters.filterset import FilterSetMetaclass
+from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
 from .testapp.filters import NoteFilter, PostFilter, TagFilter, UserFilter
 from .testapp.models import Note, Person, Post, Tag
