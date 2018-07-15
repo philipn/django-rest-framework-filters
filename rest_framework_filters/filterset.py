@@ -13,12 +13,16 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
 
-        new_class.auto_filters = cls.get_auto_filters(new_class)
-        new_class.related_filters = cls.get_related_filters(new_class)
+        new_class.auto_filters = [
+            name for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.AutoFilter)]
+        new_class.related_filters = [
+            name for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.RelatedFilter)]
 
         # see: :meth:`rest_framework_filters.filters.RelatedFilter.bind`
-        for f in new_class.related_filters.values():
-            f.bind(new_class)
+        for name in new_class.related_filters:
+            new_class.declared_filters[name].bind(new_class)
 
         # If model is defined, process auto filters
         if new_class._meta.model is not None:
@@ -40,7 +44,9 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         new_class._meta = copy.deepcopy(new_class._meta)
         new_class.declared_filters = new_class.declared_filters.copy()
 
-        for name, f in new_class.auto_filters.items():
+        for name in new_class.auto_filters:
+            f = new_class.declared_filters[name]
+
             # Remove auto filters from declared_filters so that they *are* overwritten
             # RelatedFilter is an exception, and should *not* be overwritten
             if not isinstance(f, filters.RelatedFilter):
@@ -56,20 +62,6 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         # restore reference to opts/declared filters
         new_class._meta, new_class.declared_filters = orig_meta, orig_declared
-
-    @classmethod
-    def get_auto_filters(cls, new_class):
-        return OrderedDict(
-            (name, f) for name, f in new_class.declared_filters.items()
-            if isinstance(f, filters.AutoFilter)
-        )
-
-    @classmethod
-    def get_related_filters(cls, new_class):
-        return OrderedDict(
-            (name, f) for name, f in new_class.declared_filters.items()
-            if isinstance(f, filters.RelatedFilter)
-        )
 
 
 class SubsetDisabledMixin:
@@ -165,11 +157,9 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         if param[-1] == '!' and param[:-1] in cls.base_filters:
             return param[:-1]
 
-        # Fallback to matching against relationships. (author__username__endswith).
-        related_filters = cls.related_filters.keys()
-
-        # preference more specific filters. eg, `note__author` over `note`.
-        for name in reversed(sorted(related_filters)):
+        # Match against relationships. (author__username__endswith).
+        # Preference more specific filters. eg, `note__author` over `note`.
+        for name in reversed(sorted(cls.related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
             if param.startswith("%s%s" % (name, LOOKUP_SEP)):
@@ -240,10 +230,8 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             (None, None)
 
         """
-        related_filters = cls.related_filters.keys()
-
         # preference more specific filters. eg, `note__author` over `note`.
-        for name in reversed(sorted(related_filters)):
+        for name in reversed(sorted(cls.related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
             if param.startswith("%s%s" % (name, LOOKUP_SEP)):
