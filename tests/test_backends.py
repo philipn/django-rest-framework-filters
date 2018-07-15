@@ -165,7 +165,7 @@ class BackendRenderingTests(APITestCase):
         self.assertFalse(issubclass(filterset, SubsetDisabledMixin))
 
         # check that FilterSet.related_filters aren't modified
-        filterset = UserFilter.related_filters['notes'].filterset
+        filterset = UserFilter.base_filters['notes'].filterset
         self.assertTrue(issubclass(filterset, FilterSet))
         self.assertFalse(issubclass(filterset, SubsetDisabledMixin))
 

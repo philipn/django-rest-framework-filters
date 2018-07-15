@@ -13,12 +13,16 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
         new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
 
-        new_class.auto_filters = cls.get_auto_filters(new_class)
-        new_class.related_filters = cls.get_related_filters(new_class)
+        new_class.auto_filters = [
+            name for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.AutoFilter)]
+        new_class.related_filters = [
+            name for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.RelatedFilter)]
 
         # see: :meth:`rest_framework_filters.filters.RelatedFilter.bind`
-        for f in new_class.related_filters.values():
-            f.bind(new_class)
+        for name in new_class.related_filters:
+            new_class.declared_filters[name].bind(new_class)
 
         # If model is defined, process auto filters
         if new_class._meta.model is not None:
@@ -40,7 +44,9 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
         new_class._meta = copy.deepcopy(new_class._meta)
         new_class.declared_filters = new_class.declared_filters.copy()
 
-        for name, f in new_class.auto_filters.items():
+        for name in new_class.auto_filters:
+            f = new_class.declared_filters[name]
+
             # Remove auto filters from declared_filters so that they *are* overwritten
             # RelatedFilter is an exception, and should *not* be overwritten
             if not isinstance(f, filters.RelatedFilter):
@@ -56,20 +62,6 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         # restore reference to opts/declared filters
         new_class._meta, new_class.declared_filters = orig_meta, orig_declared
-
-    @classmethod
-    def get_auto_filters(cls, new_class):
-        return OrderedDict(
-            (name, f) for name, f in new_class.declared_filters.items()
-            if isinstance(f, filters.AutoFilter)
-        )
-
-    @classmethod
-    def get_related_filters(cls, new_class):
-        return OrderedDict(
-            (name, f) for name, f in new_class.declared_filters.items()
-            if isinstance(f, filters.RelatedFilter)
-        )
 
 
 class SubsetDisabledMixin:

@@ -31,8 +31,6 @@ class MetaclassTests(TestCase):
     def test_metamethods(self):
         functions = [
             'expand_auto_filters',
-            'get_auto_filters',
-            'get_related_filters',
         ]
 
         for func in functions:
