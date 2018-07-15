@@ -7,7 +7,7 @@ from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 
 from rest_framework_filters import FilterSet, filters
-from rest_framework_filters.filterset import FilterSetMetaclass
+from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
 from .testapp.filters import NoteFilter, PostFilter, TagFilter, UserFilter
 from .testapp.models import Note, Person, Post, Tag
@@ -362,26 +362,31 @@ class DisableSubsetTests(TestCase):
 
     def test_unbound_subset(self):
         F = self.F.disable_subset()
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
         self.assertEqual(list(F().filters), ['author'])
 
     def test_bound_subset(self):
         F = self.F.disable_subset()
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
         self.assertEqual(list(F({}).filters), ['author'])
         self.assertEqual(list(F({'author': ''}).filters), ['author'])
 
     def test_duplicate_disable(self):
         F = self.F.disable_subset().disable_subset()
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
         self.assertEqual(list(F({}).filters), ['author'])
 
     def test_subset_form(self):
-        # test that subsetted forms only have provided fields
+        # test that subset-enabled forms only have provided fields
         F = self.F
+        self.assertFalse(issubclass(F, SubsetDisabledMixin))
         self.assertEqual(list(F({}).form.fields), [])
         self.assertEqual(list(F({'author': ''}).form.fields), ['author'])
 
     def test_subset_disabled_form(self):
-        # test that subset disabled forms have all fields
+        # test that subset-disabled forms have all fields
         F = self.F.disable_subset()
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
         self.assertEqual(list(F({}).form.fields), ['author'])
         self.assertEqual(list(F({'author': ''}).form.fields), ['author'])
 
