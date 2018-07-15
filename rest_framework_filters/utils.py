@@ -3,16 +3,6 @@ from django.db.models.expressions import Expression
 from django.db.models.lookups import Transform
 
 
-def relative_class_path(cls, path):
-    if '.' in path:
-        return path
-
-    if not isinstance(cls, type):
-        cls = type(cls)
-
-    return '%s.%s' % (cls.__module__, path)
-
-
 def lookups_for_field(model_field):
     """
     Generates a list of all possible lookup expressions for a model field.
