@@ -157,11 +157,9 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         if param[-1] == '!' and param[:-1] in cls.base_filters:
             return param[:-1]
 
-        # Fallback to matching against relationships. (author__username__endswith).
-        related_filters = cls.related_filters.keys()
-
-        # preference more specific filters. eg, `note__author` over `note`.
-        for name in reversed(sorted(related_filters)):
+        # Match against relationships. (author__username__endswith).
+        # Preference more specific filters. eg, `note__author` over `note`.
+        for name in reversed(sorted(cls.related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
             if param.startswith("%s%s" % (name, LOOKUP_SEP)):
@@ -232,10 +230,8 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             (None, None)
 
         """
-        related_filters = cls.related_filters.keys()
-
         # preference more specific filters. eg, `note__author` over `note`.
-        for name in reversed(sorted(related_filters)):
+        for name in reversed(sorted(cls.related_filters)):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
             if param.startswith("%s%s" % (name, LOOKUP_SEP)):
