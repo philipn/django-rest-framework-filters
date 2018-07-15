@@ -9,7 +9,9 @@ from rest_framework.views import APIView
 from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
-from .testapp.filters import NoteFilter, PostFilter, TagFilter, UserFilter
+from .testapp.filters import (
+    AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
+)
 from .testapp.models import Note, Person, Post, Tag
 
 factory = APIRequestFactory()
@@ -185,6 +187,67 @@ class AutoFilterTests(TestCase):
         self.assertIs(w[0].category, DeprecationWarning)
 
 
+class GetRelatedFiltersetsTests(TestCase):
+
+    def test_not_bound(self):
+        filtersets = UserFilter().get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 0)
+
+    def test_not_related_filter(self):
+        filtersets = NoteFilter({
+            'title': 'foo',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 0)
+
+    def test_exact(self):
+        filtersets = NoteFilter({
+            'author': 'bob',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['author'], UserFilter)
+
+    def test_filterset(self):
+        filtersets = NoteFilter({
+            'author__username': 'bob',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['author'], UserFilter)
+
+    def test_filterset_alias(self):
+        filtersets = NoteFilterWithAlias({
+            'writer__username': 'bob'
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['writer'], UserFilter)
+
+    def test_filterset_twice_removed(self):
+        filtersets = PostFilter({
+            'note__author__username': 'bob'
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['note'], NoteFilter)
+
+        filtersets = filtersets['note'].get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 1)
+        self.assertIsInstance(filtersets['author'], UserFilter)
+
+    def test_filterset_multiple_filters(self):
+        filtersets = PostFilter({
+            'note__foo': 'bob', 'tags__bar': 'joe',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 2)
+        self.assertIsInstance(filtersets['note'], NoteFilter)
+        self.assertIsInstance(filtersets['tags'], TagFilter)
+
+
 class GetParamFilterNameTests(TestCase):
 
     def test_regular_filter(self):
@@ -212,6 +275,10 @@ class GetParamFilterNameTests(TestCase):
         # of the related filterset to handle non-existent filters
         name = NoteFilter.get_param_filter_name('author__foobar')
         self.assertEqual('author', name)
+
+    def test_relationship_regular_filter(self):
+        name = UserFilter.get_param_filter_name('author__email', rel='author')
+        self.assertEqual('email', name)
 
     def test_twice_removed_related_filter(self):
         class PostFilterWithDirectAuthor(PostFilter):
@@ -263,50 +330,6 @@ class GetParamFilterNameTests(TestCase):
 
         name = PostFilterNameHiding.get_param_filter_name('note2__author')
         self.assertEqual('note2', name)
-
-
-class GetRelatedFilterParamTests(TestCase):
-
-    def test_regular_filter(self):
-        name, param = NoteFilter.get_related_filter_param('title')
-        self.assertIsNone(name)
-        self.assertIsNone(param)
-
-    def test_related_filter_exact(self):
-        name, param = NoteFilter.get_related_filter_param('author')
-        self.assertIsNone(name)
-        self.assertIsNone(param)
-
-    def test_related_filter_param(self):
-        name, param = NoteFilter.get_related_filter_param('author__email')
-        self.assertEqual('author', name)
-        self.assertEqual('email', param)
-
-    def test_name_hiding(self):
-        class PostFilterNameHiding(PostFilter):
-            note__author = filters.RelatedFilter(UserFilter)
-            note = filters.RelatedFilter(NoteFilter)
-            note2 = filters.RelatedFilter(NoteFilter)
-
-            class Meta:
-                model = Post
-                fields = []
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note__author__email')
-        self.assertEqual('note__author', name)
-        self.assertEqual('email', param)
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note__title')
-        self.assertEqual('note', name)
-        self.assertEqual('title', param)
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note2__title')
-        self.assertEqual('note2', name)
-        self.assertEqual('title', param)
-
-        name, param = PostFilterNameHiding.get_related_filter_param('note2__author')
-        self.assertEqual('note2', name)
-        self.assertEqual('author', param)
 
 
 class GetFilterSubsetTests(TestCase):
@@ -391,26 +414,71 @@ class DisableSubsetTests(TestCase):
         self.assertEqual(list(F({'author': ''}).form.fields), ['author'])
 
 
-class OverrideFiltersTests(TestCase):
+class DisableSubsetRecursiveTests(TestCase):
 
-    def test_bound(self):
-        f = PostFilter({})
+    def test_depth0(self):
+        F = AFilter.disable_subset(depth=0)
+        f = F()
 
-        with f.override_filters():
-            self.assertEqual(len(f.filters), 0)
+        # 0-depth disabled
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'b'])
 
-    def test_not_bound(self):
-        f = PostFilter(None)
+        # 1-depth not disabled
+        F = f.filters['b'].filterset
+        f = f.related_filtersets['b']
+        self.assertFalse(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), [])
 
-        with f.override_filters():
-            self.assertEqual(len(f.filters), 0)
+    def test_depth1(self):
+        F = AFilter.disable_subset(depth=1)
+        f = F()
 
-    def test_subset_disabled(self):
-        f = PostFilter.disable_subset()(None)
+        # 0-depth disabled
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'b'])
 
-        with f.override_filters():
-            # The number of filters varies by Django version
-            self.assertGreater(len(f.filters), 30)
+        # 1-depth disabled
+        F = f.filters['b'].filterset
+        f = f.related_filtersets['b']
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['name', 'c'])
+
+        # 2-depth not disabled
+        F = f.filters['c'].filterset
+        f = f.related_filtersets['c']
+        self.assertFalse(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), [])
+
+    def test_depth2(self):
+        F = original = AFilter.disable_subset(depth=2)
+        f = F()
+
+        # 0-depth disabled
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'b'])
+
+        # 1-depth disabled
+        F = f.filters['b'].filterset
+        f = f.related_filtersets['b']
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['name', 'c'])
+
+        # 2-depth disabled
+        F = f.filters['c'].filterset
+        f = f.related_filtersets['c']
+        self.assertTrue(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), ['title', 'a'])
+
+        # 3-depth not disabled
+        F = f.filters['a'].filterset
+        f = f.related_filtersets['a']
+        self.assertFalse(issubclass(F, SubsetDisabledMixin))
+        self.assertEqual(list(f.filters), [])
+
+        # relationship has looped, nested A is *not* original/disabled A.
+        self.assertIsNot(original, F)
+        self.assertTrue(issubclass(original, F))
 
 
 class FilterExclusionTests(TestCase):
@@ -436,9 +504,8 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.request_filters
 
-        self.assertTrue(requested_filters['name__contains!'].exclude)
+        self.assertTrue(filterset.filters['name__contains!'].exclude)
 
     def test_filter_and_exclude(self):
         """
@@ -450,10 +517,9 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.request_filters
 
-        self.assertFalse(requested_filters['name__contains'].exclude)
-        self.assertTrue(requested_filters['name__contains!'].exclude)
+        self.assertFalse(filterset.filters['name__contains'].exclude)
+        self.assertTrue(filterset.filters['name__contains!'].exclude)
 
     def test_related_exclude(self):
         GET = {
@@ -461,9 +527,9 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = PostFilter(GET, queryset=Post.objects.all())
-        requested_filters = filterset.request_filters
+        filterset = filterset.related_filtersets['tags']
 
-        self.assertTrue(requested_filters['tags__name__contains!'].exclude)
+        self.assertTrue(filterset.filters['name__contains!'].exclude)
 
     def test_exclusion_results(self):
         GET = {

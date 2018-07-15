@@ -1,5 +1,3 @@
-import unittest
-
 from django.test import TestCase
 
 from tests.testapp.filters import BlogFilter
@@ -77,7 +75,6 @@ class FilterTests(RelationshipData, TestCase):
         self.verify(q3, self.CORRECT)
 
     # Test behavior
-    @unittest.expectedFailure
     def test_reverse_fk(self):
         GET = {
             'post__title__contains': 'Lennon',

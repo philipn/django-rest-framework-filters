@@ -62,6 +62,7 @@ class PostFilter(FilterSet):
     publish_date = filters.AutoFilter(lookups='__all__')
     is_published = filters.BooleanFilter(method='filter_is_published')
 
+    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
     note = RelatedFilter(NoteFilter, field_name='note', queryset=Note.objects.all())
     tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
 
@@ -141,7 +142,7 @@ class AFilter(FilterSet):
 
 
 class BFilter(FilterSet):
-    name = AutoFilter(field_name='name', lookups='__all__')
+    name = filters.CharFilter(field_name='name')
     c = RelatedFilter('CFilter', field_name='c', queryset=C.objects.all())
 
     class Meta:

@@ -21,8 +21,8 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
     @contextmanager
     def patch_for_rendering(self, request):
         """
-        Patch `get_filterset_class()` so the resulting filterset does not perform
-        filter expansion during form rendering.
+        Patch `.get_filterset_class()` so the resulting filterset does not
+        perform filter expansion during form rendering.
         """
         original = self.get_filterset_class
 
@@ -31,7 +31,7 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
 
             # django-filter compatibility
             if issubclass(filterset_class, FilterSet):
-                filterset_class = filterset_class.disable_subset()
+                filterset_class = filterset_class.disable_subset(depth=1)
 
             return filterset_class
 
@@ -42,8 +42,8 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
             self.get_filterset_class = original
 
     def to_html(self, request, queryset, view):
-        # patching the behavior of `get_filterset_class()` in this method allows
-        # us to avoid maintenance issues with code duplication.
+        # Patching the behavior of `.get_filterset_class()` in this method
+        # allows us to avoid maintenance issues with code duplication.
         with self.patch_for_rendering(request):
             return super().to_html(request, queryset, view)
 
