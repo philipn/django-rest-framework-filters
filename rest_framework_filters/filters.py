@@ -1,9 +1,10 @@
 import warnings
 
+from django.utils.module_loading import import_string
 from django_filters.rest_framework.filters import *  # noqa
 from django_filters.rest_framework.filters import Filter, ModelChoiceFilter
 
-from rest_framework_filters.utils import import_class, relative_class_path
+from rest_framework_filters.utils import relative_class_path
 
 ALL_LOOKUPS = '__all__'
 
@@ -37,7 +38,7 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
         def fget(self):
             if isinstance(self._filterset, str):
                 path = relative_class_path(self.parent, self._filterset)
-                self._filterset = import_class(path)
+                self._filterset = import_string(path)
             return self._filterset
 
         def fset(self, value):
