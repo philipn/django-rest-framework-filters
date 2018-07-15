@@ -282,18 +282,22 @@ class IsNullLookupTests(TestCase):
         import django_filters.filters
 
         self.assertIsInstance(
-            UserFilter().filters['last_login__isnull'],
+            UserFilter.base_filters['last_login__isnull'],
             django_filters.filters.BooleanFilter
         )
 
         GET = {'last_login__isnull': 'false'}
         filterset = UserFilter(GET, queryset=User.objects.all())
+        filter_ = filterset.filters['last_login__isnull']
+        self.assertIsInstance(filter_, django_filters.filters.BooleanFilter)
         results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user1')
 
         GET = {'last_login__isnull': 'true'}
         filterset = UserFilter(GET, queryset=User.objects.all())
+        filter_ = filterset.filters['last_login__isnull']
+        self.assertIsInstance(filter_, django_filters.filters.BooleanFilter)
         results = list(filterset.qs)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].username, 'user2')
