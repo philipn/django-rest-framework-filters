@@ -1,5 +1,16 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Case, Value, When
+
+
+class PostQuerySet(models.QuerySet):
+
+    def annotate_is_published(self):
+        return self.annotate(is_published=Case(
+            When(publish_date__isnull=False, then=Value(True)),
+            default=Value(False),
+            output_field=models.BooleanField(),
+        ))
 
 
 class Note(models.Model):
@@ -25,6 +36,8 @@ class Post(models.Model):
     author = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     note = models.ForeignKey(Note, null=True, on_delete=models.CASCADE)
     tags = models.ManyToManyField(Tag)
+
+    objects = PostQuerySet.as_manager()
 
 
 class Cover(models.Model):

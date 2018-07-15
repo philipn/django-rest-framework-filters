@@ -1,3 +1,5 @@
+import unittest
+
 from django.test import TestCase
 from django_filters import FilterSet as DFFilterSet
 
@@ -387,6 +389,35 @@ class RelatedFilterTests(TestCase):
 
         self.assertEqual(f.__module__, 'tests.test_filtering')
         self.assertEqual(f.__name__, 'LocalTagFilter')
+
+
+class AnnotationTests(TestCase):
+    # TODO: these tests should somehow assert that the annotation method is
+    # called, but the qs isn't easily due to chaining mockable.
+
+    @classmethod
+    def setUpTestData(cls):
+        author1 = User.objects.create(username='author1', email='author1@example.org')
+        author2 = User.objects.create(username='author2', email='author2@example.org')
+        Post.objects.create(author=author1, content='Post 1', publish_date='2018-01-01')
+        Post.objects.create(author=author2, content='Post 2', publish_date=None)
+
+    def test_annotation(self):
+        f = PostFilter(
+            {'is_published': 'true'},
+            queryset=Post.objects.all(),
+        )
+
+        self.assertEqual([p.content for p in f.qs], ['Post 1'])
+
+    @unittest.expectedFailure
+    def test_related_annotation(self):
+        f = UserFilter(
+            {'posts__is_published': 'true'},
+            queryset=User.objects.all(),
+        )
+
+        self.assertEqual([a.username for a in f.qs], ['author1'])
 
 
 class MiscTests(TestCase):

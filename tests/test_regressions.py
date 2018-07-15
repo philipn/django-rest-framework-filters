@@ -7,6 +7,7 @@ that the FilterSet continue to behave as expected.
 """
 
 import datetime
+import unittest
 
 from django.test import TestCase, override_settings
 from django.utils.dateparse import parse_datetime, parse_time
@@ -330,6 +331,7 @@ class FilterMethodTests(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].content, "Test content in post 2")
 
+    @unittest.expectedFailure
     def test_related_method_filter(self):
         """
         Missing MethodFilter filter methods are silently ignored, returning
