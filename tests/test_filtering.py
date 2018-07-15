@@ -382,7 +382,7 @@ class RelatedFilterTests(TestCase):
         class PostFilter(FilterSet):
             tags = filters.RelatedFilter('LocalTagFilter', queryset=Tag.objects.all())
 
-        f = PostFilter(queryset=Post.objects.all())
+        f = PostFilter({'tags': ''}, queryset=Post.objects.all())
         f = f.filters['tags'].filterset
 
         self.assertEqual(f.__module__, 'tests.test_filtering')

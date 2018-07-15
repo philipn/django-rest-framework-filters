@@ -400,8 +400,14 @@ class OverrideFiltersTests(TestCase):
         f = PostFilter(None)
 
         with f.override_filters():
-            self.assertGreater(len(f.filters), 1)
-            self.assertIn('title', f.filters)
+            self.assertEqual(len(f.filters), 0)
+
+    def test_subset_disabled(self):
+        f = PostFilter.disable_subset()(None)
+
+        with f.override_filters():
+            # The number of filters varies by Django version
+            self.assertGreater(len(f.filters), 30)
 
 
 class FilterExclusionTests(TestCase):

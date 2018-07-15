@@ -74,7 +74,7 @@ class SubsetDisabledMixin:
     """
     @classmethod
     def get_filter_subset(cls, params, rel=None):
-        pass
+        return cls.base_filters
 
     @contextmanager
     def override_filters(self):
@@ -86,11 +86,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
     def __init__(self, data=None, queryset=None, *, request=None, prefix=None, **kwargs):
         # Filter the `base_filters` by the desired filter subset. This reduces the cost
         # of initialization by reducing the number of filters that are deepcopied.
-        subset = self.get_filter_subset(data or {})
-        if subset:
-            self.base_filters = OrderedDict([
-                (k, v) for k, v in self.base_filters.items() if k in subset
-            ])
+        self.base_filters = self.get_filter_subset(data or {})
 
         super(FilterSet, self).__init__(data, queryset, request=request, prefix=prefix, **kwargs)
 
@@ -239,7 +235,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
     @classmethod
     def get_filter_subset(cls, params):
         """
-        Returns a subset of filter names that should be initialized by the
+        Returns the subset of filters that should be initialized by the
         FilterSet, dependent on the requested `params`. This is useful when
         traversing FilterSet relationships, as it helps to minimize deepcopy
         overhead incurred when instantiating related FilterSets.
@@ -250,7 +246,9 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         # removed, as they indicate an unknown field eg, author__foobar__isnull
         filter_names = {cls.get_param_filter_name(param) for param in params}
         filter_names = {f for f in filter_names if f is not None}
-        return filter_names
+        return OrderedDict(
+            (k, v) for k, v in cls.base_filters.items() if k in filter_names
+        )
 
     @contextmanager
     def override_filters(self):
