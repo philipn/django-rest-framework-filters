@@ -1,9 +1,10 @@
 from urllib.parse import quote, urlencode
 
+import django_filters
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
 
-from rest_framework_filters import FilterSet
+from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import SubsetDisabledMixin
 
 from .testapp import models, views
@@ -114,18 +115,59 @@ class BackendRenderingTests(APITestCase):
         </form>
         """)
 
-    def test_rendering_doesnt_affect_filterset_class(self):
-        class SimpleFilterSet(FilterSet):
+    def test_django_filter_filterset_compatibility(self):
+        class SimpleFilterSet(django_filters.FilterSet):
             class Meta:
                 model = models.User
-                fields = ['username', 'email']
+                fields = ['username']
 
         class SimpleViewSet(views.FilterFieldsUserViewSet):
             filterset_class = SimpleFilterSet
 
-        self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
+        self.assertHTMLEqual(self.render(SimpleViewSet), """
+        <h2>Field filters</h2>
+        <form class="form" action="" method="get">
+            <p>
+                <label for="id_username">Username:</label>
+                <input id="id_username" name="username" type="text" />
+            </p>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
+
+    def test_rendering_doesnt_affect_filterset_classes(self):
+        class NoteFilter(FilterSet):
+            title = filters.CharFilter()
+
+            class Meta:
+                model = models.Note
+                fields = ['title']
+
+        class UserFilter(FilterSet):
+            notes = filters.RelatedFilter(
+                field_name='note',
+                filterset=NoteFilter,
+                queryset=models.Note.objects.all(),
+            )
+
+            class Meta:
+                model = models.User
+                fields = ['notes']
+
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filterset_class = UserFilter
+
         self.render(SimpleViewSet)
-        self.assertEqual(list(SimpleFilterSet({'username!': ''}).form.fields), ['username!'])
+
+        # check that ViewSet filterset_class isn't modified
+        filterset = SimpleViewSet.filterset_class
+        self.assertTrue(issubclass(filterset, FilterSet))
+        self.assertFalse(issubclass(filterset, SubsetDisabledMixin))
+
+        # check that FilterSet.related_filters aren't modified
+        filterset = UserFilter.related_filters['notes'].filterset
+        self.assertTrue(issubclass(filterset, FilterSet))
+        self.assertFalse(issubclass(filterset, SubsetDisabledMixin))
 
     def test_patch_for_rendering(self):
         view = views.FilterClassUserViewSet(action_map={})

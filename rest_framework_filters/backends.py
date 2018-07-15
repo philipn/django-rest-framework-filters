@@ -28,7 +28,11 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
 
         def get_filterset_class(view, queryset=None):
             filterset_class = original(view, queryset)
-            filterset_class = filterset_class.disable_subset()
+
+            # django-filter compatibility
+            if issubclass(filterset_class, FilterSet):
+                filterset_class = filterset_class.disable_subset()
+
             return filterset_class
 
         self.get_filterset_class = get_filterset_class
