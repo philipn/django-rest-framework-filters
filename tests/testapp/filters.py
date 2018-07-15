@@ -3,7 +3,7 @@ import django_filters
 
 from rest_framework_filters import filters
 from rest_framework_filters.filters import AutoFilter, RelatedFilter
-from rest_framework_filters.filterset import LOOKUP_SEP, FilterSet
+from rest_framework_filters.filterset import FilterSet
 
 from .models import A, B, Blog, C, Cover, Note, Page, Person, Post, Tag, User
 
@@ -21,6 +21,8 @@ class UserFilter(FilterSet):
     email = filters.CharFilter(field_name='email')
     last_login = AutoFilter(lookups='__all__')
     is_active = filters.BooleanFilter(field_name='is_active')
+
+    posts = RelatedFilter('PostFilter', field_name='post', queryset=Post.objects.all())
 
     class Meta:
         model = User
@@ -58,7 +60,7 @@ class PostFilter(FilterSet):
     title = filters.AutoFilter(field_name='title', lookups='__all__')
 
     publish_date = filters.AutoFilter(lookups='__all__')
-    is_published = filters.BooleanFilter(field_name='publish_date', method='filter_is_published')
+    is_published = filters.BooleanFilter(method='filter_is_published')
 
     note = RelatedFilter(NoteFilter, field_name='note', queryset=Note.objects.all())
     tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
@@ -67,15 +69,16 @@ class PostFilter(FilterSet):
         model = Post
         fields = []
 
-    def filter_is_published(self, qs, name, value):
+    def filter_is_published(self, queryset, field_name, value):
         """
-        `is_published` is based on the actual `date_published`.
-        If the publishing date is null, then the post is not published.
-        """
-        isnull = not value
-        lookup_expr = LOOKUP_SEP.join([name, 'isnull'])
+        `is_published` is based on the actual `publish_date`. If the
+        publish date is null, then the post is not published.
 
-        return qs.filter(**{lookup_expr: isnull})
+        This filter method is used to demonstrate annotations.
+        """
+        # Note: don't modify this without updating test_filtering.AnnotationTests
+        return queryset.annotate_is_published() \
+                       .filter(**{field_name: value})
 
 
 class CoverFilter(FilterSet):
