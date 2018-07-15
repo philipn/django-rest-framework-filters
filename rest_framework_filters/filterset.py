@@ -273,7 +273,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             if not any(value.startswith(prefix) for value in self.data):
                 continue
 
-            field_name = self.related_filters[related_name].field_name
+            field_name = self.filters[related_name].field_name
             lookup_expr = LOOKUP_SEP.join([field_name, 'in'])
             subquery = Subquery(related_filterset.qs.values('pk'))
             queryset = queryset.filter(**{lookup_expr: subquery})

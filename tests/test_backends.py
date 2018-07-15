@@ -135,13 +135,90 @@ class BackendRenderingTests(APITestCase):
         </form>
         """)
 
+    def test_related_filterset(self):
+        class UserFilter(FilterSet):
+            username = filters.CharFilter()
+
+        class NoteFilter(FilterSet):
+            author = filters.RelatedFilter(
+                filterset=UserFilter,
+                queryset=models.User.objects.all(),
+                label='Writer',
+            )
+
+        class RelatedViewSet(views.NoteViewSet):
+            filterset_class = NoteFilter
+
+        self.assertHTMLEqual(self.render(RelatedViewSet), """
+        <h2>Field filters</h2>
+        <form class="form" action="" method="get">
+            <p>
+                <label for="id_author">Writer:</label>
+                <select id="id_author" name="author">
+                    <option selected value="">---------</option>
+                </select>
+            </p>
+
+
+            <fieldset>
+                <legend>Writer</legend>
+                <p>
+                    <label for="id_author__username">Username:</label>
+                    <input id="id_author__username" name="author__username" type="text" />
+                </p>
+            </fieldset>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
+
+    def test_related_filterset_validation(self):
+        class UserFilter(FilterSet):
+            last_login = filters.DateFilter()
+
+        class NoteFilter(FilterSet):
+            author = filters.RelatedFilter(
+                filterset=UserFilter,
+                queryset=models.User.objects.all(),
+                label='Writer',
+            )
+
+        class RelatedViewSet(views.NoteViewSet):
+            filterset_class = NoteFilter
+
+        self.assertHTMLEqual(self.render(RelatedViewSet, {'author': 'invalid', 'author__last_login': 'invalid'}), """
+        <h2>Field filters</h2>
+        <form class="form" action="" method="get">
+            <ul class="errorlist">
+                <li>Select a valid choice. That choice is not one of the available choices.</li>
+            </ul>
+            <p>
+                <label for="id_author">Writer:</label>
+                <select id="id_author" name="author">
+                    <option value="">---------</option>
+                </select>
+            </p>
+
+
+            <fieldset>
+                <legend>Writer</legend>
+
+                <ul class="errorlist">
+                    <li>Enter a valid date.</li>
+                </ul>
+                <p>
+                    <label for="id_author__last_login">Last login:</label>
+                    <input id="id_author__last_login" name="author__last_login" type="text" value="invalid" />
+                </p>
+            </fieldset>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
+
     def test_rendering_doesnt_affect_filterset_classes(self):
         class NoteFilter(FilterSet):
             title = filters.CharFilter()
-
-            class Meta:
-                model = models.Note
-                fields = ['title']
 
         class UserFilter(FilterSet):
             notes = filters.RelatedFilter(
@@ -149,10 +226,6 @@ class BackendRenderingTests(APITestCase):
                 filterset=NoteFilter,
                 queryset=models.Note.objects.all(),
             )
-
-            class Meta:
-                model = models.User
-                fields = ['notes']
 
         class SimpleViewSet(views.FilterFieldsUserViewSet):
             filterset_class = UserFilter
@@ -170,7 +243,20 @@ class BackendRenderingTests(APITestCase):
         self.assertFalse(issubclass(filterset, SubsetDisabledMixin))
 
     def test_patch_for_rendering(self):
-        view = views.FilterClassUserViewSet(action_map={})
+        class NoteFilter(FilterSet):
+            title = filters.CharFilter()
+
+        class UserFilter(FilterSet):
+            notes = filters.RelatedFilter(
+                field_name='note',
+                filterset=NoteFilter,
+                queryset=models.Note.objects.all(),
+            )
+
+        class SimpleViewSet(views.FilterClassUserViewSet):
+            filterset_class = UserFilter
+
+        view = SimpleViewSet(action_map={})
         request = view.initialize_request(factory.get('/'))
         backend = view.filter_backends[0]
         backend = backend()
@@ -179,7 +265,16 @@ class BackendRenderingTests(APITestCase):
         with backend.patch_for_rendering(request):
             filterset = backend.get_filterset(request, view.get_queryset(), view)
 
+        # check ViewSet filterset
+        self.assertIsInstance(filterset, FilterSet)
         self.assertIsInstance(filterset, SubsetDisabledMixin)
+
+        # check related filtersets
+        filterset = filterset.related_filtersets['notes']
+        self.assertIsInstance(filterset, FilterSet)
+        self.assertIsInstance(filterset, SubsetDisabledMixin)
+
+        # ensure original method was reset
         self.assertEqual(backend.get_filterset_class, original)
 
     def test_patch_for_rendering_handles_exception(self):
@@ -193,6 +288,7 @@ class BackendRenderingTests(APITestCase):
             with backend.patch_for_rendering(request):
                 raise Exception
 
+        # ensure original method was reset
         self.assertEqual(backend.get_filterset_class, original)
 
 
