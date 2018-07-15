@@ -504,9 +504,8 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.request_filters
 
-        self.assertTrue(requested_filters['name__contains!'].exclude)
+        self.assertTrue(filterset.filters['name__contains!'].exclude)
 
     def test_filter_and_exclude(self):
         """
@@ -518,10 +517,9 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = TagFilter(GET, queryset=Tag.objects.all())
-        requested_filters = filterset.request_filters
 
-        self.assertFalse(requested_filters['name__contains'].exclude)
-        self.assertTrue(requested_filters['name__contains!'].exclude)
+        self.assertFalse(filterset.filters['name__contains'].exclude)
+        self.assertTrue(filterset.filters['name__contains!'].exclude)
 
     def test_related_exclude(self):
         GET = {
@@ -529,9 +527,9 @@ class FilterExclusionTests(TestCase):
         }
 
         filterset = PostFilter(GET, queryset=Post.objects.all())
-        requested_filters = filterset.request_filters
+        filterset = filterset.related_filtersets['tags']
 
-        self.assertTrue(requested_filters['tags__name__contains!'].exclude)
+        self.assertTrue(filterset.filters['name__contains!'].exclude)
 
     def test_exclusion_results(self):
         GET = {

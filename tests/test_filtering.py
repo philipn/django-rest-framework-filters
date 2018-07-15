@@ -1,5 +1,3 @@
-import unittest
-
 from django.test import TestCase
 from django_filters import FilterSet as DFFilterSet
 
@@ -326,12 +324,10 @@ class RelatedFilterTests(TestCase):
                 fields = []
 
         GET = {'author': User.objects.get(username='user2').pk}
-        f = NoteFilter(GET, queryset=Note.objects.all())
-
         msg = "Expected `.get_queryset()` for related filter 'NoteFilter.author' " \
               "to return a `QuerySet`, but got `None`."
         with self.assertRaisesMessage(AssertionError, msg):
-            f.qs
+            NoteFilter(GET, queryset=Note.objects.all())
 
     def test_relatedfilter_request_is_passed(self):
         called = False
@@ -409,7 +405,6 @@ class AnnotationTests(TestCase):
 
         self.assertEqual([p.content for p in f.qs], ['Post 1'])
 
-    @unittest.expectedFailure
     def test_related_annotation(self):
         f = UserFilter(
             {'posts__is_published': 'true'},
