@@ -20,6 +20,7 @@ setup(
     packages=find_packages(exclude=['tests*']),
     include_package_data=True,
     zip_safe=False,
+    python_requires='>=3.4',
     install_requires=[
         'djangorestframework',
         'django-filter>=2.0',
