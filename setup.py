@@ -36,7 +36,7 @@ def get_package_data(package):
 
 setup(
     name='djangorestframework-filters',
-    version='0.10.2',
+    version='0.10.2.post0',
     url='http://github.com/philipn/django-rest-framework-filters',
     license='MIT',
     long_description=README,
@@ -48,7 +48,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'djangorestframework',
-        'django-filter>=1.0.0',
+        'django-filter~=1.0',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
