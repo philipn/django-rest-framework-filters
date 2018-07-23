@@ -1,6 +1,11 @@
 Unreleased:
 -----------
 
+v0.10.2.post1:
+--------------
+
+* #253 Set django-filter version at 1.x-compatible releases.
+
 v0.10.2:
 --------
 
