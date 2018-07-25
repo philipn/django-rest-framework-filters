@@ -103,8 +103,9 @@ class BackendTests(APITestCase):
         self.assertFalse(hasattr(view, 'filterset_class'))
         self.assertFalse(hasattr(view, 'filterset_fields'))
 
-        # filterset should be None, method should not error
+        # filterset should be None, methods should not error
         self.assertIsNone(backend().get_filterset(request, view.queryset, view))
+        self.assertIsNone(backend().get_filterset_class(view, view.queryset))
 
 
 class BackendRenderingTests(APITestCase):
