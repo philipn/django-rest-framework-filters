@@ -106,6 +106,11 @@ class BackendTests(APITestCase):
         # filterset should be None, method should not error
         self.assertIsNone(backend().get_filterset(request, view.queryset, view))
 
+        # patched method should not error
+        backend = backend()
+        with backend.patch_for_rendering(request):
+            self.assertIsNone(backend.get_filterset(request, view.queryset, view))
+
 
 class BackendRenderingTests(APITestCase):
 
