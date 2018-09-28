@@ -10,7 +10,7 @@ with open('README.rst') as f:
 
 setup(
     name='djangorestframework-filters',
-    version='0.10.2',
+    version='1.0.0.dev0',
     url='http://github.com/philipn/django-rest-framework-filters',
     license='MIT',
     long_description=README,
