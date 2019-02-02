@@ -9,9 +9,9 @@ python:
 
 install:
   - travis_retry pip install -U six setuptools pip wheel
-  - travis_retry pip install detox tox-travis tox-venv coverage
+  - travis_retry pip install tox tox-travis tox-venv coverage
 script:
-  - detox
+  - tox
 after_success:
   - coverage report
   - bash <(curl -s https://codecov.io/bash)
