@@ -1,7 +1,7 @@
 Django Rest Framework Filters
 =============================
 
-.. image:: https://travis-ci.org/philipn/django-rest-framework-filters.png?branch=master
+.. image:: https://travis-ci.org/philipn/django-rest-framework-filters.svg?branch=master
   :target: https://travis-ci.org/philipn/django-rest-framework-filters
 
 .. image:: https://codecov.io/gh/philipn/django-rest-framework-filters/branch/master/graph/badge.svg
