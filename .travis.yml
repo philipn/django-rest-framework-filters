@@ -8,7 +8,7 @@ python:
 
 install:
   - travis_retry pip install -U six setuptools pip wheel
-  - travis_retry pip install tox tox-travis tox-venv coverage
+  - travis_retry pip install -U tox tox-travis tox-venv coverage
 script:
   - tox
 after_success:
