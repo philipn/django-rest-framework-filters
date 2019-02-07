@@ -1,6 +1,5 @@
 language: python
-
-sudo: false
+dist: xenial
 
 python:
   - "3.4"
@@ -9,9 +8,9 @@ python:
 
 install:
   - travis_retry pip install -U six setuptools pip wheel
-  - travis_retry pip install detox tox-travis tox-venv coverage
+  - travis_retry pip install -U tox tox-travis tox-venv coverage
 script:
-  - detox
+  - tox
 after_success:
   - coverage report
   - bash <(curl -s https://codecov.io/bash)
@@ -30,6 +29,7 @@ matrix:
       env: TOXENV="dist"
       script:
         - python setup.py bdist_wheel
+        - rm -r djangorestframework_filters.egg-info
         - tox --installpkg ./dist/djangorestframework_filters-*.whl
         - tox  # test sdist
 
