@@ -29,6 +29,7 @@ matrix:
       env: TOXENV="dist"
       script:
         - python setup.py bdist_wheel
+        - rm -r djangorestframework_filters.egg-info
         - tox --installpkg ./dist/djangorestframework_filters-*.whl
         - tox  # test sdist
 
