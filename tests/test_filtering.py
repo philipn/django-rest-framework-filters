@@ -385,6 +385,11 @@ class RelatedFilterTests(TestCase):
         self.assertEqual(f.__module__, 'tests.test_filtering')
         self.assertEqual(f.__name__, 'LocalTagFilter')
 
+    def test_empty_param_name(self):
+        GET = {'': 'foo', 'author': User.objects.get(username='user2').pk}
+        f = NoteFilter(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f.qs)), 1)
+
 
 class AnnotationTests(TestCase):
     # TODO: these tests should somehow assert that the annotation method is

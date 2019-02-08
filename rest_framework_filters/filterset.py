@@ -172,6 +172,10 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             'email'
 
         """
+        # check for empty param
+        if not param:
+            return param
+
         # strip the rel prefix from the param name.
         prefix = '%s%s' % (rel or '', LOOKUP_SEP)
         if rel and param.startswith(prefix):
