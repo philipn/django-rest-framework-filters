@@ -32,6 +32,11 @@ Using ``django-rest-framework-filters``, we can easily do stuff like::
 
 ----
 
+**!** The 1.0 pre-release is compatible with django-filter 2.x and can be installed with
+``pip install --pre``.
+
+----
+
 .. contents::
     **Table of Contents**
     :local:
