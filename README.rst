@@ -534,7 +534,10 @@ Below is the procedure for encoding a complex query:
 * URL-encode the individual querystrings.
 * Wrap the encoded strings in parentheses, and join with operators.
 * URL-encode the entire querystring.
-* Set as the value to the complex filter param (default: ``filters``).
+* Set as the value to the complex filter param (e.g., ``?filters=<complex querystring>``).
+
+Note that ``filters`` is the default parameter name and can be overridden in the backend class.
+
 
 Using the first example, these steps can be visualized as so:
 
