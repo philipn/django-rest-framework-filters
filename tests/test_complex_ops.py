@@ -1,3 +1,4 @@
+import sys
 from operator import attrgetter
 from urllib.parse import quote
 
@@ -12,14 +13,20 @@ from tests.testapp import models
 
 
 def encode(querysting):
-    return quote(querysting) \
-        .replace('-', '%2D')
+    """Mimics the encoding logic of the client."""
+    result = quote(querysting)
+
+    # Python 3.7 added '~' to the reserved character set.
+    if sys.version_info < (3, 7):
+        result = result.replace('%7E', '~')
+
+    return result
 
 
 class DecodeComplexOpsTests(TestCase):
 
     def test_docstring(self):
-        encoded = '%28a%253D1%29%20%26%20%28b%253D2%29%20%7C%20%7E%28c%253D3%29'
+        encoded = '%28a%253D1%29%20%26%20%28b%253D2%29%20%7C%20~%28c%253D3%29'
         readable = '(a%3D1) & (b%3D2) | ~(c%3D3)'
         result = [
             ('a=1', False, QuerySet.__and__),
@@ -106,7 +113,7 @@ class DecodeComplexOpsTests(TestCase):
         ])
 
     def test_negation(self):
-        encoded = '%28a%253D1%29%20%26%20%7E%28b%253D2%29'
+        encoded = '%28a%253D1%29%20%26%20~%28b%253D2%29'
         readable = '(a%3D1) & ~(b%3D2)'
         result = [
             ('a=1', False, QuerySet.__and__),
@@ -116,8 +123,29 @@ class DecodeComplexOpsTests(TestCase):
         self.assertEqual(encode(readable), encoded)
         self.assertEqual(decode_complex_ops(encoded), result)
 
+    def test_leading_negation(self):
+        encoded = '~%28a%253D1%29%20%26%20%28b%253D2%29'
+        readable = '~(a%3D1) & (b%3D2)'
+        result = [
+            ('a=1', True, QuerySet.__and__),
+            ('b=2', False, None),
+        ]
+
+        self.assertEqual(encode(readable), encoded)
+        self.assertEqual(decode_complex_ops(encoded), result)
+
+    def test_only_negation(self):
+        encoded = '~%28a%253D1%29'
+        readable = '~(a%3D1)'
+        result = [
+            ('a=1', True, None),
+        ]
+
+        self.assertEqual(encode(readable), encoded)
+        self.assertEqual(decode_complex_ops(encoded), result)
+
     def test_duplicate_negation(self):
-        encoded = '%28a%253D1%29%20%26%20%7E%7E%28b%253D2%29'
+        encoded = '%28a%253D1%29%20%26%20~~%28b%253D2%29'
         readable = '(a%3D1) & ~~(b%3D2)'
 
         self.assertEqual(encode(readable), encoded)
@@ -128,6 +156,19 @@ class DecodeComplexOpsTests(TestCase):
         self.assertEqual(exc.exception.detail, [
             "Invalid querystring operator. Matched: ' & ~'."
         ])
+
+    def test_tilde_decoding(self):
+        # Ensure decoding handles both RFC 2396 & 3986
+        encoded_rfc3986 = '~%28a%253D1%29'
+        encoded_rfc2396 = '%7E%28a%253D1%29'
+        readable = '~(a%3D1)'
+        result = [
+            ('a=1', True, None),
+        ]
+
+        self.assertEqual(encode(readable), encoded_rfc3986)
+        self.assertEqual(decode_complex_ops(encoded_rfc3986), result)
+        self.assertEqual(decode_complex_ops(encoded_rfc2396), result)
 
 
 class CombineComplexQuerysetTests(TestCase):
