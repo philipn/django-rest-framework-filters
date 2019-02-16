@@ -1,7 +1,7 @@
 import argparse
 from timeit import repeat
 
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from rest_framework.test import APIRequestFactory
 
 from tests.perf import views
@@ -20,6 +20,7 @@ args, _ = parser.parse_known_args()
 verbosity = args.verbosity
 
 
+@tag('perf')
 class PerfTestMixin(object):
     """
     This mixin provides common setup for testing the performance differences
