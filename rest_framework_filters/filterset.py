@@ -41,7 +41,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
                 del declared_filters[param]
 
         for param, f in six.iteritems(auto_filters):
-            opts.fields = {f.name: f.lookups or []}
+            opts.fields = {f.field_name: f.lookups or []}
 
             # patch, generate auto filters
             new_class._meta, new_class.declared_filters = opts, declared_filters
@@ -50,7 +50,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             # get_filters() generates param names from the model field name
             # Replace the field name with the parameter name from the filerset
             new_class.base_filters.update(OrderedDict(
-                (gen_param.replace(f.name, param, 1), gen_f)
+                (gen_param.replace(f.field_name, param, 1), gen_f)
                 for gen_param, gen_f in six.iteritems(generated_filters)
             ))
 
@@ -132,7 +132,7 @@ class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)
                 # modify filter names to account for relationship
                 for related_name, related_f in six.iteritems(filterset.expand_filters()):
                     related_name = LOOKUP_SEP.join([filter_name, related_name])
-                    related_f.name = LOOKUP_SEP.join([f.name, related_f.name])
+                    related_f.field_name = LOOKUP_SEP.join([f.field_name, related_f.field_name])
                     requested_filters[related_name] = related_f
 
         return requested_filters
