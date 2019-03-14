@@ -86,7 +86,7 @@ class LookupsFilterTests(TestCase):
     def test_alllookupsfilter_for_related_field(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/127
         class F(FilterSet):
-            author = filters.AllLookupsFilter(name='author__last_name')
+            author = filters.AllLookupsFilter(field_name='author__last_name')
 
             class Meta:
                 model = Note

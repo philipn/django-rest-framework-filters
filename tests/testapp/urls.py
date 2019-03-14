@@ -6,8 +6,8 @@ from . import views
 
 
 router = routers.DefaultRouter()
-router.register(r'df-users', views.DFUserViewSet, base_name='df-users')
-router.register(r'ff-users', views.FilterFieldsUserViewSet, base_name='ff-users')
+router.register(r'df-users', views.DFUserViewSet, basename='df-users')
+router.register(r'ff-users', views.FilterFieldsUserViewSet, basename='ff-users')
 router.register(r'users', views.UserViewSet,)
 router.register(r'notes', views.NoteViewSet,)
 
