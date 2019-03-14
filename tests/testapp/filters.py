@@ -11,7 +11,7 @@ from .models import (
 
 
 class DFUserFilter(django_filters.FilterSet):
-    email = filters.CharFilter(name='email')
+    email = filters.CharFilter(field_name='email')
 
     class Meta:
         model = User
@@ -19,7 +19,7 @@ class DFUserFilter(django_filters.FilterSet):
 
 
 class NoteFilterWithAll(FilterSet):
-    title = AllLookupsFilter(name='title')
+    title = AllLookupsFilter(field_name='title')
 
     class Meta:
         model = Note
@@ -27,10 +27,10 @@ class NoteFilterWithAll(FilterSet):
 
 
 class UserFilter(FilterSet):
-    username = filters.CharFilter(name='username')
-    email = filters.CharFilter(name='email')
+    username = filters.CharFilter(field_name='username')
+    email = filters.CharFilter(field_name='email')
     last_login = filters.AllLookupsFilter()
-    is_active = filters.BooleanFilter(name='is_active')
+    is_active = filters.BooleanFilter(field_name='is_active')
 
     class Meta:
         model = User
@@ -38,8 +38,8 @@ class UserFilter(FilterSet):
 
 
 class UserFilterWithAll(FilterSet):
-    username = AllLookupsFilter(name='username')
-    email = filters.CharFilter(name='email')
+    username = AllLookupsFilter(field_name='username')
+    email = filters.CharFilter(field_name='email')
 
     class Meta:
         model = User
@@ -47,8 +47,8 @@ class UserFilterWithAll(FilterSet):
 
 
 class NoteFilterWithRelated(FilterSet):
-    title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilter, name='author', queryset=User.objects.all())
+    title = filters.CharFilter(field_name='title')
+    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -56,8 +56,8 @@ class NoteFilterWithRelated(FilterSet):
 
 
 class NoteFilterWithRelatedAll(FilterSet):
-    title = filters.CharFilter(name='title')
-    author = RelatedFilter(UserFilterWithAll, name='author', queryset=User.objects.all())
+    title = filters.CharFilter(field_name='title')
+    author = RelatedFilter(UserFilterWithAll, field_name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -65,8 +65,8 @@ class NoteFilterWithRelatedAll(FilterSet):
 
 
 class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
-    title = filters.CharFilter(name='title')
-    writer = RelatedFilter(UserFilterWithAll, name='author', queryset=User.objects.all())
+    title = filters.CharFilter(field_name='title')
+    writer = RelatedFilter(UserFilterWithAll, field_name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -75,9 +75,9 @@ class NoteFilterWithRelatedAllDifferentFilterName(FilterSet):
 
 class PostFilter(FilterSet):
     # Used for Related filter and Filter.method regression tests
-    note = RelatedFilter(NoteFilterWithRelatedAll, name='note', queryset=Note.objects.all())
+    note = RelatedFilter(NoteFilterWithRelatedAll, field_name='note', queryset=Note.objects.all())
     date_published = filters.AllLookupsFilter()
-    is_published = filters.BooleanFilter(name='date_published', method='filter_is_published')
+    is_published = filters.BooleanFilter(field_name='date_published', method='filter_is_published')
 
     class Meta:
         model = Post
@@ -95,8 +95,8 @@ class PostFilter(FilterSet):
 
 
 class CoverFilterWithRelatedMethodFilter(FilterSet):
-    comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilter, name='post', queryset=Post.objects.all())
+    comment = filters.CharFilter(field_name='comment')
+    post = RelatedFilter(PostFilter, field_name='post', queryset=Post.objects.all())
 
     class Meta:
         model = Cover
@@ -104,8 +104,8 @@ class CoverFilterWithRelatedMethodFilter(FilterSet):
 
 
 class CoverFilterWithRelated(FilterSet):
-    comment = filters.CharFilter(name='comment')
-    post = RelatedFilter(PostFilter, name='post', queryset=Post.objects.all())
+    comment = filters.CharFilter(field_name='comment')
+    post = RelatedFilter(PostFilter, field_name='post', queryset=Post.objects.all())
 
     class Meta:
         model = Cover
@@ -113,8 +113,8 @@ class CoverFilterWithRelated(FilterSet):
 
 
 class PageFilterWithRelated(FilterSet):
-    title = filters.CharFilter(name='title')
-    previous_page = RelatedFilter(PostFilter, name='previous_page', queryset=Post.objects.all())
+    title = filters.CharFilter(field_name='title')
+    previous_page = RelatedFilter(PostFilter, field_name='previous_page', queryset=Post.objects.all())
 
     class Meta:
         model = Page
@@ -122,8 +122,8 @@ class PageFilterWithRelated(FilterSet):
 
 
 class PageFilterWithAliasedNestedRelated(FilterSet):
-    title = filters.CharFilter(name='title')
-    two_pages_back = RelatedFilter(PostFilter, name='previous_page__previous_page', queryset=Page.objects.all())
+    title = filters.CharFilter(field_name='title')
+    two_pages_back = RelatedFilter(PostFilter, field_name='previous_page__previous_page', queryset=Page.objects.all())
 
     class Meta:
         model = Page
@@ -131,7 +131,7 @@ class PageFilterWithAliasedNestedRelated(FilterSet):
 
 
 class TagFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
+    name = AllLookupsFilter(field_name='name')
 
     class Meta:
         model = Tag
@@ -139,8 +139,8 @@ class TagFilter(FilterSet):
 
 
 class BlogPostFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    tags = RelatedFilter(TagFilter, name='tags', queryset=Tag.objects.all())
+    title = filters.CharFilter(field_name='title')
+    tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
 
     class Meta:
         model = BlogPost
@@ -148,7 +148,7 @@ class BlogPostFilter(FilterSet):
 
 
 class UserFilterWithDifferentName(FilterSet):
-    name = filters.CharFilter(name='username')
+    name = filters.CharFilter(field_name='username')
 
     class Meta:
         model = User
@@ -156,7 +156,7 @@ class UserFilterWithDifferentName(FilterSet):
 
 
 class NoteFilterWithRelatedDifferentName(FilterSet):
-    author = RelatedFilter(UserFilterWithDifferentName, name='author', queryset=User.objects.all())
+    author = RelatedFilter(UserFilterWithDifferentName, field_name='author', queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -167,8 +167,8 @@ class NoteFilterWithRelatedDifferentName(FilterSet):
 # Recursive filtersets
 #############################################################
 class AFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    b = RelatedFilter('tests.testapp.filters.BFilter', name='b', queryset=B.objects.all())
+    title = filters.CharFilter(field_name='title')
+    b = RelatedFilter('tests.testapp.filters.BFilter', field_name='b', queryset=B.objects.all())
 
     class Meta:
         model = A
@@ -176,8 +176,8 @@ class AFilter(FilterSet):
 
 
 class CFilter(FilterSet):
-    title = filters.CharFilter(name='title')
-    a = RelatedFilter(AFilter, name='a', queryset=A.objects.all())
+    title = filters.CharFilter(field_name='title')
+    a = RelatedFilter(AFilter, field_name='a', queryset=A.objects.all())
 
     class Meta:
         model = C
@@ -185,8 +185,8 @@ class CFilter(FilterSet):
 
 
 class BFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-    c = RelatedFilter(CFilter, name='c', queryset=C.objects.all())
+    name = AllLookupsFilter(field_name='name')
+    c = RelatedFilter(CFilter, field_name='c', queryset=C.objects.all())
 
     class Meta:
         model = B
@@ -194,8 +194,8 @@ class BFilter(FilterSet):
 
 
 class PersonFilter(FilterSet):
-    name = AllLookupsFilter(name='name')
-    best_friend = RelatedFilter('tests.testapp.filters.PersonFilter', name='best_friend', queryset=Person.objects.all())
+    name = AllLookupsFilter(field_name='name')
+    best_friend = RelatedFilter('tests.testapp.filters.PersonFilter', field_name='best_friend', queryset=Person.objects.all())
 
     class Meta:
         model = Person
@@ -206,9 +206,9 @@ class PersonFilter(FilterSet):
 # Extensions to django_filter fields for DRF.
 #############################################################
 class AllLookupsPersonDateFilter(FilterSet):
-    date_joined = AllLookupsFilter(name='date_joined')
-    time_joined = AllLookupsFilter(name='time_joined')
-    datetime_joined = AllLookupsFilter(name='datetime_joined')
+    date_joined = AllLookupsFilter(field_name='date_joined')
+    time_joined = AllLookupsFilter(field_name='time_joined')
+    datetime_joined = AllLookupsFilter(field_name='datetime_joined')
 
     class Meta:
         model = Person
@@ -216,9 +216,9 @@ class AllLookupsPersonDateFilter(FilterSet):
 
 
 class ExplicitLookupsPersonDateFilter(FilterSet):
-    date_joined = AllLookupsFilter(name='date_joined')
-    time_joined = AllLookupsFilter(name='time_joined')
-    datetime_joined = AllLookupsFilter(name='datetime_joined')
+    date_joined = AllLookupsFilter(field_name='date_joined')
+    time_joined = AllLookupsFilter(field_name='time_joined')
+    datetime_joined = AllLookupsFilter(field_name='datetime_joined')
 
     class Meta:
         model = Person
@@ -242,8 +242,8 @@ class InSetLookupPersonNameFilter(FilterSet):
 
 
 class BlogPostOverrideFilter(FilterSet):
-    declared_publish_date__isnull = filters.NumberFilter(name='publish_date', lookup_expr='isnull')
-    all_declared_publish_date = filters.AllLookupsFilter(name='publish_date')
+    declared_publish_date__isnull = filters.NumberFilter(field_name='publish_date', lookup_expr='isnull')
+    all_declared_publish_date = filters.AllLookupsFilter(field_name='publish_date')
 
     class Meta:
         model = BlogPost

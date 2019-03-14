@@ -349,8 +349,8 @@ class RelatedFilterTests(TestCase):
         # The default behavior should not expose information, which requires users to
         # explicitly set the `queryset` argument.
         class NoteFilter(FilterSet):
-            title = filters.CharFilter(name='title')
-            author = filters.RelatedFilter(UserFilter, name='author')
+            title = filters.CharFilter(field_name='title')
+            author = filters.RelatedFilter(UserFilter, field_name='author')
 
             class Meta:
                 model = Note
@@ -376,7 +376,7 @@ class RelatedFilterTests(TestCase):
                 fields = ['username']
 
         class NoteFilter(FilterSet):
-            author = filters.RelatedFilter(RequestCheck, name='author', queryset=User.objects.all())
+            author = filters.RelatedFilter(RequestCheck, field_name='author', queryset=User.objects.all())
 
             class Meta:
                 model = Note
@@ -389,7 +389,7 @@ class RelatedFilterTests(TestCase):
 
     def test_validation(self):
         class F(PostFilter):
-            pk = filters.NumberFilter(name='id')
+            pk = filters.NumberFilter(field_name='id')
 
         GET = {
             'note__author': 'foo',
@@ -411,7 +411,7 @@ class MiscTests(TestCase):
 
         # test django-filter functionality
         class PersonFilter(DFFilterSet):
-            date_joined = filters.DateFromToRangeFilter(name='date_joined')
+            date_joined = filters.DateFromToRangeFilter(field_name='date_joined')
 
             class Meta:
                 model = Person
@@ -426,7 +426,7 @@ class MiscTests(TestCase):
 
         # test drf-filters caveat
         class PersonFilter(FilterSet):
-            date_joined = filters.DateFromToRangeFilter(name='date_joined')
+            date_joined = filters.DateFromToRangeFilter(field_name='date_joined')
 
             class Meta:
                 model = Person

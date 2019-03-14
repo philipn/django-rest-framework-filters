@@ -9,9 +9,9 @@ python:
   - "3.6"
 
 install:
-  - travis_retry pip install detox tox-travis coverage
+  - travis_retry pip install tox tox-travis coverage
 script:
-  - detox -- -v 2
+  - tox -- -v 2
 after_success:
   - coverage report
   - bash <(curl -s https://codecov.io/bash)
