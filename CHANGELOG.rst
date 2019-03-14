@@ -1,6 +1,12 @@
 Unreleased:
 -----------
 
+v0.11.0
+-------
+
+This is a minor release that upgrades django-filter compatibility from ``v1.0``
+to ``v1.1``. No new functionality has been introduced.
+
 v0.10.2.post0:
 --------------
 
