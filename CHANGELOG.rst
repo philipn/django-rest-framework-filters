@@ -4,6 +4,17 @@ Unreleased:
 * #242 Deprecate ``AllLookupsFilter``
 * #191 Fix ``name`` => ``field_name`` warnings
 
+v0.11.0
+-------
+
+This is a minor release that upgrades django-filter compatibility from ``v1.0``
+to ``v1.1``. No new functionality has been introduced.
+
+v0.10.2.post0:
+--------------
+
+* #253 Set django-filter version at 1.x-compatible releases.
+
 
 v0.10.2:
 --------
