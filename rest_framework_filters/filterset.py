@@ -259,8 +259,13 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
                 continue
 
             field_name = self.filters[related_name].field_name
+            field = self.filters[related_name].field
+            to_field_name = "pk"
+            if hasattr(field, "to_field_name"):
+                to_field_name = field.to_field_name
             lookup_expr = LOOKUP_SEP.join([field_name, 'in'])
-            subquery = Subquery(related_filterset.qs.values('pk'))
+
+            subquery = Subquery(related_filterset.qs.values(to_field_name))
             queryset = queryset.filter(**{lookup_expr: subquery})
 
         return queryset
