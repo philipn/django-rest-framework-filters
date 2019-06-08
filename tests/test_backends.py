@@ -13,6 +13,16 @@ from .testapp import models, views
 factory = APIRequestFactory()
 
 
+class RenderMixin:
+
+    def render(self, viewset_class, data=None):
+        url = '/' if not data else '/?' + urlencode(data, True)
+        view = viewset_class(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get(url))
+        return backend().to_html(request, view.get_queryset(), view)
+
+
 class BackendTests(APITestCase):
 
     @classmethod
@@ -112,14 +122,7 @@ class BackendTests(APITestCase):
             self.assertIsNone(backend.get_filterset(request, view.queryset, view))
 
 
-class BackendRenderingTests(APITestCase):
-
-    def render(self, viewset_class, data=None):
-        url = '/' if not data else '/?' + urlencode(data, True)
-        view = viewset_class(action_map={})
-        backend = view.filter_backends[0]
-        request = view.initialize_request(factory.get(url))
-        return backend().to_html(request, view.get_queryset(), view)
+class BackendRenderingTests(RenderMixin, APITestCase):
 
     def test_sanity(self):
         # Sanity check to ensure backend can render without crashing.
