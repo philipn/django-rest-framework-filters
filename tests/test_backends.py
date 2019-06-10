@@ -375,7 +375,8 @@ class BackendCrispyFormsRenderingTests(RenderMixin, APITestCase):
                 <div id="div_id_author__username" class="form-group">
                     <label for="id_author__username" class="control-label ">Username</label>
                     <div class=" controls">
-                        <input type="text" name="author__username" class="form-control textinput textInput" id="id_author__username">
+                        <input type="text" class="form-control textinput textInput"
+                               id="id_author__username" name="author__username">
                     </div>
                 </div>
             </fieldset>
