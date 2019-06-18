@@ -282,3 +282,18 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
                 return cleaned_data
         return Form
+
+    @property
+    def form(self):
+        from django_filters import compat
+
+        form = super().form
+        if compat.is_crispy():
+            from crispy_forms.helper import FormHelper
+
+            form.helper = FormHelper(form)
+            form.helper.form_tag = False
+            form.helper.disable_csrf = True
+            form.helper.template_pack = 'bootstrap3'
+
+        return form

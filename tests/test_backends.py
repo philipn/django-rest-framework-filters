@@ -1,6 +1,7 @@
 from urllib.parse import quote, urlencode
 
 import django_filters
+from django.test import modify_settings
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
 
@@ -11,6 +12,16 @@ from rest_framework_filters.filterset import SubsetDisabledMixin
 from .testapp import models, views
 
 factory = APIRequestFactory()
+
+
+class RenderMixin:
+
+    def render(self, viewset_class, data=None):
+        url = '/' if not data else '/?' + urlencode(data, True)
+        view = viewset_class(action_map={})
+        backend = view.filter_backends[0]
+        request = view.initialize_request(factory.get(url))
+        return backend().to_html(request, view.get_queryset(), view)
 
 
 class BackendTests(APITestCase):
@@ -112,14 +123,7 @@ class BackendTests(APITestCase):
             self.assertIsNone(backend.get_filterset(request, view.queryset, view))
 
 
-class BackendRenderingTests(APITestCase):
-
-    def render(self, viewset_class, data=None):
-        url = '/' if not data else '/?' + urlencode(data, True)
-        view = viewset_class(action_map={})
-        backend = view.filter_backends[0]
-        request = view.initialize_request(factory.get(url))
-        return backend().to_html(request, view.get_queryset(), view)
+class BackendRenderingTests(RenderMixin, APITestCase):
 
     def test_sanity(self):
         # Sanity check to ensure backend can render without crashing.
@@ -312,6 +316,74 @@ class BackendRenderingTests(APITestCase):
 
         # ensure original method was reset
         self.assertEqual(backend.get_filterset_class, original)
+
+
+@modify_settings(INSTALLED_APPS={'append': ['crispy_forms']})
+class BackendCrispyFormsRenderingTests(RenderMixin, APITestCase):
+
+    def test_crispy_forms_filterset_compatibility(self):
+        class SimpleCrispyFilterSet(FilterSet):
+            class Meta:
+                model = models.User
+                fields = ['username']
+
+        class SimpleViewSet(views.FilterFieldsUserViewSet):
+            filterset_class = SimpleCrispyFilterSet
+
+        self.assertHTMLEqual(self.render(SimpleViewSet), """
+        <h2>Field filters</h2>
+        <form method="get">
+            <div id="div_id_username" class="form-group">
+                <label for="id_username" class="control-label ">Username</label>
+                <div class=" controls">
+                    <input type="text" name="username" class="form-control textinput textInput" id="id_username">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
+
+    def test_related_filterset_crispy_forms(self):
+        class UserFilter(FilterSet):
+            username = filters.CharFilter()
+
+        class NoteFilter(FilterSet):
+            author = filters.RelatedFilter(
+                filterset=UserFilter,
+                queryset=models.User.objects.all(),
+                label='Writer',
+            )
+
+        class RelatedViewSet(views.NoteViewSet):
+            filterset_class = NoteFilter
+
+        self.assertHTMLEqual(self.render(RelatedViewSet), """
+        <h2>Field filters</h2>
+        <form method="get">
+            <div id="div_id_author" class="form-group">
+                <label for="id_author" class="control-label ">Writer</label>
+                <div class=" controls">
+                    <select name="author" class="select form-control" id="id_author">
+                        <option value="" selected>---------</option>
+                    </select>
+                </div>
+            </div>
+
+            <fieldset>
+                <legend>Writer</legend>
+
+                <div id="div_id_author__username" class="form-group">
+                    <label for="id_author__username" class="control-label ">Username</label>
+                    <div class=" controls">
+                        <input type="text" class="form-control textinput textInput"
+                               id="id_author__username" name="author__username">
+                    </div>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        """)
 
 
 class ComplexFilterBackendTests(APITestCase):
