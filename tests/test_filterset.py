@@ -338,21 +338,35 @@ class GetFilterSubsetTests(TestCase):
         filter_subset = UserFilter.get_filter_subset(['email'])
 
         # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('email', filter_subset)
-        self.assertEqual(len(filter_subset), 1)
+        self.assertEqual(list(filter_subset), ['email'])
 
     def test_related_subset(self):
         # related filters should only return the local RelatedFilter
         filter_subset = NoteFilter.get_filter_subset(['title', 'author', 'author__email'])
 
-        self.assertIn('title', filter_subset)
-        self.assertIn('author', filter_subset)
-        self.assertEqual(len(filter_subset), 2)
+        self.assertEqual(list(filter_subset), ['title', 'author'])
 
     def test_non_filter_subset(self):
         # non-filter params should be ignored
         filter_subset = NoteFilter.get_filter_subset(['foobar'])
-        self.assertEqual(len(filter_subset), 0)
+        self.assertEqual(list(filter_subset), [])
+
+    def test_subset_ordering(self):
+        # sanity check ordering of base filters
+        filter_subset = [f for f in NoteFilter.base_filters if f in ['title', 'author']]
+        self.assertEqual(list(filter_subset), ['title', 'author'])
+
+        # ensure that the ordering of the subset is the same as the base filters
+        filter_subset = NoteFilter.get_filter_subset(['title', 'author'])
+        self.assertEqual(list(filter_subset), ['title', 'author'])
+
+        # ensure reverse argument order does not change subset ordering
+        filter_subset = NoteFilter.get_filter_subset(['author', 'title'])
+        self.assertEqual(list(filter_subset), ['title', 'author'])
+
+        # ensure related filters do not change subset ordering
+        filter_subset = NoteFilter.get_filter_subset(['author__email', 'author', 'title'])
+        self.assertEqual(list(filter_subset), ['title', 'author'])
 
     def test_metaclass_inheritance(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/132
@@ -372,9 +386,7 @@ class GetFilterSubsetTests(TestCase):
         filter_subset = NoteFilter.get_filter_subset(['author', 'content'])
 
         # ensure that the FilterSet subset only contains the requested fields
-        self.assertIn('author', filter_subset)
-        self.assertIn('content', filter_subset)
-        self.assertEqual(len(filter_subset), 2)
+        self.assertEqual(list(filter_subset), ['content', 'author'])
 
 
 class DisableSubsetTests(TestCase):
