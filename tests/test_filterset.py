@@ -10,7 +10,8 @@ from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
 from .testapp.filters import (
-    AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter, PageNoteFilter, PageFilter
+    AFilter, NoteFilter, NoteFilterWithAlias, PageFilter, PageNoteFilter, PostFilter,
+    TagFilter, UserFilter,
 )
 from .testapp.models import Note, Person, Post, Tag
 

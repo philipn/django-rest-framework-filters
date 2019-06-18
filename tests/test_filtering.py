@@ -5,10 +5,9 @@ from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
     CFilter, CoverFilter, NoteFilter, NoteFilterWithAlias, NoteFilterWithRelatedAlias,
-    PageFilter, PersonFilter, PostFilter, UserFilter, PageNoteFilter
+    PageFilter, PageNoteFilter, PersonFilter, PostFilter, UserFilter
 )
-from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User, PageNote
-
+from .testapp.models import A, B, C, Cover, Note, Page, PageNote, Person, Post, Tag, User
 
 class LocalTagFilter(FilterSet):
     class Meta:

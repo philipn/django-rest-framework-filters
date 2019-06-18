@@ -5,7 +5,7 @@ from rest_framework_filters import filters
 from rest_framework_filters.filters import AutoFilter, RelatedFilter
 from rest_framework_filters.filterset import FilterSet
 
-from .models import A, B, Blog, C, Cover, Note, Page, Person, Post, Tag, User, PageNote
+from .models import A, B, Blog, C, Cover, Note, Page, PageNote, Person, Post, Tag, User
 
 
 class DFUserFilter(django_filters.FilterSet):
