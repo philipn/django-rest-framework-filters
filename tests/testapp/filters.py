@@ -5,7 +5,7 @@ from rest_framework_filters import filters
 from rest_framework_filters.filters import AutoFilter, RelatedFilter
 from rest_framework_filters.filterset import FilterSet
 
-from .models import A, B, Blog, C, Cover, Note, Page, Person, Post, Tag, User
+from .models import A, B, Blog, C, Cover, Note, Page, Person, Post, Tag, User, PageNote
 
 
 class DFUserFilter(django_filters.FilterSet):
@@ -98,6 +98,16 @@ class PageFilter(FilterSet):
 
     class Meta:
         model = Page
+        fields = []
+
+
+class PageNoteFilter(FilterSet):
+    page = RelatedFilter(PageFilter, field_name='page', to_field_name='alt_page_id', queryset=Page.objects.all())
+    title = AutoFilter(field_name='title', lookups='__all__')
+    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
+
+    class Meta:
+        model = PageNote
         fields = []
 
 

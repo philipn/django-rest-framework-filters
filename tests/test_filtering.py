@@ -5,9 +5,9 @@ from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
     CFilter, CoverFilter, NoteFilter, NoteFilterWithAlias, NoteFilterWithRelatedAlias,
-    PageFilter, PersonFilter, PostFilter, UserFilter,
+    PageFilter, PersonFilter, PostFilter, UserFilter, PageNoteFilter
 )
-from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
+from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User, PageNote
 
 
 class LocalTagFilter(FilterSet):
@@ -102,10 +102,16 @@ class RelatedFilterTests(TestCase):
         #######################
         # Create pages
         #######################
-        Page.objects.create(title="First page", content="First first.")
-        Page.objects.create(title="Second page", content="Second second.", previous_page_id=1)
-        Page.objects.create(title="Third page", content="Third third.", previous_page_id=2)
-        Page.objects.create(title="Fourth page", content="Fourth fourth.", previous_page_id=3)
+        Page.objects.create(title="First page", content="First first.", alt_page_id=1)
+        Page.objects.create(title="Second page", content="Second second.", previous_page_id=1, alt_page_id=2)
+        Page.objects.create(title="Third page", content="Third third.", previous_page_id=2, alt_page_id=3)
+        Page.objects.create(title="Fourth page", content="Fourth fourth.", previous_page_id=3, alt_page_id=4)
+
+        #######################
+        # Create page notes
+        #######################
+        PageNote.objects.create(page_id=1, title="Test 1", content="Test content 1", author=user1)
+        PageNote.objects.create(page_id=2, title="Test 2", content="Test content 2", author=user1)
 
         ################################
         # ManyToMany
@@ -388,6 +394,13 @@ class RelatedFilterTests(TestCase):
     def test_empty_param_name(self):
         GET = {'': 'foo', 'author': User.objects.get(username='user2').pk}
         f = NoteFilter(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f.qs)), 1)
+
+    def test_to_field_name_filter(self):
+        GET = {
+            'page__title': 'First page',
+        }
+        f = PageNoteFilter(GET, queryset=PageNote.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
 
 

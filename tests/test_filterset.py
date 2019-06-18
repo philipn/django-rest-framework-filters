@@ -10,7 +10,7 @@ from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
 from .testapp.filters import (
-    AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
+    AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter, PageNoteFilter, PageFilter
 )
 from .testapp.models import Note, Person, Post, Tag
 
@@ -246,6 +246,15 @@ class GetRelatedFiltersetsTests(TestCase):
         self.assertEqual(len(filtersets), 2)
         self.assertIsInstance(filtersets['note'], NoteFilter)
         self.assertIsInstance(filtersets['tags'], TagFilter)
+
+    def test_filterset_to_field_name(self):
+        filtersets = PageNoteFilter({
+            'page__foo': 'bob', 'author__username': 'joe',
+        }).get_related_filtersets()
+
+        self.assertEqual(len(filtersets), 2)
+        self.assertIsInstance(filtersets['page'], PageFilter)
+        self.assertIsInstance(filtersets['author'], UserFilter)
 
 
 class GetParamFilterNameTests(TestCase):

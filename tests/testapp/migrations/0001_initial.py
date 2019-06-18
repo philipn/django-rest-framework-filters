@@ -72,9 +72,21 @@ class Migration(migrations.Migration):
             name='Page',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('alt_page_id', models.CharField(max_length=100, unique=True)),
                 ('title', models.CharField(max_length=100)),
                 ('content', models.TextField()),
                 ('previous_page', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='testapp.Page')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='PageNote',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('page',
+                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to_field='alt_page_id', to='testapp.Page')),
+                ('title', models.CharField(max_length=100)),
+                ('content', models.TextField()),
+                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(

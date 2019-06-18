@@ -47,8 +47,16 @@ class Cover(models.Model):
 
 class Page(models.Model):
     title = models.CharField(max_length=100)
+    alt_page_id = models.CharField(max_length=100, unique=True)
     content = models.TextField()
     previous_page = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
+
+
+class PageNote(models.Model):
+    page = models.ForeignKey(Page, to_field='alt_page_id', on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class A(models.Model):

@@ -261,7 +261,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             field_name = self.filters[related_name].field_name
             field = self.filters[related_name].field
             to_field_name = "pk"
-            if hasattr(field, "to_field_name"):
+            if hasattr(field, "to_field_name") and field.to_field_name is not None:
                 to_field_name = field.to_field_name
             lookup_expr = LOOKUP_SEP.join([field_name, 'in'])
 
