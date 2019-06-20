@@ -12,7 +12,7 @@ from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledM
 from .testapp.filters import (
     AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
 )
-from .testapp.models import Note, Person, Post, Tag
+from .testapp.models import Note, Person, Post, Tag, User
 
 factory = APIRequestFactory()
 
@@ -71,6 +71,36 @@ class AutoFilterTests(TestCase):
 
         self.assertIsInstance(F.declared_filters['id'], filters.AutoFilter)
         self.assertIsInstance(F.base_filters['id'], filters.NumberFilter)
+
+    def test_autofilter_doesnt_expand_declared(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/234
+        class F(FilterSet):
+            pk = filters.AutoFilter(field_name='id', lookups=['exact'])
+            individual = filters.CharFilter()
+
+            class Meta:
+                model = Note
+                fields = []
+
+        base_filters = {name: type(f) for name, f in F.base_filters.items()}
+        self.assertEqual(base_filters, {
+            'individual': filters.CharFilter,
+            'pk': filters.NumberFilter,
+        })
+
+    def test_relatedfilter_doesnt_expand_declared(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/234
+        class F(FilterSet):
+            posts = filters.RelatedFilter(PostFilter, field_name='post', lookups=['exact'])
+
+            class Meta:
+                model = User
+                fields = []
+
+        base_filters = {name: type(f) for name, f in F.base_filters.items()}
+        self.assertEqual(base_filters, {
+            'posts': filters.RelatedFilter,
+        })
 
     def test_all_lookups_for_relation(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/84
