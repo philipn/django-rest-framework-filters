@@ -364,38 +364,47 @@ class GetParamFilterNameTests(TestCase):
 
 class GetFilterSubsetTests(TestCase):
 
+    class NoteFilter(FilterSet):
+        # A simpler version of NoteFilter that doesn't use autofilter expansion
+        title = filters.CharFilter()
+        author = filters.RelatedFilter(UserFilter)
+
+        class Meta:
+            model = Note
+            fields = []
+
     def test_get_subset(self):
-        filter_subset = UserFilter.get_filter_subset(['email'])
+        filter_subset = self.NoteFilter.get_filter_subset(['title'])
 
         # ensure that the FilterSet subset only contains the requested fields
-        self.assertEqual(list(filter_subset), ['email'])
+        self.assertEqual(list(filter_subset), ['title'])
 
     def test_related_subset(self):
         # related filters should only return the local RelatedFilter
-        filter_subset = NoteFilter.get_filter_subset(['title', 'author', 'author__email'])
+        filter_subset = self.NoteFilter.get_filter_subset(['title', 'author', 'author__email'])
 
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
     def test_non_filter_subset(self):
         # non-filter params should be ignored
-        filter_subset = NoteFilter.get_filter_subset(['foobar'])
+        filter_subset = self.NoteFilter.get_filter_subset(['foobar'])
         self.assertEqual(list(filter_subset), [])
 
     def test_subset_ordering(self):
         # sanity check ordering of base filters
-        filter_subset = [f for f in NoteFilter.base_filters if f in ['title', 'author']]
+        filter_subset = [f for f in self.NoteFilter.base_filters if f in ['title', 'author']]
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure that the ordering of the subset is the same as the base filters
-        filter_subset = NoteFilter.get_filter_subset(['title', 'author'])
+        filter_subset = self.NoteFilter.get_filter_subset(['title', 'author'])
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure reverse argument order does not change subset ordering
-        filter_subset = NoteFilter.get_filter_subset(['author', 'title'])
+        filter_subset = self.NoteFilter.get_filter_subset(['author', 'title'])
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure related filters do not change subset ordering
-        filter_subset = NoteFilter.get_filter_subset(['author__email', 'author', 'title'])
+        filter_subset = self.NoteFilter.get_filter_subset(['author__email', 'author', 'title'])
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
     def test_metaclass_inheritance(self):
