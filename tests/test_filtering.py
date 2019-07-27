@@ -63,8 +63,17 @@ class AutoFilterTests(TestCase):
                 model = Note
                 fields = []
 
+        class Subclass(Actual):
+            class Meta:
+                model = Note
+                fields = []
+
         GET = {'title__contains': 'Hello'}
         f = Actual(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f.qs)), 2)
+
+        GET = {'title__contains': 'Hello'}
+        f = Subclass(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 2)
 
 
