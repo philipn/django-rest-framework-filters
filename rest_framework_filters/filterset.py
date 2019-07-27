@@ -79,8 +79,8 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         This method name is slightly inaccurate since it handles both
         :class:`rest_framework_filters.filters.AutoFilter` and
-        :class:`rest_framework_filters.filters.RelatedFilter`, which both
-        support per-lookup filter generation.
+        :class:`rest_framework_filters.filters.BaseRelatedFilter`, as well as
+        their subclasses, which all support per-lookup filter generation.
 
         Args:
             new_class: The ``FilterSet`` class to generate filters for.
