@@ -3,7 +3,7 @@ from collections import namedtuple
 from urllib.parse import unquote
 
 from django.db.models import QuerySet
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from rest_framework.serializers import ValidationError
 
 from rest_framework_filters.utils import lookahead
