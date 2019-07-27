@@ -57,7 +57,7 @@ Requirements
 
 * **Python**: 3.4, 3.5, 3.6, 3.7
 * **Django**: 1.11, 2.0, 2.1, 2.2
-* **DRF**: 3.9
+* **DRF**: 3.10
 * **django-filter**: 2.0
 
 
