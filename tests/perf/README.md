@@ -13,6 +13,10 @@ relationships via `RelatedFilter`. The intent is to provide some assurance that:
 The performance tests have been isolated from the main test suite so that they can be
 ran independently. Simply run:
 
+    $ tox -e performance
+
+Or more directly:
+
     $ python manage.py test tests.perf
 
 
