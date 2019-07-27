@@ -32,7 +32,8 @@ class MetaclassTests(TestCase):
 
     def test_metamethods(self):
         functions = [
-            'expand_auto_filters',
+            'get_auto_filters',
+            'expand_auto_filter',
         ]
 
         for func in functions:
@@ -45,6 +46,16 @@ class AutoFilterTests(TestCase):
     """
     Test auto filter generation (`AutoFilter`, `RelatedFilter`, '__all__').
     """
+
+    def test_autofilter_not_declared(self):
+        # AutoFilter is not an actual Filter subclass
+        f = filters.AutoFilter(lookups=['exact'])
+
+        class F(FilterSet):
+            id = f
+
+        self.assertEqual(F.auto_filters, {'id': f})
+        self.assertEqual(F.declared_filters, {})
 
     def test_autofilter_meta_fields_unmodified(self):
         # The FilterSetMetaclass temporarily modifies the `FilterSet._meta` when
@@ -63,14 +74,48 @@ class AutoFilterTests(TestCase):
     def test_autofilter_replaced(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/118
         class F(FilterSet):
-            id = filters.AutoFilter(lookups='__all__')
+            id = filters.AutoFilter(lookups=['exact'])
 
             class Meta:
                 model = Note
                 fields = []
 
-        self.assertIsInstance(F.declared_filters['id'], filters.AutoFilter)
+        self.assertEqual(list(F.base_filters), ['id'])
         self.assertIsInstance(F.base_filters['id'], filters.NumberFilter)
+        self.assertEqual(F.base_filters['id'].lookup_expr, 'exact')
+
+    def test_autofilter_noop(self):
+        class F(FilterSet):
+            id = filters.AutoFilter(lookups=[])
+
+            class Meta:
+                model = Note
+                fields = []
+
+        self.assertEqual(F.base_filters, {})
+
+    def test_autofilter_with_mixin(self):
+        class Mixin(FilterSet):
+            title = filters.AutoFilter(lookups=['exact'])
+
+        class Actual(Mixin):
+            class Meta:
+                model = Note
+                fields = []
+
+        class Subclass(Actual):
+            class Meta:
+                model = Note
+                fields = []
+
+        base_filters = {name: type(f) for name, f in Mixin.base_filters.items()}
+        self.assertEqual(base_filters, {})
+
+        base_filters = {name: type(f) for name, f in Actual.base_filters.items()}
+        self.assertEqual(base_filters, {'title': filters.CharFilter})
+
+        base_filters = {name: type(f) for name, f in Subclass.base_filters.items()}
+        self.assertEqual(base_filters, {'title': filters.CharFilter})
 
     def test_autofilter_doesnt_expand_declared(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/234
@@ -340,7 +385,7 @@ class GetParamFilterNameTests(TestCase):
         class PostFilterNameHiding(PostFilter):
             note__author = filters.RelatedFilter(UserFilter)
             note = filters.RelatedFilter(NoteFilter)
-            note2 = filters.RelatedFilter(NoteFilter)
+            note2 = filters.RelatedFilter(NoteFilter, field_name='note')
 
             class Meta:
                 model = Post

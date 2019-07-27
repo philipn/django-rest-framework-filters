@@ -20,57 +20,98 @@ def related(filterset, filter_name):
 
 class FilterSetMetaclass(filterset.FilterSetMetaclass):
     def __new__(cls, name, bases, attrs):
-        new_class = super(FilterSetMetaclass, cls).__new__(cls, name, bases, attrs)
+        attrs['auto_filters'] = cls.get_auto_filters(bases, attrs)
 
-        new_class.auto_filters = [
-            name for name, f in new_class.declared_filters.items()
-            if isinstance(f, filters.AutoFilter)]
-        new_class.related_filters = [
-            name for name, f in new_class.declared_filters.items()
-            if isinstance(f, filters.RelatedFilter)]
+        new_class = super().__new__(cls, name, bases, attrs)
 
-        # see: :meth:`rest_framework_filters.filters.RelatedFilter.bind`
-        for name in new_class.related_filters:
-            new_class.declared_filters[name].bind(new_class)
+        new_class.related_filters = OrderedDict([
+            (name, f) for name, f in new_class.declared_filters.items()
+            if isinstance(f, filters.BaseRelatedFilter)])
 
-        # If model is defined, process auto filters
+        # See: :meth:`rest_framework_filters.filters.RelatedFilter.bind`
+        for name, f in new_class.related_filters.items():
+            f.bind(new_class)
+
+        # Only expand when model is defined. Model may be undefined for mixins.
         if new_class._meta.model is not None:
-            cls.expand_auto_filters(new_class)
+            for name, f in new_class.auto_filters.items():
+                expanded = cls.expand_auto_filter(new_class, name, f)
+                new_class.base_filters.update(expanded)
+
+            for name, f in new_class.related_filters.items():
+                expanded = cls.expand_auto_filter(new_class, name, f)
+                new_class.base_filters.update(expanded)
 
         return new_class
 
     @classmethod
-    def expand_auto_filters(cls, new_class):
+    def get_auto_filters(cls, bases, attrs):
+        # Auto filters are specially handled since they aren't an actual filter
+        # subclass and aren't handled by the declared filter machinery. Note
+        # that this is a nearly identical copy of `get_declared_filters`.
+        auto_filters = [
+            (filter_name, attrs.pop(filter_name))
+            for filter_name, obj in list(attrs.items())
+            if isinstance(obj, filters.AutoFilter)
+        ]
+
+        # Default the `filter.field_name` to the attribute name on the filterset
+        for filter_name, f in auto_filters:
+            if getattr(f, 'field_name', None) is None:
+                f.field_name = filter_name
+
+        auto_filters.sort(key=lambda x: x[1].creation_counter)
+
+        # merge auto filters from base classes
+        for base in reversed(bases):
+            if hasattr(base, 'auto_filters'):
+                auto_filters = [
+                    (name, f) for name, f
+                    in base.auto_filters.items()
+                    if name not in attrs
+                ] + auto_filters
+
+        return OrderedDict(auto_filters)
+
+    @classmethod
+    def expand_auto_filter(cls, new_class, filter_name, f):
+        """Resolve an ``AutoFilter`` into its per-lookup filters.
+
+        This method name is slightly inaccurate since it handles both
+        :class:`rest_framework_filters.filters.AutoFilter` and
+        :class:`rest_framework_filters.filters.RelatedFilter`, which both
+        support per-lookup filter generation.
+
+        Args:
+            new_class: The ``FilterSet`` class to generate filters for.
+            filter_name: The attribute name of the filter on the ``FilterSet``.
+            f: The filter instance.
+
+        Returns:
+            A named map of generated filter objects.
         """
-        Resolve `AutoFilter`s into their per-lookup filters. `AutoFilter`s are
-        a declarative alternative to the `Meta.fields` dictionary syntax, and
-        use the same machinery internally.
-        """
-        # get reference to opts/declared filters
+        expanded = OrderedDict()
+
+        # get reference to opts/declared filters so originals aren't modified
         orig_meta, orig_declared = new_class._meta, new_class.declared_filters
-
-        # override opts/declared filters w/ copies
         new_class._meta = copy.deepcopy(new_class._meta)
-        new_class.declared_filters = new_class.declared_filters.copy()
+        new_class.declared_filters = {}
 
-        for name in new_class.auto_filters:
-            f = new_class.declared_filters[name]
+        # Use meta.fields to generate auto filters
+        new_class._meta.fields = {f.field_name: f.lookups or []}
+        for gen_name, gen_f in new_class.get_filters().items():
+            # get_filters() generates param names from the model field name, so
+            # replace the field name with the param name from the filerset
+            gen_name = gen_name.replace(f.field_name, filter_name, 1)
 
-            # Remove auto filters from declared_filters so that they *are* overwritten
-            # RelatedFilter is an exception, and should *not* be overwritten
-            if not isinstance(f, filters.RelatedFilter):
-                del new_class.declared_filters[name]
-
-            # Use meta.fields to generate auto filters
-            new_class._meta.fields = {f.field_name: f.lookups or []}
-            for gen_name, gen_f in new_class.get_filters().items():
-                # get_filters() generates param names from the model field name
-                # Replace the field name with the parameter name from the filerset
-                gen_name = gen_name.replace(f.field_name, name, 1)
-                new_class.base_filters[gen_name] = gen_f
+            # do not overwrite declared filters
+            if gen_name not in orig_declared:
+                expanded[gen_name] = gen_f
 
         # restore reference to opts/declared filters
         new_class._meta, new_class.declared_filters = orig_meta, orig_declared
+
+        return expanded
 
 
 class SubsetDisabledMixin:
@@ -95,6 +136,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     @classmethod
     def get_fields(cls):
+        # Extend the 'Meta.fields' dict syntax to allow '__all__' field lookups.
         fields = super(FilterSet, cls).get_fields()
 
         for name, lookups in fields.items():

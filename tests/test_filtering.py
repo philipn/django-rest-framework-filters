@@ -314,7 +314,7 @@ class RelatedFilterTests(TestCase):
 
     def test_related_filters_inheritance(self):
         class ChildFilter(PostFilter):
-            foo = filters.RelatedFilter(PostFilter)
+            foo = filters.RelatedFilter(NoteFilter, field_name='note')
 
         self.assertEqual(['author', 'note', 'tags'], list(PostFilter.related_filters))
         self.assertEqual(['author', 'note', 'tags', 'foo'], list(ChildFilter.related_filters))
