@@ -12,7 +12,7 @@ from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledM
 from .testapp.filters import (
     AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
 )
-from .testapp.models import Note, Person, Post, Tag
+from .testapp.models import Note, Person, Post, Tag, User
 
 factory = APIRequestFactory()
 
@@ -32,7 +32,8 @@ class MetaclassTests(TestCase):
 
     def test_metamethods(self):
         functions = [
-            'expand_auto_filters',
+            'get_auto_filters',
+            'expand_auto_filter',
         ]
 
         for func in functions:
@@ -45,6 +46,16 @@ class AutoFilterTests(TestCase):
     """
     Test auto filter generation (`AutoFilter`, `RelatedFilter`, '__all__').
     """
+
+    def test_autofilter_not_declared(self):
+        # AutoFilter is not an actual Filter subclass
+        f = filters.AutoFilter(lookups=['exact'])
+
+        class F(FilterSet):
+            id = f
+
+        self.assertEqual(F.auto_filters, {'id': f})
+        self.assertEqual(F.declared_filters, {})
 
     def test_autofilter_meta_fields_unmodified(self):
         # The FilterSetMetaclass temporarily modifies the `FilterSet._meta` when
@@ -63,14 +74,78 @@ class AutoFilterTests(TestCase):
     def test_autofilter_replaced(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/118
         class F(FilterSet):
-            id = filters.AutoFilter(lookups='__all__')
+            id = filters.AutoFilter(lookups=['exact'])
 
             class Meta:
                 model = Note
                 fields = []
 
-        self.assertIsInstance(F.declared_filters['id'], filters.AutoFilter)
+        self.assertEqual(list(F.base_filters), ['id'])
         self.assertIsInstance(F.base_filters['id'], filters.NumberFilter)
+        self.assertEqual(F.base_filters['id'].lookup_expr, 'exact')
+
+    def test_autofilter_noop(self):
+        class F(FilterSet):
+            id = filters.AutoFilter(lookups=[])
+
+            class Meta:
+                model = Note
+                fields = []
+
+        self.assertEqual(F.base_filters, {})
+
+    def test_autofilter_with_mixin(self):
+        class Mixin(FilterSet):
+            title = filters.AutoFilter(lookups=['exact'])
+
+        class Actual(Mixin):
+            class Meta:
+                model = Note
+                fields = []
+
+        class Subclass(Actual):
+            class Meta:
+                model = Note
+                fields = []
+
+        base_filters = {name: type(f) for name, f in Mixin.base_filters.items()}
+        self.assertEqual(base_filters, {})
+
+        base_filters = {name: type(f) for name, f in Actual.base_filters.items()}
+        self.assertEqual(base_filters, {'title': filters.CharFilter})
+
+        base_filters = {name: type(f) for name, f in Subclass.base_filters.items()}
+        self.assertEqual(base_filters, {'title': filters.CharFilter})
+
+    def test_autofilter_doesnt_expand_declared(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/234
+        class F(FilterSet):
+            pk = filters.AutoFilter(field_name='id', lookups=['exact'])
+            individual = filters.CharFilter()
+
+            class Meta:
+                model = Note
+                fields = []
+
+        base_filters = {name: type(f) for name, f in F.base_filters.items()}
+        self.assertEqual(base_filters, {
+            'individual': filters.CharFilter,
+            'pk': filters.NumberFilter,
+        })
+
+    def test_relatedfilter_doesnt_expand_declared(self):
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/234
+        class F(FilterSet):
+            posts = filters.RelatedFilter(PostFilter, field_name='post', lookups=['exact'])
+
+            class Meta:
+                model = User
+                fields = []
+
+        base_filters = {name: type(f) for name, f in F.base_filters.items()}
+        self.assertEqual(base_filters, {
+            'posts': filters.RelatedFilter,
+        })
 
     def test_all_lookups_for_relation(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/84
@@ -310,7 +385,7 @@ class GetParamFilterNameTests(TestCase):
         class PostFilterNameHiding(PostFilter):
             note__author = filters.RelatedFilter(UserFilter)
             note = filters.RelatedFilter(NoteFilter)
-            note2 = filters.RelatedFilter(NoteFilter)
+            note2 = filters.RelatedFilter(NoteFilter, field_name='note')
 
             class Meta:
                 model = Post
@@ -334,38 +409,47 @@ class GetParamFilterNameTests(TestCase):
 
 class GetFilterSubsetTests(TestCase):
 
+    class NoteFilter(FilterSet):
+        # A simpler version of NoteFilter that doesn't use autofilter expansion
+        title = filters.CharFilter()
+        author = filters.RelatedFilter(UserFilter)
+
+        class Meta:
+            model = Note
+            fields = []
+
     def test_get_subset(self):
-        filter_subset = UserFilter.get_filter_subset(['email'])
+        filter_subset = self.NoteFilter.get_filter_subset(['title'])
 
         # ensure that the FilterSet subset only contains the requested fields
-        self.assertEqual(list(filter_subset), ['email'])
+        self.assertEqual(list(filter_subset), ['title'])
 
     def test_related_subset(self):
         # related filters should only return the local RelatedFilter
-        filter_subset = NoteFilter.get_filter_subset(['title', 'author', 'author__email'])
+        filter_subset = self.NoteFilter.get_filter_subset(['title', 'author', 'author__email'])
 
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
     def test_non_filter_subset(self):
         # non-filter params should be ignored
-        filter_subset = NoteFilter.get_filter_subset(['foobar'])
+        filter_subset = self.NoteFilter.get_filter_subset(['foobar'])
         self.assertEqual(list(filter_subset), [])
 
     def test_subset_ordering(self):
         # sanity check ordering of base filters
-        filter_subset = [f for f in NoteFilter.base_filters if f in ['title', 'author']]
+        filter_subset = [f for f in self.NoteFilter.base_filters if f in ['title', 'author']]
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure that the ordering of the subset is the same as the base filters
-        filter_subset = NoteFilter.get_filter_subset(['title', 'author'])
+        filter_subset = self.NoteFilter.get_filter_subset(['title', 'author'])
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure reverse argument order does not change subset ordering
-        filter_subset = NoteFilter.get_filter_subset(['author', 'title'])
+        filter_subset = self.NoteFilter.get_filter_subset(['author', 'title'])
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure related filters do not change subset ordering
-        filter_subset = NoteFilter.get_filter_subset(['author__email', 'author', 'title'])
+        filter_subset = self.NoteFilter.get_filter_subset(['author__email', 'author', 'title'])
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
     def test_metaclass_inheritance(self):

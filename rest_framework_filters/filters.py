@@ -2,35 +2,62 @@ import warnings
 
 from django.utils.module_loading import import_string
 from django_filters.rest_framework.filters import *  # noqa
-from django_filters.rest_framework.filters import Filter, ModelChoiceFilter
+from django_filters.rest_framework.filters import (
+    ModelChoiceFilter, ModelMultipleChoiceFilter,
+)
 
 ALL_LOOKUPS = '__all__'
 
 
-class AutoFilter(Filter):
-    """
-    Declarative alternative to using the `Meta.fields` dictionary syntax. These
-    fields are processed by the metaclass and resolved into per-lookup filters.
+class AutoFilter:
+    """A placeholder class that enables generating multiple per-lookup filters.
 
-    `AutoFilter`s benefit from their declarative nature in that it is possible
-    to change the parameter name of the generated filters. This is not possible
-    with the `Meta.fields` syntax.
-    """
+    This is a declarative alternative to the ``Meta.fields`` dict syntax, and
+    the below are functionally equivalent:
 
-    def __init__(self, *args, lookups=None, **kwargs):
-        super().__init__(*args, **kwargs)
+        class PersonFilter(filters.FilterSet):
+            name = AutoFilter(lookups=['exact', 'contains'])
+
+            class Meta:
+                model = Person
+                fields = []
+
+        class PersonFilter(filters.FilterSet):
+            class Meta:
+                model = Person
+                fields = {'name': ['exact', 'contains']}
+
+    Due to its declarative nature, an ``AutoFilter`` allows for paramater name
+    aliasing for its generated filters. e.g.,
+
+        class BlogFilter(filters.FilterSet):
+            title = AutoFilter(field_name='name', lookups=['contains'])
+
+    The above generates a ``title__contains`` filter for the ``name`` field
+    intstead of ``name__contains``. This is not possible with ``Meta.fields``,
+    since the key must match the model field name.
+
+    Note that ``AutoFilter`` is a filter-like placeholder and is not present in
+    the ``FilterSet.filters``. In the above example, ``title`` would not be
+    filterable. However, an ``AutoFilter`` is typically replaced by a generated
+    ``exact`` filter of the same name, which enables filtering by that param.
+    """
+    creation_counter = 0
+
+    def __init__(self, field_name=None, *, lookups=None):
+        self.field_name = field_name
         self.lookups = lookups or []
 
+        self.creation_counter = AutoFilter.creation_counter
+        AutoFilter.creation_counter += 1
 
-class RelatedFilter(AutoFilter, ModelChoiceFilter):
-    """
-    A `ModelChoiceFilter` that defines a relationship to another `FilterSet`.
-    This related filterset is processed by the filter's `parent` instance, and
-    """
 
-    def __init__(self, filterset, *args, **kwargs):
+class BaseRelatedFilter:
+
+    def __init__(self, filterset, *args, lookups=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.filterset = filterset
+        self.lookups = lookups or []
 
     def bind(self, bind_cls):
         """
@@ -63,11 +90,54 @@ class RelatedFilter(AutoFilter, ModelChoiceFilter):
     filterset = property(**filterset())
 
     def get_queryset(self, request):
-        queryset = super(RelatedFilter, self).get_queryset(request)
+        queryset = super(BaseRelatedFilter, self).get_queryset(request)
         assert queryset is not None, \
-            "Expected `.get_queryset()` for related filter '%s.%s' to return a `QuerySet`, but got `None`." \
+            "Expected `.get_queryset()` for related filter '%s.%s' to " \
+            "return a `QuerySet`, but got `None`." \
             % (self.parent.__class__.__name__, self.field_name)
         return queryset
+
+
+class RelatedFilter(BaseRelatedFilter, ModelChoiceFilter):
+    """A ``ModelChoiceFilter`` that enables filtering across relationships.
+
+    Take the following example:
+
+        class ManagerFilter(filters.FilterSet):
+            class Meta:
+                model = Manager
+                fields = {'name': ['exact', 'in', 'startswith']}
+
+        class DepartmentFilter(filters.FilterSet):
+            manager = RelatedFilter(ManagerFilter, queryset=managers)
+
+            class Meta:
+                model = Department
+                fields = {'name': ['exact', 'in', 'startswith']}
+
+    In the above, the ``DepartmentFilter`` can traverse the ``manager``
+    relationship with the ``__`` lookup seperator, accessing the filters of the
+    ``ManagerFilter`` class. For example, the above would enable calls like:
+
+        /api/managers?name=john%20doe
+        /api/departments?manager__name=john%20doe
+
+    Related filters function similarly to auto filters in that they can generate
+    per-lookup filters. However, unlike auto filters, related filters are
+    functional and not just placeholders. They will not be replaced by a
+    generated ``exact`` filter.
+
+    Attributes:
+        filterset: The ``FilterSet`` that is traversed by this relationship.
+            May be a class, an absolute import path, or the name of a class
+            located in the same module as the origin filterset.
+        lookups: A list of lookups to generate per-lookup filters for. This
+            functions similarly to the ``AutoFilter.lookups`` argument.
+    """
+
+
+class RelatedMultipleFilter(BaseRelatedFilter, ModelMultipleChoiceFilter):
+    """A ``ModelMultipleChoiceFilter`` variant of ``RelatedFilter``."""
 
 
 class AllLookupsFilter(AutoFilter):
