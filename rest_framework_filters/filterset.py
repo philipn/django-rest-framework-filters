@@ -1,7 +1,6 @@
 import copy
 from collections import OrderedDict
 
-from django.db.models import Subquery
 from django.db.models.constants import LOOKUP_SEP
 from django_filters import filterset, rest_framework
 from django_filters.utils import get_model_field
@@ -264,7 +263,7 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             field_name = self.filters[related_name].field_name
             lookup_expr = LOOKUP_SEP.join([field_name, 'in'])
 
-            subquery = Subquery(related_filterset.qs.values(to_field_name))
+            subquery = related_filterset.qs.values(to_field_name)
             queryset = queryset.filter(**{lookup_expr: subquery})
 
         return queryset
