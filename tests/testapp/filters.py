@@ -5,7 +5,9 @@ from rest_framework_filters import filters
 from rest_framework_filters.filters import AutoFilter, RelatedFilter
 from rest_framework_filters.filterset import FilterSet
 
-from .models import A, B, Blog, C, Cover, Note, Page, PageNote, Person, Post, Tag, User
+from .models import (
+    A, Account, B, Blog, C, Cover, Customer, Note, Page, Person, Post, Tag, User,
+)
 
 
 class DFUserFilter(django_filters.FilterSet):
@@ -100,17 +102,6 @@ class PageFilter(FilterSet):
         model = Page
         fields = []
 
-
-class PageNoteFilter(FilterSet):
-    page = RelatedFilter(PageFilter, field_name='page', to_field_name='alt_page_id', queryset=Page.objects.all())
-    title = AutoFilter(field_name='title', lookups='__all__')
-    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
-
-    class Meta:
-        model = PageNote
-        fields = []
-
-
 #############################################################
 # Aliased parameter names
 #############################################################
@@ -180,3 +171,22 @@ class PersonFilter(FilterSet):
     class Meta:
         model = Person
         fields = []
+
+
+#############################################################
+# `to_field` filtersets
+#############################################################
+class CustomerFilter(FilterSet):
+    accounts = RelatedFilter('AccountFilter', field_name='account', queryset=Account.objects.all())
+
+    class Meta:
+        model = Customer
+        fields = ['name', 'ssn', 'dob', 'accounts']
+
+
+class AccountFilter(FilterSet):
+    customer = RelatedFilter('CustomerFilter', to_field_name='ssn', queryset=Customer.objects.all())
+
+    class Meta:
+        model = Account
+        fields = ['customer', 'type', 'name']
