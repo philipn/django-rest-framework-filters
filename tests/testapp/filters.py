@@ -102,9 +102,9 @@ class PageFilter(FilterSet):
         model = Page
         fields = []
 
-#############################################################
-# Aliased parameter names
-#############################################################
+
+################################################################################
+# Aliased parameter names ######################################################
 class UserFilterWithAlias(FilterSet):
     name = filters.CharFilter(field_name='username')
 
@@ -130,9 +130,8 @@ class NoteFilterWithRelatedAlias(FilterSet):
         fields = []
 
 
-#############################################################
-# Recursive filtersets
-#############################################################
+################################################################################
+# Recursive filtersets #########################################################
 class AFilter(FilterSet):
     title = filters.CharFilter(field_name='title')
     b = RelatedFilter('BFilter', field_name='b', queryset=B.objects.all())
@@ -173,9 +172,8 @@ class PersonFilter(FilterSet):
         fields = []
 
 
-#############################################################
-# `to_field` filtersets
-#############################################################
+################################################################################
+# `to_field` filtersets ########################################################
 class CustomerFilter(FilterSet):
     accounts = RelatedFilter('AccountFilter', field_name='account', queryset=Account.objects.all())
 
