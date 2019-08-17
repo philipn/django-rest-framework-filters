@@ -4,10 +4,12 @@ from django_filters import FilterSet as DFFilterSet
 from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import (
-    CFilter, CoverFilter, NoteFilter, NoteFilterWithAlias, NoteFilterWithRelatedAlias,
-    PageFilter, PersonFilter, PostFilter, UserFilter,
+    AccountFilter, CFilter, CoverFilter, CustomerFilter, NoteFilter, NoteFilterWithAlias,
+    NoteFilterWithRelatedAlias, PageFilter, PersonFilter, PostFilter, UserFilter,
 )
-from .testapp.models import A, B, C, Cover, Note, Page, Person, Post, Tag, User
+from .testapp.models import (
+    A, Account, B, C, Cover, Customer, Note, Page, Person, Post, Tag, User,
+)
 
 
 class LocalTagFilter(FilterSet):
@@ -81,44 +83,38 @@ class RelatedFilterTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        #######################
-        # Create users
-        #######################
+        ########################################################################
+        # Create users #########################################################
         user1 = User.objects.create(username="user1", email="user1@example.org")
         user2 = User.objects.create(username="user2", email="user2@example.org")
 
-        #######################
-        # Create notes
-        #######################
+        ########################################################################
+        # Create notes #########################################################
         note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user1)
         note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user1)
         Note.objects.create(title="Hello Test 3", content="Test content 3", author=user1)
         note4 = Note.objects.create(title="Hello Test 4", content="Test content 4", author=user2)
 
-        #######################
-        # Create posts
-        #######################
+        ########################################################################
+        # Create posts #########################################################
         post1 = Post.objects.create(note=note1, content="Test content in post 1")
         Post.objects.create(note=note2, content="Test content in post 2")
         post3 = Post.objects.create(note=note4, content="Test content in post 3")
 
-        #######################
-        # Create covers
-        #######################
+        ########################################################################
+        # Create covers ########################################################
         Cover.objects.create(post=post1, comment="Cover 1")
         Cover.objects.create(post=post3, comment="Cover 2")
 
-        #######################
-        # Create pages
-        #######################
+        ########################################################################
+        # Create pages #########################################################
         Page.objects.create(title="First page", content="First first.")
         Page.objects.create(title="Second page", content="Second second.", previous_page_id=1)
         Page.objects.create(title="Third page", content="Third third.", previous_page_id=2)
         Page.objects.create(title="Fourth page", content="Fourth fourth.", previous_page_id=3)
 
-        ################################
-        # ManyToMany
-        ################################
+        ########################################################################
+        # ManyToMany ###########################################################
         t1 = Tag.objects.create(name="park")
         Tag.objects.create(name="lake")
         t3 = Tag.objects.create(name="house")
@@ -126,9 +122,8 @@ class RelatedFilterTests(TestCase):
         post1.tags.set([t1, t3])
         post3.tags.set([t3])
 
-        ################################
-        # Recursive relations
-        ################################
+        ########################################################################
+        # Recursive relations ##################################################
         a = A.objects.create(title="A1")
         b = B.objects.create(name="B1")
         c = C.objects.create(title="C1")
@@ -145,6 +140,17 @@ class RelatedFilterTests(TestCase):
 
         john = Person.objects.create(name="John")
         Person.objects.create(name="Mark", best_friend=john)
+
+        ########################################################################
+        # to_field relations ###################################################
+        c1 = Customer.objects.create(name='Bob Jones', ssn='111111111', dob='1990-01-01')
+        c2 = Customer.objects.create(name='Sue Jones', ssn='222222222', dob='1990-01-01')
+
+        Account.objects.create(customer=c1, type='c', name='Bank 1 checking')
+        Account.objects.create(customer=c1, type='s', name='Bank 1 savings')
+        Account.objects.create(customer=c2, type='c', name='Bank 1 checking 1')
+        Account.objects.create(customer=c2, type='c', name='Bank 1 checking 2')
+        Account.objects.create(customer=c2, type='s', name='Bank 2 savings')
 
     def test_relatedfilter(self):
         # Test that the default exact filter works
@@ -398,6 +404,17 @@ class RelatedFilterTests(TestCase):
         GET = {'': 'foo', 'author': User.objects.get(username='user2').pk}
         f = NoteFilter(GET, queryset=Note.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
+
+    def test_to_field_forwards_relation(self):
+        GET = {'customer__name': 'Bob Jones'}
+        f = AccountFilter(GET)
+        self.assertEqual(len(list(f.qs)), 2)
+
+    def test_to_field_reverse_relation(self):
+        # Note: pending #99, this query should ideally return 2 distinct results
+        GET = {'accounts__type': 'c'}
+        f = CustomerFilter(GET)
+        self.assertEqual(len(list(f.qs)), 3)
 
 
 class AnnotationTests(TestCase):

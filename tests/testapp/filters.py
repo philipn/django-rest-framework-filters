@@ -5,7 +5,9 @@ from rest_framework_filters import filters
 from rest_framework_filters.filters import AutoFilter, RelatedFilter
 from rest_framework_filters.filterset import FilterSet
 
-from .models import A, B, Blog, C, Cover, Note, Page, Person, Post, Tag, User
+from .models import (
+    A, Account, B, Blog, C, Cover, Customer, Note, Page, Person, Post, Tag, User,
+)
 
 
 class DFUserFilter(django_filters.FilterSet):
@@ -101,9 +103,8 @@ class PageFilter(FilterSet):
         fields = []
 
 
-#############################################################
-# Aliased parameter names
-#############################################################
+################################################################################
+# Aliased parameter names ######################################################
 class UserFilterWithAlias(FilterSet):
     name = filters.CharFilter(field_name='username')
 
@@ -129,9 +130,8 @@ class NoteFilterWithRelatedAlias(FilterSet):
         fields = []
 
 
-#############################################################
-# Recursive filtersets
-#############################################################
+################################################################################
+# Recursive filtersets #########################################################
 class AFilter(FilterSet):
     title = filters.CharFilter(field_name='title')
     b = RelatedFilter('BFilter', field_name='b', queryset=B.objects.all())
@@ -170,3 +170,21 @@ class PersonFilter(FilterSet):
     class Meta:
         model = Person
         fields = []
+
+
+################################################################################
+# `to_field` filtersets ########################################################
+class CustomerFilter(FilterSet):
+    accounts = RelatedFilter('AccountFilter', field_name='account', queryset=Account.objects.all())
+
+    class Meta:
+        model = Customer
+        fields = ['name', 'ssn', 'dob', 'accounts']
+
+
+class AccountFilter(FilterSet):
+    customer = RelatedFilter('CustomerFilter', to_field_name='ssn', queryset=Customer.objects.all())
+
+    class Meta:
+        model = Account
+        fields = ['customer', 'type', 'name']

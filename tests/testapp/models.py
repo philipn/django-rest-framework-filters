@@ -73,3 +73,16 @@ class Person(models.Model):
     date_joined = models.DateField(auto_now_add=True)
     time_joined = models.TimeField(auto_now_add=True)
     datetime_joined = models.DateTimeField(auto_now_add=True)
+
+
+# Models using `to_field`
+class Customer(models.Model):
+    name = models.CharField(max_length=80)
+    ssn = models.CharField(max_length=9, unique=True)
+    dob = models.DateField()
+
+
+class Account(models.Model):
+    customer = models.ForeignKey(Customer, to_field='ssn', on_delete=models.CASCADE)
+    type = models.CharField(max_length=1, choices=[('c', 'Checking'), ('s', 'Savings')])
+    name = models.CharField(max_length=80)
