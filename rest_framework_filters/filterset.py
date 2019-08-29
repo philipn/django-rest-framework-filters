@@ -212,15 +212,22 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             >>> FilterSet.get_param_filter_name('author__email', rel='author')
             'email'
 
+            # exclude non related filters in related filterset
+            >>> FilterSet.get_param_filter_name('email', rel='author')
+
+
         """
         # check for empty param
         if not param:
             return param
 
         # strip the rel prefix from the param name.
-        prefix = '%s%s' % (rel or '', LOOKUP_SEP)
-        if rel and param.startswith(prefix):
-            param = param[len(prefix):]
+        if rel:
+            prefix = '%s%s' % (rel, LOOKUP_SEP)
+            if param.startswith(prefix):
+                param = param[len(prefix):]
+            else:
+                return None
 
         # Attempt to match against filters with lookups first. (username__endswith)
         if param in cls.base_filters:
