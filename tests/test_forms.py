@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework_filters import FilterSet, filters
 
 from .testapp.filters import PostFilter
-from .testapp.models import Post, User
+from .testapp.models import Note, Post, User
 
 
 class FilterSetFormTests(TestCase):
@@ -71,6 +71,33 @@ class FilterSetFormTests(TestCase):
 
         form = F({'title': '', 'author': '', 'author__email': ''}).related_filtersets['author'].form
         self.assertEqual(list(form.fields), ['email'])
+
+    def test_related_form_fields_for_same_parent_filters(self):
+        # Related and parent filtersets have filter with same name
+        # Related FilterSet form should not contain fields from parent filtersets
+
+        class NoteFilterSet(FilterSet):
+            title = filters.AutoFilter(field_name='title', lookups='__all__')
+
+            class Meta:
+                model = Note
+                fields = ['title']
+
+        class PostFilterSet(FilterSet):
+            title = filters.AutoFilter(field_name='title', lookups='__all__')
+            note = filters.RelatedFilter(NoteFilterSet, queryset=Note.objects.all())
+
+            class Meta:
+                model = Post
+                fields = ['title', 'author']
+
+        GET = {'title': '', 'note': ''}
+
+        form = PostFilterSet(GET).form
+        self.assertEqual(list(form.fields), ['title', 'note'])
+
+        form = PostFilterSet(GET).related_filtersets['note'].form
+        self.assertEqual(list(form.fields), [])
 
     def test_validation_errors(self):
         f = PostFilter({
