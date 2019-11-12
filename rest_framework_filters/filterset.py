@@ -70,6 +70,17 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             ])
         return self._related_filters
 
+    @property
+    def expanded_filters(self):
+        if '_expanded_filters' not in self.__dict__:
+            self._expanded_filters = self.base_filters.copy()
+            for filter_name, f in self.related_filters.items():
+                del self._expanded_filters[filter_name]
+                for related_name, related_f in six.iteritems(f.filterset.expanded_filters):
+                    related_name = LOOKUP_SEP.join([filter_name, related_name])
+                    self._expanded_filters[related_name] = related_f
+        return self._expanded_filters
+
 
 class FilterSet(six.with_metaclass(FilterSetMetaclass, rest_framework.FilterSet)):
     _subset_cache = {}

@@ -4,12 +4,13 @@ from __future__ import unicode_literals
 
 import sys
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import six
 
 from rest_framework_filters.compat import set_many
 from rest_framework_filters.filterset import FilterSetMetaclass
-from rest_framework_filters import filters, FilterSet
+from rest_framework_filters import filters, FilterSet, RelatedFilter
 from django_filters.filters import BaseInFilter
 
 from .testapp.models import (
@@ -462,3 +463,31 @@ class FilterExclusionTests(TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], 'Post 2')
+
+
+class ExpandedFiltersTests(TestCase):
+
+    def test_include_nested_filters(self):
+        """
+        Ensure that the FilterSet.expanded_filters includes
+        all nested fields from RelatedFilters
+        """
+
+        class UserFilter(FilterSet):
+            username = filters.CharFilter(field_name='username')
+            email = filters.CharFilter(field_name='email')
+
+            class Meta:
+                model = User
+                fields = []
+
+        class NoteFilter(FilterSet):
+            title = filters.CharFilter(field_name='title')
+            author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
+
+            class Meta:
+                model = Note
+                fields = []
+
+        expected_fields = ['title', 'author__username', 'author__email']
+        self.assertEqual(expected_fields, list(NoteFilter.expanded_filters.keys()))
