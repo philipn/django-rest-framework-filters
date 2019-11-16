@@ -565,7 +565,10 @@ class ComplexJsonFilterBackendTests(APITestCase):
         )
 
         # pagination + complex-filtering
-        response = self.client.get('/ffjsoncomplex-users/?page_size=1&json_filters=' + quote(readable), content_type='json')
+        response = self.client.get(
+            '/ffjsoncomplex-users/?page_size=1&json_filters=' + quote(readable),
+            content_type='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
