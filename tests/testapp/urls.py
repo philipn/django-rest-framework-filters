@@ -8,6 +8,7 @@ router = routers.DefaultRouter()
 router.register(r'df-users', views.DFUserViewSet, basename='df-users')
 router.register(r'ff-users', views.FilterFieldsUserViewSet, basename='ff-users')
 router.register(r'ffcomplex-users', views.ComplexFilterFieldsUserViewSet, basename='ffcomplex-users')
+router.register(r'ffjsoncomplex-users', views.ComplexJsonFilterFieldsUserViewSet, basename='ffcomplex-users')
 router.register(r'users', views.UserViewSet,)
 router.register(r'notes', views.NoteViewSet,)
 

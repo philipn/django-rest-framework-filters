@@ -52,6 +52,19 @@ class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
         page_size_query_param = 'page_size'
 
 
+class ComplexJsonFilterFieldsUserViewSet(FilterFieldsUserViewSet):
+    queryset = User.objects.order_by('pk')
+    filter_backends = (backends.ComplexJsonFilterBackend, )
+    filterset_fields = {
+        'id': '__all__',
+        'username': '__all__',
+        'email': '__all__',
+    }
+
+    class pagination_class(pagination.PageNumberPagination):
+        page_size_query_param = 'page_size'
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

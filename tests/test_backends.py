@@ -1,5 +1,5 @@
 from urllib.parse import quote, urlencode
-
+import json
 import django_filters
 from django.test import modify_settings
 from rest_framework import status
@@ -457,6 +457,119 @@ class ComplexFilterBackendTests(APITestCase):
 
         # pagination + complex-filtering
         response = self.client.get('/ffcomplex-users/?page_size=1&filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertListEqual(
+            [r['username'] for r in response.data['results']],
+            ['user3']
+        )
+
+
+class ComplexJsonFilterBackendTests(APITestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        models.User.objects.create(username="user1", email="user1@example.com")
+        models.User.objects.create(username="user2", email="user2@example.com")
+        models.User.objects.create(username="user3", email="user3@example.org")
+        models.User.objects.create(username="user4", email="user4@example.org")
+
+    def test_valid(self):
+        readable = json.dumps({
+            "or": [
+                {
+                    "username": "user1"
+                },
+                {
+                    "email__contains": "example.org"
+                }
+            ]
+        })
+        response = self.client.get('/ffjsoncomplex-users/?json_filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [r['username'] for r in response.data],
+            ['user1', 'user3', 'user4']
+        )
+
+    def test_invalid(self):
+        readable = json.dumps({
+            "or": [
+                {
+                    "username": "user1"
+                },
+                {
+                    "email__contains": "example.org"
+                }
+            ]
+        })[0:10]
+        response = self.client.get('/ffjsoncomplex-users/?json_filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertDictEqual(response.data, {
+            'filters': ["Invalid querystring operator. Matched: 'asdf'."],
+        })
+
+    def test_invalid_filterset_errors(self):
+        readable = json.dumps({
+            "or": [
+                {
+                    "id": "foo"
+                },
+                {
+                    "id": "bar"
+                }
+            ]
+        })
+        response = self.client.get('/ffjsoncomplex-users/?json_filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertDictEqual(response.data, {
+            'filters': {
+                'id=foo': {
+                    'id': ['Enter a number.'],
+                },
+                'id=bar': {
+                    'id': ['Enter a number.'],
+                },
+            },
+        })
+
+    def test_pagination_compatibility(self):
+        """
+        Ensure that complex-filtering does not interfere with additional query param processing.
+        """
+        readable = json.dumps({
+            "or": [
+                {
+                    "email__contains": "example.org"
+                }
+            ]
+        })
+
+        # sanity check w/o pagination
+        response = self.client.get('/ffjsoncomplex-users/?json_filters=' + quote(readable), content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [r['username'] for r in response.data],
+            ['user3', 'user4']
+        )
+
+        # sanity check w/o complex-filtering
+        response = self.client.get('/ffjsoncomplex-users/?page_size=1', content_type='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertListEqual(
+            [r['username'] for r in response.data['results']],
+            ['user1']
+        )
+
+        # pagination + complex-filtering
+        response = self.client.get('/ffjsoncomplex-users/?page_size=1&filters=' + quote(readable), content_type='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
