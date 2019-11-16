@@ -8,7 +8,6 @@ from django_filters.rest_framework import backends
 from rest_framework.exceptions import ValidationError
 
 from .complex_ops import combine_complex_queryset, decode_complex_ops
-
 from .filterset import FilterSet
 
 COMPLEX_JSON_OPERATORS = {"and": QuerySet.__and__, "or": QuerySet.__or__}
@@ -155,4 +154,3 @@ class ComplexJsonFilterBackend(RestFrameworkFilterBackend):
         finally:
             request._request.GET = original_GET
         return res
-
