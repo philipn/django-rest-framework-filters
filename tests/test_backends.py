@@ -508,8 +508,8 @@ class ComplexJsonFilterBackendTests(APITestCase):
         response = self.client.get('/ffjsoncomplex-users/?json_filters=' + quote(readable), content_type='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertDictEqual(response.data, {
-            'json_filters': ["unable to parse json"],
+        self.assertDictEqual(response.json(), {
+            'json_filters': ["unable to parse json."],
         })
 
     def test_invalid_filterset_errors(self):
@@ -528,7 +528,7 @@ class ComplexJsonFilterBackendTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertDictEqual(response.json(), {
             'json_filters': {
-                'id': ["Enter a number"],
+                'id': ["Enter a number."],
             },
         })
 

@@ -115,7 +115,7 @@ class ComplexJsonFilterBackend(RestFrameworkFilterBackend):
         except ValidationError as exc:
             raise ValidationError({self.complex_filter_param: exc.detail})
         except json.decoder.JSONDecodeError:
-            raise ValidationError({self.complex_filter_param: "unable to parse json"})
+            raise ValidationError({self.complex_filter_param: "unable to parse json."})
 
     def combine_filtered_querysets(self, complex_filter, request, queryset, view):
         """
