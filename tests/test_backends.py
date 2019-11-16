@@ -509,7 +509,7 @@ class ComplexJsonFilterBackendTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertDictEqual(response.data, {
-            'filters': ["Invalid querystring operator. Matched: 'asdf'."],
+            'json_filters': ["unable to parse json"],
         })
 
     def test_invalid_filterset_errors(self):
@@ -528,7 +528,7 @@ class ComplexJsonFilterBackendTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertDictEqual(response.json(), {
             'json_filters': {
-                'id': "Enter a number",
+                'id': ["Enter a number"],
             },
         })
 
