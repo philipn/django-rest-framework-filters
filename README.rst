@@ -600,7 +600,7 @@ filters = {
         }
     ]
 }
-querystring = f"json_filters={quote(json.dumps(filters))}"
+querystring = "json_filters={filters}".format(filters=quote(json.dumps(filters)))
 
 ```
 

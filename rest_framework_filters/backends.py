@@ -142,7 +142,7 @@ class ComplexJsonFilterBackend(RestFrameworkFilterBackend):
             return combined_queryset
 
         return self.get_filtered_queryset(
-            "&".join([f"{k}={v}" for k, v in complex_filter.items()]), request, queryset, view
+            "&".join(["{k}={v}".format(k=k, v=v) for k, v in complex_filter.items()]), request, queryset, view
         )
 
     def get_filtered_queryset(self, querystring, request, queryset, view):
