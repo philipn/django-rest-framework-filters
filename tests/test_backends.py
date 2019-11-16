@@ -9,6 +9,7 @@ from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.backends import RestFrameworkFilterBackend
 from rest_framework_filters.filterset import SubsetDisabledMixin
+
 from .testapp import models, views
 
 factory = APIRequestFactory()
