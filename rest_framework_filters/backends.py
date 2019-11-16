@@ -108,8 +108,8 @@ class ComplexJsonFilterBackend(RestFrameworkFilterBackend):
         if self.complex_filter_param not in request.query_params:
             return super().filter_queryset(request, queryset, view)
 
-        encoded_querystring = request.query_params[self.complex_filter_param]
         try:
+            encoded_querystring = request.query_params[self.complex_filter_param]
             complex_ops = json.loads(encoded_querystring)
             return self.combine_filtered_querysets(complex_ops, request, queryset, view)
         except ValidationError as exc:

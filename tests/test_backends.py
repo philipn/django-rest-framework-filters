@@ -526,14 +526,9 @@ class ComplexJsonFilterBackendTests(APITestCase):
         response = self.client.get('/ffjsoncomplex-users/?json_filters=' + quote(readable), content_type='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertDictEqual(response.data, {
-            'filters': {
-                'id=foo': {
-                    'id': ['Enter a number.'],
-                },
-                'id=bar': {
-                    'id': ['Enter a number.'],
-                },
+        self.assertDictEqual(response.json(), {
+            'json_filters': {
+                'id': "Enter a number",
             },
         })
 
@@ -569,7 +564,7 @@ class ComplexJsonFilterBackendTests(APITestCase):
         )
 
         # pagination + complex-filtering
-        response = self.client.get('/ffjsoncomplex-users/?page_size=1&filters=' + quote(readable), content_type='json')
+        response = self.client.get('/ffjsoncomplex-users/?page_size=1&json_filters=' + quote(readable), content_type='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
