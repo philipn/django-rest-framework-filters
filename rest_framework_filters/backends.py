@@ -100,7 +100,7 @@ class ComplexFilterBackend(RestFrameworkFilterBackend):
         return querysets
 
 
-class ComplexJsonFilterBackend(RestFrameworkFilterBackend):
+class ComplexJSONFilterBackend(RestFrameworkFilterBackend):
     complex_filter_param = "json_filters"
 
     def filter_queryset(self, request, queryset, view):

@@ -52,7 +52,7 @@ class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
         page_size_query_param = 'page_size'
 
 
-class ComplexJsonFilterFieldsUserViewSet(FilterFieldsUserViewSet):
+class ComplexJSONFilterFieldsUserViewSet(FilterFieldsUserViewSet):
     queryset = User.objects.order_by('pk')
     filter_backends = (backends.ComplexJsonFilterBackend, )
     filterset_fields = {
