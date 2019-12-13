@@ -54,7 +54,7 @@ class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
 
 class ComplexJSONFilterFieldsUserViewSet(FilterFieldsUserViewSet):
     queryset = User.objects.order_by('pk')
-    filter_backends = (backends.ComplexJsonFilterBackend, )
+    filter_backends = (backends.ComplexJSONFilterBackend, )
     filterset_fields = {
         'id': '__all__',
         'username': '__all__',
