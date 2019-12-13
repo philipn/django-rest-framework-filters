@@ -467,7 +467,7 @@ class ComplexFilterBackendTests(APITestCase):
         )
 
 
-class ComplexJsonFilterBackendTests(APITestCase):
+class ComplexJSONFilterBackendTests(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
