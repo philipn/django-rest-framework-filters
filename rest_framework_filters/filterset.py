@@ -1,6 +1,7 @@
 import copy
 from collections import OrderedDict
 
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models.constants import LOOKUP_SEP
 from django_filters import filterset, rest_framework
 from django_filters.utils import get_model_field
@@ -141,6 +142,8 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         for name, lookups in fields.items():
             if lookups == filters.ALL_LOOKUPS:
                 field = get_model_field(cls._meta.model, name)
+                if field is None:
+                    raise FieldDoesNotExist("Unknown field %s in %s" % (name, cls._meta.model.__name__))
                 fields[name] = utils.lookups_for_field(field)
 
         return fields

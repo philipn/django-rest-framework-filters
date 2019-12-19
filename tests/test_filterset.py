@@ -1,6 +1,7 @@
 import sys
 import warnings
 
+from django.core.exceptions import FieldDoesNotExist
 from django.test import TestCase
 from django_filters.filters import BaseInFilter
 from rest_framework.test import APIRequestFactory
@@ -146,6 +147,15 @@ class AutoFilterTests(TestCase):
         self.assertEqual(base_filters, {
             'posts': filters.RelatedFilter,
         })
+
+    def test_bad_field(self):
+        with self.assertRaises(FieldDoesNotExist):
+            class F(FilterSet):
+                class Meta:
+                    model = Note
+                    fields = {
+                        'xyz': '__all__',
+                    }
 
     def test_all_lookups_for_relation(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/84
