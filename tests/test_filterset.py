@@ -261,6 +261,33 @@ class AutoFilterTests(TestCase):
         self.assertEqual(str(w[0].message), message)
         self.assertIs(w[0].category, DeprecationWarning)
 
+    def test_autofilter_can_be_generated_with_method(self):
+        # ensure AutoFilters are generated with the provided method.
+        def external_method(instance, qs, field, value):
+            pass
+
+        class F(FilterSet):
+            id = filters.AutoFilter(lookups='__all__', method='filterset_method')
+            title = filters.AutoFilter(lookups=['exact'], method=external_method)
+            author = filters.AutoFilter(field_name='author__last_name', lookups='__all__', method='related_method')
+
+            class Meta:
+                model = Note
+                fields = []
+
+            def filterset_method(self, qs, field, value):
+                pass
+
+            def related_method(self, qs, field, value):
+                pass
+
+        for field_name, lookup_filter in F.base_filters.items():
+            # Ensure field name on filter is overridden to include lookup expression.
+            if lookup_filter.lookup_expr != 'exact':
+                self.assertTrue(lookup_filter.field_name.endswith(lookup_filter.lookup_expr))
+
+            self.assertIsNotNone(lookup_filter._method)
+
 
 class GetRelatedFiltersetsTests(TestCase):
 

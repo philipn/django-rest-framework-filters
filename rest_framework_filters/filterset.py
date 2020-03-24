@@ -103,6 +103,16 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             # replace the field name with the param name from the filerset
             gen_name = gen_name.replace(f.field_name, filter_name, 1)
 
+            if f.method:
+                # Override method for auto-generated filters.
+                gen_f.method = f.method
+
+                # Skip if lookup expression is `exact` since it is equivalent to no lookup
+                if gen_f.lookup_expr != "exact":
+                    # Update field name to also include lookup expr.
+                    gen_f.field_name = "{field_name}__{lookup_expr}".format(field_name=f.field_name,
+                                                                            lookup_expr=gen_f.lookup_expr)
+
             # do not overwrite declared filters
             if gen_name not in orig_declared:
                 expanded[gen_name] = gen_f

@@ -44,9 +44,10 @@ class AutoFilter:
     """
     creation_counter = 0
 
-    def __init__(self, field_name=None, *, lookups=None):
+    def __init__(self, field_name=None, *, lookups=None, method=None):
         self.field_name = field_name
         self.lookups = lookups or []
+        self.method = method
 
         self.creation_counter = AutoFilter.creation_counter
         AutoFilter.creation_counter += 1
