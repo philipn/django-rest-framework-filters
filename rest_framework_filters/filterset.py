@@ -98,10 +98,18 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         # Use meta.fields to generate auto filters
         new_class._meta.fields = {f.field_name: f.lookups or []}
+
         for gen_name, gen_f in new_class.get_filters().items():
             # get_filters() generates param names from the model field name, so
             # replace the field name with the param name from the filerset
             gen_name = gen_name.replace(f.field_name, filter_name, 1)
+
+            if f.method:
+                # Override method for auto-generated filters.
+                # Update field name to also include lookup expr.
+                gen_f.field_name = "{field_name}__{lookup_expr}".format(field_name=f.field_name,
+                                                                        lookup_expr=gen_f.lookup_expr)
+                gen_f.method = f.method
 
             # do not overwrite declared filters
             if gen_name not in orig_declared:
