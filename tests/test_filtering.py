@@ -54,6 +54,11 @@ class AutoFilterTests(TestCase):
         self.assertEqual(len(list(f.qs)), 1)
         self.assertEqual(list(f.qs)[0].title, "Hello Test 3")
 
+        # Test that malformed filters are ignored, e.g. /?=value
+        GET = {'': 'value'}
+        f = NoteFilter(GET, queryset=Note.objects.all())
+        self.assertEqual(len(list(f.qs)), 4)
+
     def test_autofilter_with_mixin(self):
         # Mixin FilterSets should not error when no model is provided. See:
         # https://github.com/philipn/django-rest-framework-filters/issues/82
