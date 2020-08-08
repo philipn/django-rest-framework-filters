@@ -66,7 +66,7 @@ class PostFilter(FilterSet):
 
     author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
     note = RelatedFilter(NoteFilter, field_name='note', queryset=Note.objects.all())
-    tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
+    tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all(), distinct=True)
 
     class Meta:
         model = Post
