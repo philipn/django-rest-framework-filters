@@ -10,7 +10,8 @@ from rest_framework_filters import FilterSet, filters
 from rest_framework_filters.filterset import FilterSetMetaclass, SubsetDisabledMixin
 
 from .testapp.filters import (
-    AFilter, NoteFilter, NoteFilterWithAlias, PostFilter, TagFilter, UserFilter,
+    AFilter, NoteFilter, NoteFilterWithAlias, PersonFilter, PostFilter, TagFilter,
+    UserFilter,
 )
 from .testapp.models import Note, Person, Post, Tag, User
 
@@ -354,6 +355,15 @@ class GetParamFilterNameTests(TestCase):
     def test_relationship_regular_filter(self):
         name = UserFilter.get_param_filter_name('author__email', rel='author')
         self.assertEqual('email', name)
+
+    def test_recursive_self_filter(self):
+        name = PersonFilter.get_param_filter_name('best_friend')
+        self.assertEqual('best_friend', name)
+
+    def test_related_recursive_self_filter(self):
+        # see: https://github.com/philipn/django-rest-framework-filters/issues/333
+        name = PersonFilter.get_param_filter_name('best_friend', rel='best_friend')
+        self.assertEqual(None, name)
 
     def test_twice_removed_related_filter(self):
         class PostFilterWithDirectAuthor(PostFilter):

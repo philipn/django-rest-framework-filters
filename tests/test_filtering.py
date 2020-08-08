@@ -281,6 +281,16 @@ class RelatedFilterTests(TestCase):
         self.assertEqual(c.title, "C1")
 
     def test_direct_recursive_relation(self):
+        # see: https://github.com/philipn/django-rest-framework-filters/issues/333
+        GET = {
+            'best_friend': 1
+        }
+        f = PersonFilter(GET, queryset=Person.objects.all())
+        self.assertEqual(len(list(f.qs)), 1)
+        p = list(f.qs)[0]
+        self.assertEqual(p.name, "Mark")
+
+    def test_direct_recursive_relation__lookup(self):
         GET = {
             'best_friend__name__endswith': 'hn'
         }
