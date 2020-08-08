@@ -55,10 +55,10 @@ Features
 Requirements
 ------------
 
-* **Python**: 3.4, 3.5, 3.6, 3.7
-* **Django**: 1.11, 2.0, 2.1, 2.2
+* **Python**: 3.4, 3.5, 3.6, 3.7, 3.8
+* **Django**: 1.11, 2.0, 2.1, 2.2, 3.0, 3.1
 * **DRF**: 3.10
-* **django-filter**: 2.0
+* **django-filter**: 2.1, 2.2 (Django 2.0+)
 
 
 Installation
