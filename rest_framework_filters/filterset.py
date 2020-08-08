@@ -29,7 +29,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
         # See: :meth:`rest_framework_filters.filters.RelatedFilter.bind`
         for name, f in new_class.related_filters.items():
-            f.bind(new_class)
+            f.bind_filterset(new_class)
 
         # Only expand when model is defined. Model may be undefined for mixins.
         if new_class._meta.model is not None:

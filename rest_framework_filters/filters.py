@@ -59,7 +59,7 @@ class BaseRelatedFilter:
         self.filterset = filterset
         self.lookups = lookups or []
 
-    def bind(self, bind_cls):
+    def bind_filterset(self, filterset):
         """
         Bind a filterset class to the filter instance. This class is used for
         relative imports. Only the first bound class is used as filterset
@@ -68,8 +68,8 @@ class BaseRelatedFilter:
         This is also necessary to allow `.filterset` to be resolved during
         FilterSet class creation time, instead of during initialization.
         """
-        if not hasattr(self, 'bind_cls'):
-            self.bind_cls = bind_cls
+        if not hasattr(self, 'bound_filterset'):
+            self.bound_filterset = filterset
 
     def filterset():
         def fget(self):
@@ -79,7 +79,7 @@ class BaseRelatedFilter:
                     self._filterset = import_string(self._filterset)
                 except ImportError:
                     # Fallback to building import path relative to bind class
-                    path = '.'.join([self.bind_cls.__module__, self._filterset])
+                    path = '.'.join([self.bound_filterset.__module__, self._filterset])
                     self._filterset = import_string(path)
             return self._filterset
 
