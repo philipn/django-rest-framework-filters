@@ -141,7 +141,11 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         for name, lookups in fields.items():
             if lookups == filters.ALL_LOOKUPS:
                 field = get_model_field(cls._meta.model, name)
-                fields[name] = utils.lookups_for_field(field)
+                if field is not None:
+                    fields[name] = utils.lookups_for_field(field)
+                else:
+                    # FilterSet will handle invalid name
+                    fields[name] = []
 
         return fields
 

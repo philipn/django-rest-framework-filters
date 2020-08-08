@@ -1,6 +1,8 @@
 import sys
+import unittest
 import warnings
 
+import django_filters
 from django.test import TestCase
 from django_filters.filters import BaseInFilter
 from rest_framework.test import APIRequestFactory
@@ -133,6 +135,28 @@ class AutoFilterTests(TestCase):
             'individual': filters.CharFilter,
             'pk': filters.NumberFilter,
         })
+
+    @unittest.skipIf(django_filters.VERSION < (2, 2), 'requires django-filter 2.2')
+    def test_autofilter_invalid_field(self):
+        msg = "'Meta.fields' must not contain non-model field names: xyz"
+        with self.assertRaisesMessage(TypeError, msg):
+            class F(FilterSet):
+                pk = filters.AutoFilter(field_name='xyz', lookups=['exact'])
+
+                class Meta:
+                    model = Note
+                    fields = []
+
+    @unittest.skipIf(django_filters.VERSION < (2, 2), 'requires django-filter 2.2')
+    def test_all_lookups_invalid_field(self):
+        msg = "'Meta.fields' must not contain non-model field names: xyz"
+        with self.assertRaisesMessage(TypeError, msg):
+            class F(FilterSet):
+                class Meta:
+                    model = Note
+                    fields = {
+                        'xyz': '__all__',
+                    }
 
     def test_relatedfilter_doesnt_expand_declared(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/234
