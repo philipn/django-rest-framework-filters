@@ -217,6 +217,10 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         if not param:
             return param
 
+        # check that param is not the rel.
+        if param == rel:
+            return None
+
         # strip the rel prefix from the param name.
         prefix = '%s%s' % (rel or '', LOOKUP_SEP)
         if rel and param.startswith(prefix):
