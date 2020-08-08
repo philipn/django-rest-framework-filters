@@ -308,6 +308,10 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             subquery = related_filterset.qs.values(to_field_name)
             queryset = queryset.filter(**{lookup_expr: subquery})
 
+            # handle disinct
+            if self.related_filters[related_name].distinct:
+                queryset = queryset.distinct()
+
         return queryset
 
     def get_form_class(self):

@@ -98,7 +98,7 @@ class RelatedFilterTests(TestCase):
         ########################################################################
         # Create posts #########################################################
         post1 = Post.objects.create(note=note1, content="Test content in post 1")
-        Post.objects.create(note=note2, content="Test content in post 2")
+        post2 = Post.objects.create(note=note2, content="Test content in post 2")
         post3 = Post.objects.create(note=note4, content="Test content in post 3")
 
         ########################################################################
@@ -121,6 +121,13 @@ class RelatedFilterTests(TestCase):
 
         post1.tags.set([t1, t3])
         post3.tags.set([t3])
+
+        ########################################################################
+        # ManyToMany distinct ##################################################
+        t4 = Tag.objects.create(name="test1")
+        t5 = Tag.objects.create(name="test2")
+
+        post2.tags.set([t4, t5])
 
         ########################################################################
         # Recursive relations ##################################################
@@ -298,6 +305,15 @@ class RelatedFilterTests(TestCase):
         self.assertEqual(len(list(f.qs)), 2)
         contents = set([post.content for post in f.qs])
         self.assertEqual(contents, {'Test content in post 1', 'Test content in post 3'})
+
+    def test_m2m_distinct(self):
+        GET = {
+            'tags__name__startswith': 'test',
+        }
+        f = PostFilter(GET, queryset=Post.objects.all())
+        self.assertEqual(len(list(f.qs)), 1)
+        contents = set([post.content for post in f.qs])
+        self.assertEqual(contents, {'Test content in post 2'})
 
     def test_nonexistent_related_field(self):
         """
