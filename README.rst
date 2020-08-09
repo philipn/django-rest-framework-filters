@@ -10,6 +10,12 @@ Django Rest Framework Filters
 .. image:: https://img.shields.io/pypi/v/djangorestframework-filters.svg
   :target: https://pypi.python.org/pypi/djangorestframework-filters
 
+.. image:: https://img.shields.io/pypi/pyversions/djangorestframework-filters.svg
+  :target: https://pypi.org/project/djangorestframework-filters/
+
+.. image:: https://img.shields.io/pypi/l/tox-factor.svg
+  :target: https://pypi.org/project/djangorestframework-filters/
+
 
 ``django-rest-framework-filters`` is an extension to `Django REST framework`_ and `Django filter`_
 that makes it easy to filter across relationships. Historically, this extension also provided a
@@ -55,9 +61,9 @@ Features
 Requirements
 ------------
 
-* **Python**: 3.4, 3.5, 3.6, 3.7, 3.8
+* **Python**: 3.5, 3.6, 3.7, 3.8
 * **Django**: 1.11, 2.0, 2.1, 2.2, 3.0, 3.1
-* **DRF**: 3.10
+* **DRF**: 3.11
 * **django-filter**: 2.1, 2.2 (Django 2.0+)
 
 
