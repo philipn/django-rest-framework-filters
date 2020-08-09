@@ -66,10 +66,11 @@ class FilterSetFormTests(TestCase):
                 model = Post
                 fields = ['title', 'author']
 
-        form = F({'title': '', 'author': '', 'author__email': ''}).form
+        f = F({'title': '', 'author': '', 'author__email': ''})
+        form = f.form
         self.assertEqual(list(form.fields), ['title', 'author'])
 
-        form = F({'title': '', 'author': '', 'author__email': ''}).related_filtersets['author'].form
+        form = f.related_filtersets['author'].form
         self.assertEqual(list(form.fields), ['email'])
 
     def test_validation_errors(self):

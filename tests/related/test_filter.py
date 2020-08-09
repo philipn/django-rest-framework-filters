@@ -35,12 +35,13 @@ class FilterTests(RelationshipData, TestCase):
     NOT_CORRECT = [1, 5, 6, 7, 8, 11, 12, 13, 14, 15]
 
     def test_single_filter(self):
-        """
-        Verify that the following queries are equivalent
-        """
+        # Verify that the following queries are equivalent
         q1 = Blog.objects.filter(post__title__contains='Lennon')
-        q2 = Blog.objects.filter(post__in=Post.objects.filter(title__contains='Lennon'))
-        q3 = Blog.objects.filter(pk__in=Post.objects.filter(title__contains='Lennon').values('blog'))
+        q2 = Blog.objects.filter(post__in=Post.objects
+                                              .filter(title__contains='Lennon'))
+        q3 = Blog.objects.filter(pk__in=Post.objects
+                                            .filter(title__contains='Lennon')
+                                            .values('blog'))
 
         expected = [1, 2, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
 
@@ -59,7 +60,7 @@ class FilterTests(RelationshipData, TestCase):
         q2 = Blog.objects.filter(
             post__in=Post.objects
                          .filter(title__contains='Lennon')
-                         .filter(publish_date__year=2008)
+                         .filter(publish_date__year=2008),
         )
 
         self.verify(q2, self.CORRECT)
@@ -69,7 +70,7 @@ class FilterTests(RelationshipData, TestCase):
             pk__in=Post.objects
                        .filter(title__contains='Lennon')
                        .filter(publish_date__year=2008)
-                       .values('blog')
+                       .values('blog'),
         )
 
         self.verify(q3, self.CORRECT)

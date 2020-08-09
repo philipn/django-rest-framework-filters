@@ -46,9 +46,7 @@ class MetaclassTests(TestCase):
 
 
 class AutoFilterTests(TestCase):
-    """
-    Test auto filter generation (`AutoFilter`, `RelatedFilter`, '__all__').
-    """
+    # Test auto filter generation (`AutoFilter`, `RelatedFilter`, '__all__').
 
     def test_autofilter_not_declared(self):
         # AutoFilter is not an actual Filter subclass
@@ -161,7 +159,11 @@ class AutoFilterTests(TestCase):
     def test_relatedfilter_doesnt_expand_declared(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/234
         class F(FilterSet):
-            posts = filters.RelatedFilter(PostFilter, field_name='post', lookups=['exact'])
+            posts = filters.RelatedFilter(
+                PostFilter,
+                field_name='post',
+                lookups=['exact'],
+            )
 
             class Meta:
                 model = User
@@ -319,7 +321,7 @@ class GetRelatedFiltersetsTests(TestCase):
 
     def test_filterset_alias(self):
         filtersets = NoteFilterWithAlias({
-            'writer__username': 'bob'
+            'writer__username': 'bob',
         }).get_related_filtersets()
 
         self.assertEqual(len(filtersets), 1)
@@ -327,7 +329,7 @@ class GetRelatedFiltersetsTests(TestCase):
 
     def test_filterset_twice_removed(self):
         filtersets = PostFilter({
-            'note__author__username': 'bob'
+            'note__author__username': 'bob',
         }).get_related_filtersets()
 
         self.assertEqual(len(filtersets), 1)
@@ -360,7 +362,7 @@ class GetParamFilterNameTests(TestCase):
 
     def test_non_filter(self):
         name = UserFilter.get_param_filter_name('foobar')
-        self.assertEqual(None, name)
+        self.assertIsNone(name)
 
     def test_related_filter(self):
         # 'exact' matches
@@ -387,7 +389,7 @@ class GetParamFilterNameTests(TestCase):
     def test_related_recursive_self_filter(self):
         # see: https://github.com/philipn/django-rest-framework-filters/issues/333
         name = PersonFilter.get_param_filter_name('best_friend', rel='best_friend')
-        self.assertEqual(None, name)
+        self.assertIsNone(name)
 
     def test_twice_removed_related_filter(self):
         class PostFilterWithDirectAuthor(PostFilter):
@@ -460,7 +462,8 @@ class GetFilterSubsetTests(TestCase):
 
     def test_related_subset(self):
         # related filters should only return the local RelatedFilter
-        filter_subset = self.NoteFilter.get_filter_subset(['title', 'author', 'author__email'])
+        filter_subset = ['title', 'author', 'author__email']
+        filter_subset = self.NoteFilter.get_filter_subset(filter_subset)
 
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
@@ -471,7 +474,8 @@ class GetFilterSubsetTests(TestCase):
 
     def test_subset_ordering(self):
         # sanity check ordering of base filters
-        filter_subset = [f for f in self.NoteFilter.base_filters if f in ['title', 'author']]
+        filter_subset = ['title', 'author']
+        filter_subset = [f for f in self.NoteFilter.base_filters if f in filter_subset]
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure that the ordering of the subset is the same as the base filters
@@ -483,7 +487,8 @@ class GetFilterSubsetTests(TestCase):
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
         # ensure related filters do not change subset ordering
-        filter_subset = self.NoteFilter.get_filter_subset(['author__email', 'author', 'title'])
+        filter_subset = ['author__email', 'author', 'title']
+        filter_subset = self.NoteFilter.get_filter_subset(filter_subset)
         self.assertEqual(list(filter_subset), ['title', 'author'])
 
     def test_metaclass_inheritance(self):
@@ -626,9 +631,7 @@ class FilterExclusionTests(TestCase):
         p2.tags.set([t3])
 
     def test_exclude_property(self):
-        """
-        Ensure that the filter is set to exclude
-        """
+        # Ensure that the filter is set to exclude
         GET = {
             'name__contains!': 'Tag',
         }
@@ -638,9 +641,7 @@ class FilterExclusionTests(TestCase):
         self.assertTrue(filterset.filters['name__contains!'].exclude)
 
     def test_filter_and_exclude(self):
-        """
-        Ensure that both the filter and exclusion filter are available
-        """
+        # Ensure that both the filter and exclusion filter are available
         GET = {
             'name__contains': 'Tag',
             'name__contains!': 'Tag',
@@ -696,7 +697,11 @@ class FilterExclusionTests(TestCase):
     def test_exclude_and_request_interaction(self):
         # See: https://github.com/philipn/django-rest-framework-filters/issues/171
         request = APIView().initialize_request(factory.get('/?tags__name__contains!=Tag'))
-        filterset = PostFilter(request.query_params, request=request, queryset=Post.objects.all())
+        filterset = PostFilter(
+            request.query_params,
+            request=request,
+            queryset=Post.objects.all(),
+        )
 
         try:
             with limit_recursion():

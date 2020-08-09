@@ -15,6 +15,8 @@ class AutoFilter:
     This is a declarative alternative to the ``Meta.fields`` dict syntax, and
     the below are functionally equivalent:
 
+    .. code-block:: python
+
         class PersonFilter(filters.FilterSet):
             name = AutoFilter(lookups=['exact', 'contains'])
 
@@ -30,6 +32,8 @@ class AutoFilter:
     Due to its declarative nature, an ``AutoFilter`` allows for paramater name
     aliasing for its generated filters. e.g.,
 
+    .. code-block:: python
+
         class BlogFilter(filters.FilterSet):
             title = AutoFilter(field_name='name', lookups=['contains'])
 
@@ -42,6 +46,7 @@ class AutoFilter:
     filterable. However, an ``AutoFilter`` is typically replaced by a generated
     ``exact`` filter of the same name, which enables filtering by that param.
     """
+
     creation_counter = 0
 
     def __init__(self, field_name=None, *, lookups=None):
@@ -60,13 +65,16 @@ class BaseRelatedFilter:
         self.lookups = lookups or []
 
     def bind_filterset(self, filterset):
-        """
-        Bind a filterset class to the filter instance. This class is used for
-        relative imports. Only the first bound class is used as filterset
-        inheritance might otherwise break these relative import paths.
+        """Bind a filterset class to the filter instance.
 
-        This is also necessary to allow `.filterset` to be resolved during
-        FilterSet class creation time, instead of during initialization.
+        This class is used for relative imports. Only the first bound class is used as
+        filterset inheritance might otherwise break these relative import paths.
+
+        This is also necessary to allow ``.filterset`` to be resolved during FilterSet
+        class creation time, instead of during initialization.
+
+        Args:
+            filterset: The filterset to bind
         """
         if not hasattr(self, 'bound_filterset'):
             self.bound_filterset = filterset
@@ -144,5 +152,8 @@ class AllLookupsFilter(AutoFilter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, lookups=ALL_LOOKUPS, **kwargs)
         warnings.warn(
-            "`AllLookupsFilter()` has been deprecated in favor of `AutoFilter(lookups='__all__')`.",
-            DeprecationWarning, stacklevel=2)
+            "`AllLookupsFilter()` has been deprecated in favor of "
+            "`AutoFilter(lookups='__all__')`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
