@@ -19,6 +19,9 @@ setup(
 
     author='Philip Neustrom',
     author_email='philipn@gmail.com',
+    maintainer='Ryan P Kilby',
+    maintainer_email='kilbyr@gmail.com',
+
     packages=find_packages(exclude=['tests*']),
     include_package_data=True,
     zip_safe=False,
