@@ -9,9 +9,7 @@ from . import filters, utils
 
 
 def related(filterset, filter_name):
-    """
-    Return a related filter_name, using the filterset relationship if present.
-    """
+    # Return a related filter_name, using the filterset relationship if present.
     if not filterset.relationship:
         return filter_name
     return LOOKUP_SEP.join([filterset.relationship, filter_name])
@@ -28,7 +26,7 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
             if isinstance(f, filters.BaseRelatedFilter)])
 
         # See: :meth:`rest_framework_filters.filters.RelatedFilter.bind`
-        for name, f in new_class.related_filters.items():
+        for f in new_class.related_filters.values():
             f.bind_filterset(new_class)
 
         # Only expand when model is defined. Model may be undefined for mixins.
@@ -114,9 +112,8 @@ class FilterSetMetaclass(filterset.FilterSetMetaclass):
 
 
 class SubsetDisabledMixin:
-    """
-    Used to disable filter subsetting (see: :meth:`FilterSet.disable_subset`).
-    """
+    """Disable filter subsetting (see: :meth:`FilterSet.disable_subset`)."""
+
     @classmethod
     def get_filter_subset(cls, params, rel=None):
         return cls.base_filters
@@ -151,13 +148,19 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     @classmethod
     def get_filter_subset(cls, params, rel=None):
-        """
-        Returns the subset of filters that should be initialized by the
-        FilterSet, dependent on the requested `params`. This helps minimize
-        the cost of initialization by reducing the number of deepcopy ops.
+        """Get the subset of filters that should be initialized by this filterset class.
 
-        The `rel` argument is used for related filtersets to strip the param
-        of its relationship prefix. See `.get_param_filter_name()` for info.
+        A filterset may have a large number of filters, and selecting the subset based on
+        the request ``params`` minimizes the cost of initialization by reducing the total
+        number of expensive deepcopy operations. See :meth:`.get_param_filter_name()`
+        for a better understanding of how the filter names are resolved.
+
+        Args:
+            params: The request's query params.
+            rel (str, optional): The relationship the ``params`` are resolved against.
+
+        Returns:
+            Mapping of the resolved ``{filter names: filter instances}``.
         """
         # Determine names of filters from query params and remove empty values.
         # param names that traverse relations are translated to just the local
@@ -171,10 +174,17 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     @classmethod
     def disable_subset(cls, *, depth=0):
-        """
-        Disable filter subsetting, allowing the form to render the filterset.
-        Note that this decreases performance and should only be used when
-        rendering a form, such as with DRF's browsable API.
+        """Disable filter subsetting, allowing a form to render the complete filterset.
+
+        Note that this decreases performance and should only be used when rendering a
+        form, such as with DRF's browsable API.
+
+        Args:
+            depth (int, optional): Disable related filterset subsetting to this depth.
+                The form should not render rels beyond this depth.
+
+        Returns:
+            This filterset class with subset disabling mixed in.
         """
         if not issubclass(cls, SubsetDisabledMixin):
             cls = type('SubsetDisabled%s' % cls.__name__,
@@ -195,10 +205,12 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
     @classmethod
     def get_param_filter_name(cls, param, rel=None):
-        """
-        Get the filter name for the request data parameter.
+        """Resolve a query parameter name into a filter name.
 
-        ex::
+        This is primarily used to resolve query parameters respective to their base or
+        related filtersets. e.g.,
+
+        .. code-block:: python
 
             # regular attribute filters
             >>> FilterSet.get_param_filter_name('email')
@@ -216,6 +228,12 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
             >>> FilterSet.get_param_filter_name('author__email', rel='author')
             'email'
 
+        Args:
+            param (str): The query paramater.
+            rel (str, optional): The relationship a ``param`` is resolved against.
+
+        Returns:
+            The parameter name relative to the relationship.
         """
         # check for empty param
         if not param:
@@ -240,16 +258,19 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
 
         # Match against relationships. (author__username__endswith).
         # Preference more specific filters. eg, `note__author` over `note`.
-        for name in reversed(sorted(cls.related_filters)):
+        for name in sorted(cls.related_filters, reverse=True):
             # we need to match against '__' to prevent eager matching against
             # like names. eg, note vs note2. Exact matches are handled above.
             if param.startswith("%s%s" % (name, LOOKUP_SEP)):
                 return name
 
     def get_request_filters(self):
-        """
-        Build a set of filters based on the request data. This currently
-        includes only filter exclusion/negation.
+        """Build a set of filters based on the request data.
+
+        This currently includes only filter exclusion/negation.
+
+        Returns:
+            Mapping of expanded ``{filter names: filter instances}``.
         """
         # build the compiled set of all filters
         requested_filters = OrderedDict()
@@ -270,8 +291,10 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         return requested_filters
 
     def get_related_filtersets(self):
-        """
-        Get the related filterset instances for all related filters.
+        """Get the related filterset instances for all related filters.
+
+        Returns:
+            Mapping of related ``{filter names: filterset instances}``.
         """
         related_filtersets = OrderedDict()
 
@@ -296,10 +319,15 @@ class FilterSet(rest_framework.FilterSet, metaclass=FilterSetMetaclass):
         return queryset
 
     def filter_related_filtersets(self, queryset):
-        """
-        Filter the provided `queryset` by the `related_filtersets`. It is
-        recommended that you override this method to change the filtering
-        behavior across relationships.
+        """Filter the provided ``queryset`` by the ``related_filtersets``.
+
+        Override this method to change the filtering behavior across relationships.
+
+        Args:
+            queryset: The filterset's filtered queryset.
+
+        Returns:
+            The ``queryset`` filtered by its related filtersets' querysets.
         """
         for related_name, related_filterset in self.related_filtersets.items():
             # Related filtersets should only be applied if they had data.

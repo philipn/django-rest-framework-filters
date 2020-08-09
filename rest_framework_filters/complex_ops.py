@@ -23,15 +23,9 @@ ComplexOp = namedtuple('ComplexOp', ['querystring', 'negate', 'op'])
 
 
 def decode_complex_ops(encoded_querystring, operators=None, negation=True):
-    """
-    Returns a list of (querystring, negate, op) tuples that represent complex operations.
+    """Decode the complex encoded querysting into a list of complex operations.
 
-    This function will raise a `ValidationError`s if:
-    - the individual querystrings are not wrapped in parentheses
-    - the set operators do not match the provided `operators`
-    - there is trailing content after the ending querysting
-
-    Ex::
+    .. code-block:: python
 
         # unencoded query: (a=1) & (b=2) | ~(c=3)
         >>> s = '%28a%253D1%29%20%26%20%28b%253D2%29%20%7C%20%7E%28c%253D3%29'
@@ -41,6 +35,21 @@ def decode_complex_ops(encoded_querystring, operators=None, negation=True):
             ('b=2', False, QuerySet.__or__),
             ('c=3', True, None),
         ]
+
+    Args:
+        encoded_querystring: The encoded querystring.
+        operators: A map of {operator symbols: queryset operations}. Defaults to the
+            ``COMPLEX_OPERATIONS`` mapping.
+        negation: Whether to parse negation.
+
+    Returns:
+        A list of ``(querystring, negate, op)`` tuples that represent the operations.
+
+    Raises:
+        ValidationError: Raised under the following conditions:
+            - the individual querystrings are not wrapped in parentheses
+            - the set operators do not match the provided `operators`
+            - there is trailing content after the ending querysting
     """
     complex_op_re = COMPLEX_OP_NEG_RE if negation else COMPLEX_OP_RE
     if operators is None:
@@ -48,7 +57,7 @@ def decode_complex_ops(encoded_querystring, operators=None, negation=True):
 
     # decode into: (a%3D1) & (b%3D2) | ~(c%3D3)
     decoded_querystring = unquote(encoded_querystring)
-    matches = [m for m in complex_op_re.finditer(decoded_querystring)]
+    matches = list(complex_op_re.finditer(decoded_querystring))
 
     if not matches:
         msg = _("Unable to parse querystring. Decoded: '%(decoded)s'.")
@@ -67,9 +76,9 @@ def decode_complex_ops(encoded_querystring, operators=None, negation=True):
 
         results.append(ComplexOp(querystring, negate, op_func))
 
+    msg = _("Ending querystring must not have trailing characters. Matched: '%(chars)s'.")
     trailing_chars = decoded_querystring[matches[-1].end():]
     if trailing_chars:
-        msg = _("Ending querystring must not have trailing characters. Matched: '%(chars)s'.")
         errors.append(msg % {'chars': trailing_chars})
 
     if errors:
