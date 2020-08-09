@@ -83,6 +83,10 @@ class Customer(models.Model):
 
 
 class Account(models.Model):
+    TYPE_CHOICES = [
+        ('c', 'Checking'),
+        ('s', 'Savings'),
+    ]
     customer = models.ForeignKey(Customer, to_field='ssn', on_delete=models.CASCADE)
-    type = models.CharField(max_length=1, choices=[('c', 'Checking'), ('s', 'Savings')])
+    type = models.CharField(max_length=1, choices=TYPE_CHOICES)
     name = models.CharField(max_length=80)

@@ -90,10 +90,18 @@ class RelatedFilterTests(TestCase):
 
         ########################################################################
         # Create notes #########################################################
-        note1 = Note.objects.create(title="Test 1", content="Test content 1", author=user1)
-        note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user1)
-        Note.objects.create(title="Hello Test 3", content="Test content 3", author=user1)
-        note4 = Note.objects.create(title="Hello Test 4", content="Test content 4", author=user2)
+        note1 = Note.objects.create(title="Test 1",
+                                    content="Test content 1",
+                                    author=user1)
+        note2 = Note.objects.create(title="Test 2",
+                                    content="Test content 2",
+                                    author=user1)
+        Note.objects.create(title="Hello Test 3",
+                            content="Test content 3",
+                            author=user1)
+        note4 = Note.objects.create(title="Hello Test 4",
+                                    content="Test content 4",
+                                    author=user2)
 
         ########################################################################
         # Create posts #########################################################
@@ -108,10 +116,17 @@ class RelatedFilterTests(TestCase):
 
         ########################################################################
         # Create pages #########################################################
-        Page.objects.create(title="First page", content="First first.")
-        Page.objects.create(title="Second page", content="Second second.", previous_page_id=1)
-        Page.objects.create(title="Third page", content="Third third.", previous_page_id=2)
-        Page.objects.create(title="Fourth page", content="Fourth fourth.", previous_page_id=3)
+        Page.objects.create(title="First page",
+                            content="First first.")
+        Page.objects.create(title="Second page",
+                            content="Second second.",
+                            previous_page_id=1)
+        Page.objects.create(title="Third page",
+                            content="Third third.",
+                            previous_page_id=2)
+        Page.objects.create(title="Fourth page",
+                            content="Fourth fourth.",
+                            previous_page_id=3)
 
         ########################################################################
         # ManyToMany ###########################################################
@@ -255,7 +270,7 @@ class RelatedFilterTests(TestCase):
 
     def test_double_relation_filter(self):
         GET = {
-            'note__author__username__endswith': 'user2'
+            'note__author__username__endswith': 'user2',
         }
         f = PostFilter(GET, queryset=Post.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
@@ -264,7 +279,7 @@ class RelatedFilterTests(TestCase):
 
     def test_triple_relation_filter(self):
         GET = {
-            'post__note__author__username__endswith': 'user2'
+            'post__note__author__username__endswith': 'user2',
         }
         f = CoverFilter(GET, queryset=Cover.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
@@ -273,7 +288,7 @@ class RelatedFilterTests(TestCase):
 
     def test_indirect_recursive_relation(self):
         GET = {
-            'a__b__name__endswith': '1'
+            'a__b__name__endswith': '1',
         }
         f = CFilter(GET, queryset=C.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
@@ -283,7 +298,7 @@ class RelatedFilterTests(TestCase):
     def test_direct_recursive_relation(self):
         # see: https://github.com/philipn/django-rest-framework-filters/issues/333
         GET = {
-            'best_friend': 1
+            'best_friend': 1,
         }
         f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
@@ -292,7 +307,7 @@ class RelatedFilterTests(TestCase):
 
     def test_direct_recursive_relation__lookup(self):
         GET = {
-            'best_friend__name__endswith': 'hn'
+            'best_friend__name__endswith': 'hn',
         }
         f = PersonFilter(GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
@@ -313,7 +328,7 @@ class RelatedFilterTests(TestCase):
         }
         f = PostFilter(GET, queryset=Post.objects.all())
         self.assertEqual(len(list(f.qs)), 2)
-        contents = set([post.content for post in f.qs])
+        contents = {post.content for post in f.qs}
         self.assertEqual(contents, {'Test content in post 1', 'Test content in post 3'})
 
     def test_m2m_distinct(self):
@@ -322,16 +337,12 @@ class RelatedFilterTests(TestCase):
         }
         f = PostFilter(GET, queryset=Post.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
-        contents = set([post.content for post in f.qs])
+        contents = {post.content for post in f.qs}
         self.assertEqual(contents, {'Test content in post 2'})
 
     def test_nonexistent_related_field(self):
-        """
-        Invalid filter keys (including those on related filters) are invalid
-        and should be ignored.
-
-        Related: https://github.com/philipn/django-rest-framework-filters/issues/58
-        """
+        # Invalid filter keys (including those on related filters) should be ignored.
+        # Related: https://github.com/philipn/django-rest-framework-filters/issues/58
         GET = {
             'author__nonexistent': 'foobar',
         }
@@ -348,8 +359,14 @@ class RelatedFilterTests(TestCase):
         class ChildFilter(PostFilter):
             foo = filters.RelatedFilter(NoteFilter, field_name='note')
 
-        self.assertEqual(['author', 'note', 'tags'], list(PostFilter.related_filters))
-        self.assertEqual(['author', 'note', 'tags', 'foo'], list(ChildFilter.related_filters))
+        self.assertEqual(
+            ['author', 'note', 'tags'],
+            list(PostFilter.related_filters),
+        )
+        self.assertEqual(
+            ['author', 'note', 'tags', 'foo'],
+            list(ChildFilter.related_filters),
+        )
 
     def test_relatedfilter_queryset_required(self):
         # Use a secure default queryset. Previous behavior was to use the default model
@@ -386,7 +403,7 @@ class RelatedFilterTests(TestCase):
                 fields = ['username']
 
         class NoteFilter(FilterSet):
-            author = filters.RelatedFilter(RequestCheck, field_name='author', queryset=User.objects.all())
+            author = filters.RelatedFilter(RequestCheck, queryset=User.objects.all())
 
             class Meta:
                 model = Note

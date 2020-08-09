@@ -38,9 +38,8 @@ class ExcludeTests(RelationshipData, TestCase):
     NOT_CORRECT_ONE = [4, 7, 9, 10, 12, 13, 14, 15]
 
     def test_single_exclude(self):
-        """
-        Verify that exclusion is not equivalent
-        """
+        # Verify that exclusion is not equivalent
+
         # q1 should be equivalent to q2/q4 and *not* q3/q5
         q1 = Blog.objects.exclude(post__title__contains='Lennon')
 
@@ -49,8 +48,12 @@ class ExcludeTests(RelationshipData, TestCase):
         q3 = Blog.objects.filter(post__in=Post.objects.exclude(title__contains='Lennon'))
 
         # nested subquery
-        q4 = Blog.objects.exclude(pk__in=Post.objects.filter(title__contains='Lennon').values('blog'))
-        q5 = Blog.objects.filter(pk__in=Post.objects.exclude(title__contains='Lennon').values('blog'))
+        q4 = Blog.objects.exclude(pk__in=Post.objects
+                                             .filter(title__contains='Lennon')
+                                             .values('blog'))
+        q5 = Blog.objects.filter(pk__in=Post.objects
+                                            .exclude(title__contains='Lennon')
+                                            .values('blog'))
 
         # C, D, CD *all* entries do not have a title containing 'Lennon'
         self.verify(q1, [3, 4, 10])
@@ -72,7 +75,7 @@ class ExcludeTests(RelationshipData, TestCase):
         q2 = Blog.objects.exclude(
             post__in=Post.objects
                          .filter(title__contains='Lennon')
-                         .filter(publish_date__year=2008)
+                         .filter(publish_date__year=2008),
         )
 
         self.verify(q2, self.CORRECT)
@@ -81,7 +84,7 @@ class ExcludeTests(RelationshipData, TestCase):
         q3 = Blog.objects.filter(
             post__in=Post.objects
                          .exclude(title__contains='Lennon')
-                         .exclude(publish_date__year=2008)
+                         .exclude(publish_date__year=2008),
         )
 
         self.verify(q3, self.NOT_CORRECT_ONE)
@@ -91,7 +94,7 @@ class ExcludeTests(RelationshipData, TestCase):
             pk__in=Post.objects
                        .filter(title__contains='Lennon')
                        .filter(publish_date__year=2008)
-                       .values('blog')
+                       .values('blog'),
         )
 
         self.verify(q4, self.CORRECT)
@@ -101,7 +104,7 @@ class ExcludeTests(RelationshipData, TestCase):
             pk__in=Post.objects
                        .exclude(title__contains='Lennon')
                        .exclude(publish_date__year=2008)
-                       .values('blog')
+                       .values('blog'),
         )
 
         self.verify(q5, self.NOT_CORRECT_ONE)

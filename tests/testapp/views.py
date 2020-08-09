@@ -13,21 +13,21 @@ class DFUserViewSet(viewsets.ModelViewSet):
     # with standard django-filter FilterSets.
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.RestFrameworkFilterBackend, )
+    filter_backends = [backends.RestFrameworkFilterBackend]
     filterset_class = DFUserFilter
 
 
 class FilterClassUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.RestFrameworkFilterBackend, )
+    filter_backends = [backends.RestFrameworkFilterBackend]
     filterset_class = UserFilter
 
 
 class FilterFieldsUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.RestFrameworkFilterBackend, )
+    filter_backends = [backends.RestFrameworkFilterBackend]
     filterset_fields = {
         'username': '__all__',
     }
@@ -36,7 +36,7 @@ class FilterFieldsUserViewSet(viewsets.ModelViewSet):
 class UnfilteredUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.RestFrameworkFilterBackend, )
+    filter_backends = [backends.RestFrameworkFilterBackend]
 
 
 class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
@@ -55,12 +55,12 @@ class ComplexFilterFieldsUserViewSet(FilterFieldsUserViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_backends = (backends.RestFrameworkFilterBackend, )
+    filter_backends = [backends.RestFrameworkFilterBackend]
     filterset_class = UserFilter
 
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    filter_backends = (backends.RestFrameworkFilterBackend, )
+    filter_backends = [backends.RestFrameworkFilterBackend]
     filterset_class = NoteFilter

@@ -13,7 +13,7 @@ from tests.testapp import models
 
 
 def encode(querysting):
-    """Mimics the encoding logic of the client."""
+    # Mimics the encoding logic of the client.
     result = quote(querysting)
 
     # Python 3.7 added '~' to the reserved character set.
@@ -94,7 +94,7 @@ class DecodeComplexOpsTests(TestCase):
             decode_complex_ops(encoded)
 
         self.assertEqual(exc.exception.detail, [
-            "Invalid querystring operator. Matched: ''."
+            "Invalid querystring operator. Matched: ''.",
         ])
 
     def test_invalid_ops(self):
@@ -154,7 +154,7 @@ class DecodeComplexOpsTests(TestCase):
             decode_complex_ops(encoded)
 
         self.assertEqual(exc.exception.detail, [
-            "Invalid querystring operator. Matched: ' & ~'."
+            "Invalid querystring operator. Matched: ' & ~'.",
         ])
 
     def test_tilde_decoding(self):

@@ -32,8 +32,7 @@ class BackendTests(APITestCase):
         models.User.objects.create(username="user2", email="user2@example.org")
 
     def test_django_filter_compatibility(self):
-        response = self.client.get('/df-users/', {'username': 'user1'}, content_type='json')
-
+        response = self.client.get('/df-users/', {'username': 'user1'})
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'user1')
 
@@ -42,23 +41,30 @@ class BackendTests(APITestCase):
         # https://github.com/philipn/django-rest-framework-filters/issues/81
 
         # Ensure that the filterset_fields aren't altered
-        self.assertDictEqual(views.FilterFieldsUserViewSet.filterset_fields, {'username': '__all__'})
+        self.assertDictEqual(
+            views.FilterFieldsUserViewSet.filterset_fields,
+            {'username': '__all__'},
+        )
 
-        response = self.client.get('/ff-users/', {'username': 'user1'}, content_type='json')
+        response = self.client.get('/ff-users/', {'username': 'user1'})
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'user1')
-        self.assertDictEqual(views.FilterFieldsUserViewSet.filterset_fields, {'username': '__all__'})
+        self.assertDictEqual(
+            views.FilterFieldsUserViewSet.filterset_fields,
+            {'username': '__all__'},
+        )
 
-        response = self.client.get('/ff-users/', {'username': 'user1'}, content_type='json')
+        response = self.client.get('/ff-users/', {'username': 'user1'})
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'user1')
-        self.assertDictEqual(views.FilterFieldsUserViewSet.filterset_fields, {'username': '__all__'})
+        self.assertDictEqual(
+            views.FilterFieldsUserViewSet.filterset_fields,
+            {'username': '__all__'},
+        )
 
     def test_request_obj_is_passed(test):
-        """
-        Ensure that the request object is passed from the backend to the filterset.
-        See: https://github.com/philipn/django-rest-framework-filters/issues/149
-        """
+        # Ensure that the request object is passed from the backend to the filterset.
+        # See: https://github.com/philipn/django-rest-framework-filters/issues/149
         called = False
 
         class RequestCheck(FilterSet):
@@ -128,7 +134,7 @@ class BackendRenderingTests(RenderMixin, APITestCase):
     def test_sanity(self):
         # Sanity check to ensure backend can render without crashing.
         class SimpleViewSet(views.FilterFieldsUserViewSet):
-            filterset_fields = ['username', ]
+            filterset_fields = ['username']
 
         self.assertHTMLEqual(self.render(SimpleViewSet), """
         <h2>Field filters</h2>
@@ -212,11 +218,15 @@ class BackendRenderingTests(RenderMixin, APITestCase):
         class RelatedViewSet(views.NoteViewSet):
             filterset_class = NoteFilter
 
-        self.assertHTMLEqual(self.render(RelatedViewSet, {'author': 'invalid', 'author__last_login': 'invalid'}), """
+        context = {'author': 'invalid', 'author__last_login': 'invalid'}
+        self.assertHTMLEqual(self.render(RelatedViewSet, context), """
         <h2>Field filters</h2>
         <form class="form" action="" method="get">
             <ul class="errorlist">
-                <li>Select a valid choice. That choice is not one of the available choices.</li>
+                <li>
+                    Select a valid choice. That choice
+                    is not one of the available choices.
+                </li>
             </ul>
             <p>
                 <label for="id_author">Writer:</label>
@@ -234,7 +244,10 @@ class BackendRenderingTests(RenderMixin, APITestCase):
                 </ul>
                 <p>
                     <label for="id_author__last_login">Last login:</label>
-                    <input id="id_author__last_login" name="author__last_login" type="text" value="invalid" />
+                    <input id="id_author__last_login"
+                           name="author__last_login"
+                           type="text"
+                           value="invalid" />
                 </p>
             </fieldset>
 
@@ -336,7 +349,10 @@ class BackendCrispyFormsRenderingTests(RenderMixin, APITestCase):
             <div id="div_id_username" class="form-group">
                 <label for="id_username" class="control-label ">Username</label>
                 <div class=" controls">
-                    <input type="text" name="username" class="form-control textinput textInput" id="id_username">
+                    <input type="text"
+                           name="username"
+                           class="form-control textinput textInput"
+                           id="id_username">
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">Submit</button>
@@ -373,7 +389,9 @@ class BackendCrispyFormsRenderingTests(RenderMixin, APITestCase):
                 <legend>Writer</legend>
 
                 <div id="div_id_author__username" class="form-group">
-                    <label for="id_author__username" class="control-label ">Username</label>
+                    <label for="id_author__username" class="control-label ">
+                        Username
+                    </label>
                     <div class=" controls">
                         <input type="text" class="form-control textinput textInput"
                                id="id_author__username" name="author__username">
@@ -396,18 +414,18 @@ class ComplexFilterBackendTests(APITestCase):
         models.User.objects.create(username="user4", email="user4@example.org")
 
     def test_valid(self):
-        readable = '(username%3Duser1)|(email__contains%3Dexample.org)'
-        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+        readable = quote('(username%3Duser1)|(email__contains%3Dexample.org)')
+        response = self.client.get('/ffcomplex-users/?filters=' + readable)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             [r['username'] for r in response.data],
-            ['user1', 'user3', 'user4']
+            ['user1', 'user3', 'user4'],
         )
 
     def test_invalid(self):
-        readable = '(username%3Duser1)asdf(email__contains%3Dexample.org)'
-        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+        readable = quote('(username%3Duser1)asdf(email__contains%3Dexample.org)')
+        response = self.client.get('/ffcomplex-users/?filters=' + readable)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertDictEqual(response.data, {
@@ -415,8 +433,8 @@ class ComplexFilterBackendTests(APITestCase):
         })
 
     def test_invalid_filterset_errors(self):
-        readable = '(id%3Dfoo) | (id%3Dbar)'
-        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+        readable = quote('(id%3Dfoo) | (id%3Dbar)')
+        response = self.client.get('/ffcomplex-users/?filters=' + readable)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertDictEqual(response.data, {
@@ -431,36 +449,34 @@ class ComplexFilterBackendTests(APITestCase):
         })
 
     def test_pagination_compatibility(self):
-        """
-        Ensure that complex-filtering does not interfere with additional query param processing.
-        """
-        readable = '(email__contains%3Dexample.org)'
+        # Ensure that complex-filtering does not affect additional query param processing.
+        readable = quote('(email__contains%3Dexample.org)')
 
         # sanity check w/o pagination
-        response = self.client.get('/ffcomplex-users/?filters=' + quote(readable), content_type='json')
+        response = self.client.get('/ffcomplex-users/?filters=' + readable)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             [r['username'] for r in response.data],
-            ['user3', 'user4']
+            ['user3', 'user4'],
         )
 
         # sanity check w/o complex-filtering
-        response = self.client.get('/ffcomplex-users/?page_size=1', content_type='json')
+        response = self.client.get('/ffcomplex-users/?page_size=1')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
         self.assertListEqual(
             [r['username'] for r in response.data['results']],
-            ['user1']
+            ['user1'],
         )
 
         # pagination + complex-filtering
-        response = self.client.get('/ffcomplex-users/?page_size=1&filters=' + quote(readable), content_type='json')
+        response = self.client.get('/ffcomplex-users/?page_size=1&filters=' + readable)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
         self.assertListEqual(
             [r['username'] for r in response.data['results']],
-            ['user3']
+            ['user3'],
         )
