@@ -7,6 +7,10 @@ python:
   - "3.7"
   - "3.8"
 
+arch:
+  - amd64
+  - ppc64le
+
 install:
   - travis_retry pip install -U six setuptools pip wheel
   - travis_retry pip install -U tox tox-travis coverage
@@ -33,6 +37,26 @@ matrix:
         - rm -r djangorestframework_filters.egg-info
         - tox --installpkg ./dist/djangorestframework_filters-*.whl
         - tox  # test sdist
+
+    # Adding jobs for ppc64le architecture
+    - python: "3.8"
+      arch: ppc64le
+      env: TOXENV="performance"
+      script: tox -- -v 2
+    - python: "3.8"
+      arch: ppc64le
+      env: TOXENV="warnings"
+    - python: "3.8"
+      arch: ppc64le
+      env: TOXENV="isort,lint"
+    - python: "3.8"
+      arch: ppc64le
+      env: TOXENV="dist"
+      script:
+        - python setup.py bdist_wheel
+        - rm -r djangorestframework_filters.egg-info
+        - tox --installpkg ./dist/djangorestframework_filters-*.whl
+        - tox  # test sdist   
 
   allow_failures:
     - env: TOXENV="warnings"
