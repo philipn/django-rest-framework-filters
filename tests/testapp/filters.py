@@ -33,7 +33,7 @@ class UserFilter(FilterSet):
 
 class NoteFilter(FilterSet):
     title = AutoFilter(field_name='title', lookups='__all__')
-    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
+    author = RelatedFilter(UserFilter, queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -50,7 +50,7 @@ class TagFilter(FilterSet):
 
 class BlogFilter(FilterSet):
     name = AutoFilter(field_name='name', lookups='__all__')
-    post = RelatedFilter('PostFilter', field_name='post', queryset=Post.objects.all())
+    post = RelatedFilter('PostFilter', queryset=Post.objects.all())
 
     class Meta:
         model = Blog
@@ -64,21 +64,18 @@ class PostFilter(FilterSet):
     publish_date = filters.AutoFilter(lookups='__all__')
     is_published = filters.BooleanFilter(method='filter_is_published')
 
-    author = RelatedFilter(UserFilter, field_name='author', queryset=User.objects.all())
-    note = RelatedFilter(NoteFilter, field_name='note', queryset=Note.objects.all())
-    tags = RelatedFilter(TagFilter, field_name='tags', queryset=Tag.objects.all())
+    author = RelatedFilter(UserFilter, queryset=User.objects.all())
+    note = RelatedFilter(NoteFilter, queryset=Note.objects.all())
+    tags = RelatedFilter(TagFilter, queryset=Tag.objects.all(), distinct=True)
 
     class Meta:
         model = Post
         fields = []
 
     def filter_is_published(self, queryset, field_name, value):
-        """
-        `is_published` is based on the actual `publish_date`. If the
-        publish date is null, then the post is not published.
+        # `is_published` is based on the `publish_date`. If the publish date is null,
+        # then the post is not published. This filter method demonstrates annotations.
 
-        This filter method is used to demonstrate annotations.
-        """
         # Note: don't modify this without updating test_filtering.AnnotationTests
         return queryset.annotate_is_published() \
                        .filter(**{field_name: value})
@@ -86,7 +83,7 @@ class PostFilter(FilterSet):
 
 class CoverFilter(FilterSet):
     comment = filters.CharFilter(field_name='comment')
-    post = RelatedFilter(PostFilter, field_name='post', queryset=Post.objects.all())
+    post = RelatedFilter(PostFilter, queryset=Post.objects.all())
 
     class Meta:
         model = Cover
@@ -95,8 +92,16 @@ class CoverFilter(FilterSet):
 
 class PageFilter(FilterSet):
     title = filters.CharFilter(field_name='title')
-    previous_page = RelatedFilter(PostFilter, field_name='previous_page', queryset=Post.objects.all())
-    two_pages_back = RelatedFilter(PostFilter, field_name='previous_page__previous_page', queryset=Page.objects.all())
+    previous_page = RelatedFilter(
+        PostFilter,
+        field_name='previous_page',
+        queryset=Post.objects.all(),
+    )
+    two_pages_back = RelatedFilter(
+        PostFilter,
+        field_name='previous_page__previous_page',
+        queryset=Page.objects.all(),
+    )
 
     class Meta:
         model = Page
@@ -123,7 +128,7 @@ class NoteFilterWithAlias(FilterSet):
 
 
 class NoteFilterWithRelatedAlias(FilterSet):
-    author = RelatedFilter(UserFilterWithAlias, field_name='author', queryset=User.objects.all())
+    author = RelatedFilter(UserFilterWithAlias, queryset=User.objects.all())
 
     class Meta:
         model = Note
@@ -175,7 +180,11 @@ class PersonFilter(FilterSet):
 ################################################################################
 # `to_field` filtersets ########################################################
 class CustomerFilter(FilterSet):
-    accounts = RelatedFilter('AccountFilter', field_name='account', queryset=Account.objects.all())
+    accounts = RelatedFilter(
+        'AccountFilter',
+        field_name='account',
+        queryset=Account.objects.all(),
+    )
 
     class Meta:
         model = Customer
@@ -183,7 +192,11 @@ class CustomerFilter(FilterSet):
 
 
 class AccountFilter(FilterSet):
-    customer = RelatedFilter('CustomerFilter', to_field_name='ssn', queryset=Customer.objects.all())
+    customer = RelatedFilter(
+        'CustomerFilter',
+        to_field_name='ssn',
+        queryset=Customer.objects.all(),
+    )
 
     class Meta:
         model = Account

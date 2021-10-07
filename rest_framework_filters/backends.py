@@ -24,10 +24,8 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
 
     @contextmanager
     def patch_for_rendering(self, request):
-        """
-        Patch `.get_filterset_class()` so the resulting filterset does not
-        perform filter expansion during form rendering.
-        """
+        # Patch ``.get_filterset_class()`` so the resulting filterset does not perform
+        # filter expansion during form rendering.
         original = self.get_filterset_class
 
         def get_filterset_class(view, queryset=None):
@@ -50,8 +48,8 @@ class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
             self.get_filterset_class = original
 
     def to_html(self, request, queryset, view):
-        # Patching the behavior of `.get_filterset_class()` in this method
-        # allows us to avoid maintenance issues with code duplication.
+        # Patching the behavior of ``.get_filterset_class()`` in this method allows us
+        # to avoid maintenance issues with code duplication.
         with self.patch_for_rendering(request):
             return super().to_html(request, queryset, view)
 
@@ -68,7 +66,11 @@ class ComplexFilterBackend(RestFrameworkFilterBackend):
         # Decode the set of complex operations
         encoded_querystring = request.query_params[self.complex_filter_param]
         try:
-            complex_ops = decode_complex_ops(encoded_querystring, self.operators, self.negation)
+            complex_ops = decode_complex_ops(
+                encoded_querystring,
+                self.operators,
+                self.negation,
+            )
         except ValidationError as exc:
             raise ValidationError({self.complex_filter_param: exc.detail})
 

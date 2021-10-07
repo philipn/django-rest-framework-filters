@@ -22,12 +22,9 @@ verbosity = args.verbosity
 
 @tag('perf')
 class PerfTestMixin(object):
-    """
-    This mixin provides common setup for testing the performance differences
-    between django-filter and django-rest-framework-filters. A callable for
-    each implementation should be generated that will return semantically
-    equivalent results.
-    """
+    # This mixin provides common setup for testing the performance differences between
+    # django-filter and django-rest-framework-filters. A callable for each implementation
+    # should be generated that will return semantically equivalent results.
     iterations = 1000
     repeat = 5
     threshold = 1.0
@@ -44,35 +41,26 @@ class PerfTestMixin(object):
         models.Note.objects.create(author=joe, title='Note 4')
 
     def get_callable(self, *args):
-        """
-        Returns the callable and callable's *args to be used for each test
-        iteration. The performance of the callable is what is under test.
-        """
+        # Returns the callable and callable's *args to be used for each test
+        # iteration. The performance of the callable is what is under test.
         raise NotImplementedError
 
     def django_filter_args(self):
-        """
-        Arguments passed to `get_callable()` in order to create
-        django-filter test iterations.
-        """
+        # Arguments passed to `get_callable()` in order to create
+        # django-filter test iterations.
         raise NotImplementedError
 
     def rest_framework_filters_args(self):
-        """
-        Arguments passed to `get_callable()` in order to create
-        django-rest-framework-filters test iterations.
-        """
+        # Arguments passed to `get_callable()` in order to create
+        # django-rest-framework-filters test iterations.
         raise NotImplementedError
 
     def validate_result(self, result):
-        """
-        Provides the validation logic that the sanity test uses to check
-        its test call results against.
+        # Provides the validation logic that the sanity test uses to check its test
+        # call results against.
 
-        Since the calls for both implementations must be comparable or
-        at least semantically equivalent, this method should validate
-        both results.
-        """
+        # Since the calls for both implementations must be comparable or at least
+        # semantically equivalent, this method should validate both results.
         raise NotImplementedError
 
     def test_sanity(self):
@@ -108,19 +96,18 @@ class PerfTestMixin(object):
             print('performance diff:\t%+.2f%% ' % diff)
             print('-' * 32)
 
-        self.assertTrue(drf_time < (df_time * self.threshold))
+        self.assertLess(drf_time, df_time * self.threshold)
 
 
 class FilterBackendTests(PerfTestMixin, TestCase):
-    """
-    How much faster or slower is drf-filters than django-filter?
-    """
+    # How much faster or slower is drf-filters than django-filter?
     threshold = 1.5
     label = 'Filter Backend'
 
     def get_callable(self, view_class):
         view = view_class(action_map={'get': 'list'})
-        request = factory.get('/', data={'author__username': 'bob', 'title__contains': 'Note'})
+        data = {'author__username': 'bob', 'title__contains': 'Note'}
+        request = factory.get('/', data=data)
         request = view.initialize_request(request)
         backend = view.filter_backends[0]
 
@@ -143,12 +130,9 @@ class FilterBackendTests(PerfTestMixin, TestCase):
 
 @override_settings(ROOT_URLCONF='tests.perf.urls')
 class WSGIResponseTests(PerfTestMixin, TestCase):
-    """
-    How much does drf-filters affect the request/response cycle?
-
-    This includes response rendering, which provides a more practical
-    picture of the performance costs of using drf-filters.
-    """
+    # How much does drf-filters affect the request/response cycle? This includes
+    # response rendering, which provides a more practical picture of the performance
+    # costs of using drf-filters.
     threshold = 1.3
     label = 'WSGI Response'
 

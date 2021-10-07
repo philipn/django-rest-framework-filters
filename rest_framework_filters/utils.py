@@ -4,8 +4,13 @@ from django.db.models.lookups import Transform
 
 
 def lookups_for_field(model_field):
-    """
-    Generates a list of all possible lookup expressions for a model field.
+    """Generate a list of all possible lookup expressions for a model field.
+
+    Args:
+        model_field: The model field to inspect.
+
+    Returns:
+        A list of lookups for the given ``model_field``.
     """
     lookups = []
 
@@ -24,17 +29,21 @@ def lookups_for_field(model_field):
 
 
 def lookups_for_transform(transform):
-    """
-    Generates a list of subsequent lookup expressions for a transform.
+    """Generate a list of subsequent lookup expressions for a transform.
 
     Note:
-    Infinite transform recursion is only prevented when the subsequent and
-    passed in transforms are the same class. For example, the ``Unaccent``
-    transform from ``django.contrib.postgres``.
-    There is no cycle detection across multiple transforms. For example,
-    ``a__b__a__b`` would continue to recurse. However, this is not currently
-    a problem (no builtin transforms exhibit this behavior).
+    Infinite transform recursion is only prevented when the subsequent and passed in
+    transforms are the same class. For example, the ``Unaccent`` transform from
+    ``django.contrib.postgres``.
+    There is no cycle detection across multiple transforms. For example, ``a__b__a__b``
+    would continue to recurse. However, this is not currently a problem (no builtin
+    transforms exhibit this behavior).
 
+    Args:
+        transform: The transform to inspect.
+
+    Returns:
+        A list of lookups for the given ``transform``.
     """
     lookups = []
 

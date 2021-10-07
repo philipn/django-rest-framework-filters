@@ -76,12 +76,14 @@ class IsoDatetimeTests(TestCase):
         date_str = JSONRenderer().render(data['date_joined']).decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6))
+        offset = parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)
+        datetime_str = JSONRenderer().render(offset)
         datetime_str = datetime_str.decode('utf-8').strip('"')
 
         # Adjust for imprecise rendering of time
-        dt = datetime.datetime.combine(today, parse_time(data['time_joined'])) + datetime.timedelta(seconds=0.6)
-        time_str = JSONRenderer().render(dt.time()).decode('utf-8').strip('"')
+        offset = datetime.datetime.combine(today, parse_time(data['time_joined']))
+        offset += datetime.timedelta(seconds=0.6)
+        time_str = JSONRenderer().render(offset.time()).decode('utf-8').strip('"')
 
         # DateField
         GET = {
@@ -111,17 +113,16 @@ class IsoDatetimeTests(TestCase):
 
     @override_settings(USE_TZ=True, TIME_ZONE='UTC')
     def test_datetime_timezone_awareness(self):
-        # Addresses issue #24 - ensure that datetime strings terminating
-        # in 'Z' are correctly handled.
+        # Issue #24 - coorectly handle datetime strings terminating in 'Z'.
 
-        # Figure out what the date strings should look like based on the
-        # serializer output.
+        # Figure out what the date strings should look like based on the serializer output
         john = Person.objects.get(name="John")
         data = PersonSerializer(john).data
-        datetime_str = JSONRenderer().render(parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6))
+        offset = parse_datetime(data['datetime_joined']) + datetime.timedelta(seconds=0.6)
+        datetime_str = JSONRenderer().render(offset)
         datetime_str = datetime_str.decode('utf-8').strip('"')
 
-        # This is more for documentation - DRF appends a 'Z' to timezone aware UTC datetimes when rendering:
+        # DRF appends a 'Z' to timezone aware UTC datetimes when rendering:
         # https://github.com/tomchristie/django-rest-framework/blob/3.2.0/rest_framework/fields.py#L1002-L1006
         self.assertTrue(datetime_str.endswith('Z'))
 
@@ -138,8 +139,13 @@ class BooleanFilterTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=today)
-        User.objects.create(username="user2", email="user2@example.org", is_active=False)
+        User.objects.create(username="user1",
+                            email="user1@example.org",
+                            is_active=True,
+                            last_login=today)
+        User.objects.create(username="user2",
+                            email="user2@example.org",
+                            is_active=False)
 
     def test_boolean_filter(self):
         # Capitalized True
@@ -192,8 +198,13 @@ class InLookupTests(TestCase):
         john = Person.objects.create(name="John")
         Person.objects.create(name="Mark", best_friend=john)
 
-        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=today)
-        User.objects.create(username="user2", email="user2@example.org", is_active=False)
+        User.objects.create(username="user1",
+                            email="user1@example.org",
+                            is_active=True,
+                            last_login=today)
+        User.objects.create(username="user2",
+                            email="user2@example.org",
+                            is_active=False)
 
     def test_inset_number_filter(self):
         p1 = Person.objects.get(name="John").pk
@@ -209,14 +220,14 @@ class InLookupTests(TestCase):
         self.assertIn(p2, f)
 
         INVALID_GET = {
-            'pk__in': '{:d},c{:d}'.format(p1, p2)
+            'pk__in': '{:d},c{:d}'.format(p1, p2),
         }
         f = InLookupPersonFilter(INVALID_GET, queryset=Person.objects.all())
         self.assertFalse(f.is_valid())
         self.assertEqual(f.qs.count(), 2)
 
         EXTRA_GET = {
-            'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1 * p2)
+            'pk__in': '{:d},{:d},{:d}'.format(p1, p2, p1 * p2),
         }
         f = InLookupPersonFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.pk for x in f.qs]
@@ -225,7 +236,7 @@ class InLookupTests(TestCase):
         self.assertIn(p2, f)
 
         DISORDERED_GET = {
-            'pk__in': '{:d},{:d},{:d}'.format(p2, p2 * p1, p1)
+            'pk__in': '{:d},{:d},{:d}'.format(p2, p2 * p1, p1),
         }
         f = InLookupPersonFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.pk for x in f.qs]
@@ -247,13 +258,13 @@ class InLookupTests(TestCase):
         self.assertIn(p2, f)
 
         NONEXISTENT_GET = {
-            'name__in': '{},Foo{}'.format(p1, p2)
+            'name__in': '{},Foo{}'.format(p1, p2),
         }
         f = InLookupPersonFilter(NONEXISTENT_GET, queryset=Person.objects.all())
         self.assertEqual(len(list(f.qs)), 1)
 
         EXTRA_GET = {
-            'name__in': '{},{},{}'.format(p1, p2, p1 + p2)
+            'name__in': '{},{},{}'.format(p1, p2, p1 + p2),
         }
         f = InLookupPersonFilter(EXTRA_GET, queryset=Person.objects.all())
         f = [x.name for x in f.qs]
@@ -262,7 +273,7 @@ class InLookupTests(TestCase):
         self.assertIn(p2, f)
 
         DISORDERED_GET = {
-            'name__in': '{},{},{}'.format(p2, p2 + p1, p1)
+            'name__in': '{},{},{}'.format(p2, p2 + p1, p1),
         }
         f = InLookupPersonFilter(DISORDERED_GET, queryset=Person.objects.all())
         f = [x.name for x in f.qs]
@@ -275,15 +286,20 @@ class IsNullLookupTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        User.objects.create(username="user1", email="user1@example.org", is_active=True, last_login=today)
-        User.objects.create(username="user2", email="user2@example.org", is_active=False)
+        User.objects.create(username="user1",
+                            email="user1@example.org",
+                            is_active=True,
+                            last_login=today)
+        User.objects.create(username="user2",
+                            email="user2@example.org",
+                            is_active=False)
 
     def test_isnull_override(self):
         import django_filters.filters
 
         self.assertIsInstance(
             UserFilter.base_filters['last_login__isnull'],
-            django_filters.filters.BooleanFilter
+            django_filters.filters.BooleanFilter,
         )
 
         GET = {'last_login__isnull': 'false'}
@@ -304,9 +320,6 @@ class IsNullLookupTests(TestCase):
 
 
 class FilterMethodTests(TestCase):
-    """
-    Old test case for MethodFilter. Ensure that the new Filter.method remains compatible.
-    """
 
     @classmethod
     def setUpTestData(cls):
@@ -316,14 +329,16 @@ class FilterMethodTests(TestCase):
         note2 = Note.objects.create(title="Test 2", content="Test content 2", author=user)
 
         post1 = Post.objects.create(note=note1, content="Test content in post 1")
-        post2 = Post.objects.create(note=note2, content="Test content in post 2", publish_date=today)
+        post2 = Post.objects.create(note=note2,
+                                    content="Test content in post 2",
+                                    publish_date=today)
 
         Cover.objects.create(post=post1, comment="Cover 1")
         Cover.objects.create(post=post2, comment="Cover 2")
 
     def test_method_filter(self):
         GET = {
-            'is_published': 'true'
+            'is_published': 'true',
         }
         filterset = PostFilter(GET, queryset=Post.objects.all())
         results = list(filterset.qs)
@@ -331,12 +346,9 @@ class FilterMethodTests(TestCase):
         self.assertEqual(results[0].content, "Test content in post 2")
 
     def test_related_method_filter(self):
-        """
-        Missing MethodFilter filter methods are silently ignored, returning
-        the unfiltered queryset.
-        """
+        # Missing MethodFilter methods are silently ignored, returning the unfiltered qs.
         GET = {
-            'post__is_published': 'true'
+            'post__is_published': 'true',
         }
         filterset = CoverFilter(GET, queryset=Cover.objects.all())
         results = list(filterset.qs)

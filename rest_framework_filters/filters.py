@@ -15,6 +15,8 @@ class AutoFilter:
     This is a declarative alternative to the ``Meta.fields`` dict syntax, and
     the below are functionally equivalent:
 
+    .. code-block:: python
+
         class PersonFilter(filters.FilterSet):
             name = AutoFilter(lookups=['exact', 'contains'])
 
@@ -30,6 +32,8 @@ class AutoFilter:
     Due to its declarative nature, an ``AutoFilter`` allows for paramater name
     aliasing for its generated filters. e.g.,
 
+    .. code-block:: python
+
         class BlogFilter(filters.FilterSet):
             title = AutoFilter(field_name='name', lookups=['contains'])
 
@@ -42,6 +46,7 @@ class AutoFilter:
     filterable. However, an ``AutoFilter`` is typically replaced by a generated
     ``exact`` filter of the same name, which enables filtering by that param.
     """
+
     creation_counter = 0
 
     def __init__(self, field_name=None, *, lookups=None):
@@ -59,17 +64,20 @@ class BaseRelatedFilter:
         self.filterset = filterset
         self.lookups = lookups or []
 
-    def bind(self, bind_cls):
-        """
-        Bind a filterset class to the filter instance. This class is used for
-        relative imports. Only the first bound class is used as filterset
-        inheritance might otherwise break these relative import paths.
+    def bind_filterset(self, filterset):
+        """Bind a filterset class to the filter instance.
 
-        This is also necessary to allow `.filterset` to be resolved during
-        FilterSet class creation time, instead of during initialization.
+        This class is used for relative imports. Only the first bound class is used as
+        filterset inheritance might otherwise break these relative import paths.
+
+        This is also necessary to allow ``.filterset`` to be resolved during FilterSet
+        class creation time, instead of during initialization.
+
+        Args:
+            filterset: The filterset to bind
         """
-        if not hasattr(self, 'bind_cls'):
-            self.bind_cls = bind_cls
+        if not hasattr(self, 'bound_filterset'):
+            self.bound_filterset = filterset
 
     def filterset():
         def fget(self):
@@ -79,7 +87,7 @@ class BaseRelatedFilter:
                     self._filterset = import_string(self._filterset)
                 except ImportError:
                     # Fallback to building import path relative to bind class
-                    path = '.'.join([self.bind_cls.__module__, self._filterset])
+                    path = '.'.join([self.bound_filterset.__module__, self._filterset])
                     self._filterset = import_string(path)
             return self._filterset
 
@@ -144,5 +152,8 @@ class AllLookupsFilter(AutoFilter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, lookups=ALL_LOOKUPS, **kwargs)
         warnings.warn(
-            "`AllLookupsFilter()` has been deprecated in favor of `AutoFilter(lookups='__all__')`.",
-            DeprecationWarning, stacklevel=2)
+            "`AllLookupsFilter()` has been deprecated in favor of "
+            "`AutoFilter(lookups='__all__')`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
