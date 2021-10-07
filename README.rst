@@ -590,6 +590,35 @@ errors would be raised like so:
     {
 
 
+Complex JSON Filtering with Boolean Logic
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``ComplexJSONFilterBackend`` backend allows a user to filter using a JSON definition instead of an encoded string. Pass an encoded representation of a json object that has a top-level `or` or `and` key, mapped to an array of clauses to the `json_filters` option. These clauses can either be other `or` or `and` clauses or a mapping of query params to their values. For example to query for all resources where (title does not contain "Why") AND (title starts with "Who" OR title starts with "What"):
+
+.. code-block:: python
+
+    filters = {
+        "and": [
+            {
+                "or": [
+                    {
+                        "title__startswith": "Who"
+                    },
+                    {
+                        "title__startswith": "What"
+                    },
+                ]
+            },
+            {
+                "title__icontains!": "Why"
+            },
+        ]
+    }
+    querystring = "json_filters={filters}".format(
+        filters=quote(json.dumps(filters))
+    )
+
+
 Migrating to 1.0
 ----------------
 

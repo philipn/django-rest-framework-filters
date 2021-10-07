@@ -10,6 +10,9 @@ router.register('ff-users', views.FilterFieldsUserViewSet, basename='ff-users')
 router.register('ffcomplex-users',
                 views.ComplexFilterFieldsUserViewSet,
                 basename='ffcomplex-users')
+router.register(r'ffjsoncomplex-users',
+                views.ComplexJSONFilterFieldsUserViewSet,
+                basename='ffjsoncomplex-users')
 router.register('users', views.UserViewSet)
 router.register('notes', views.NoteViewSet)
 

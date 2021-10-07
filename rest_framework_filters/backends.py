@@ -1,5 +1,7 @@
+import json
 from contextlib import contextmanager
 
+from django.db.models import QuerySet
 from django.http import QueryDict
 from django_filters import compat
 from django_filters.rest_framework import backends
@@ -7,6 +9,8 @@ from rest_framework.exceptions import ValidationError
 
 from .complex_ops import combine_complex_queryset, decode_complex_ops
 from .filterset import FilterSet
+
+COMPLEX_JSON_OPERATORS = {"and": QuerySet.__and__, "or": QuerySet.__or__}
 
 
 class RestFrameworkFilterBackend(backends.DjangoFilterBackend):
@@ -96,3 +100,60 @@ class ComplexFilterBackend(RestFrameworkFilterBackend):
         if errors:
             raise ValidationError(errors)
         return querysets
+
+
+class ComplexJSONFilterBackend(RestFrameworkFilterBackend):
+    complex_filter_param = "json_filters"
+
+    def filter_queryset(self, request, queryset, view):
+        res = super().filter_queryset(request, queryset, view)
+        if self.complex_filter_param not in request.query_params:
+            return res
+
+        encoded_querystring = request.query_params[self.complex_filter_param]
+        try:
+            complex_ops = json.loads(encoded_querystring)
+            return self.combine_filtered_querysets(complex_ops, request, res, view)
+        except ValidationError as exc:
+            raise ValidationError({self.complex_filter_param: exc.detail})
+        except json.decoder.JSONDecodeError:
+            raise ValidationError({self.complex_filter_param: "unable to parse json."})
+
+    def combine_filtered_querysets(self, complex_filter, request, queryset, view):
+        """
+        Function used recursively to filter the complex filter boolean logic
+        Args:
+            complex_filter: the json complex filter
+            request: request
+            queryset: starting queryset, unfiltered
+            view: the view
+
+        Returns:
+            queryset
+        """
+        operator = None
+        combined_queryset = None
+        for symbol, complex_operator in COMPLEX_JSON_OPERATORS.items():
+            if operator is None and symbol in complex_filter:
+                operator = complex_operator
+                for sub_filter in complex_filter[symbol]:
+                    filtered_queryset = self.combine_filtered_querysets(sub_filter, request, queryset, view)
+                    if combined_queryset is None:
+                        combined_queryset = filtered_queryset
+                    else:
+                        combined_queryset = complex_operator(combined_queryset, filtered_queryset)
+        if operator:
+            return combined_queryset
+
+        return self.get_filtered_queryset(
+            "&".join(["{k}={v}".format(k=k, v=v) for k, v in complex_filter.items()]), request, queryset, view
+        )
+
+    def get_filtered_queryset(self, querystring, request, queryset, view):
+        original_GET = request._request.GET
+        request._request.GET = QueryDict(querystring)
+        try:
+            res = super().filter_queryset(request, queryset, view)
+        finally:
+            request._request.GET = original_GET
+        return res
